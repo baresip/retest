@@ -676,7 +676,7 @@ static struct rtmp_endpoint *rtmp_endpoint_alloc(enum mode mode,
 		re_snprintf(path, sizeof(path), "%s/server-ecdsa.pem",
 			    test_datapath());
 
-		err = tls_alloc(&ep->tls, TLS_METHOD_SSLV23,
+		err = tls_alloc(&ep->tls, TLS_METHOD_SSLV23, TCP_IDLE_TIMEOUT,
 				is_client ? NULL : path, NULL);
 		if (err)
 			goto out;

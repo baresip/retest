@@ -205,7 +205,8 @@ static int test_tls_base(enum tls_keytype keytype, bool add_ca, int exp_verr)
 	if (err)
 		goto out;
 
-	err = tls_alloc(&tt.tls, TLS_METHOD_SSLV23, NULL, NULL);
+	err = tls_alloc(&tt.tls, TLS_METHOD_SSLV23, TCP_IDLE_TIMEOUT,
+		NULL, NULL);
 	if (err)
 		goto out;
 
@@ -325,7 +326,8 @@ int test_tls_selfsigned(void)
 	uint8_t fp[20];
 	int err;
 
-	err = tls_alloc(&tls, TLS_METHOD_SSLV23, NULL, NULL);
+	err = tls_alloc(&tls, TLS_METHOD_SSLV23, TCP_IDLE_TIMEOUT,
+		NULL, NULL);
 	if (err)
 		goto out;
 
@@ -351,7 +353,8 @@ int test_tls_certificate(void)
 	uint8_t fp[20];
 	int err;
 
-	err = tls_alloc(&tls, TLS_METHOD_SSLV23, NULL, NULL);
+	err = tls_alloc(&tls, TLS_METHOD_SSLV23, TCP_IDLE_TIMEOUT,
+		NULL, NULL);
 	if (err)
 		goto out;
 

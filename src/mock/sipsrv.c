@@ -89,7 +89,8 @@ int sip_server_alloc(struct sip_server **srvp)
 		goto out;
 
 #ifdef USE_TLS
-	err = tls_alloc(&tls, TLS_METHOD_SSLV23, NULL, NULL);
+	err = tls_alloc(&tls, TLS_METHOD_SSLV23, TCP_IDLE_TIMEOUT,
+		NULL, NULL);
 	if (err)
 		goto out;
 

@@ -301,7 +301,8 @@ static int agent_alloc(struct agent **agp, uint16_t lport,
 	/* allocate DTLS */
 	ag->dtls_active = dtls_active;
 
-	err = tls_alloc(&ag->tls, TLS_METHOD_DTLSV1, NULL, NULL);
+	err = tls_alloc(&ag->tls, TLS_METHOD_DTLSV1, TCP_IDLE_TIMEOUT,
+		NULL, NULL);
 	if (err)
 		goto out;
 
@@ -392,7 +393,8 @@ static bool have_dtls_support(enum tls_method method)
 	struct tls *tls = NULL;
 	int err;
 
-	err = tls_alloc(&tls, method, NULL, NULL);
+	err = tls_alloc(&tls, method, TCP_IDLE_TIMEOUT,
+		NULL, NULL);
 
 	mem_deref(tls);
 
