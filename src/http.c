@@ -355,3 +355,96 @@ int test_https_loop(void)
 	return test_http_loop_base(true);
 }
 #endif
+
+
+static void http_resp_handler2(int err, const struct http_msg *msg, void *arg)
+{
+	struct test *t = arg;
+	TEST_EQUALS(200, msg->scode);
+	++t->n_response;
+out:
+	DEBUG_INFO("%s scode=%u (%m)", __func__, msg->scode, err);
+	abort_test(t, err);
+}
+
+
+static int test_request(const struct pl *uri,
+			const struct pl *user, const struct pl *pass,
+			const struct pl *met, const struct pl *body)
+{
+	struct http_cli *cli = NULL;
+	struct http_reqconn *conn = NULL;
+	struct dnsc *dnsc = NULL;
+	struct sa dns;
+	struct test t;
+	int err = 0;
+
+	memset(&t, 0, sizeof(t));
+
+	err |= sa_set_str(&dns, "8.8.8.8", 53);    /* note: unused */
+	if (err)
+		goto out;
+
+	err = dnsc_alloc(&dnsc, NULL, &dns, 1);
+	if (err)
+		goto out;
+
+	err = http_client_alloc(&cli, dnsc);
+	if (err)
+		goto out;
+
+	err = http_reqconn_alloc(&conn, cli,
+			   http_resp_handler2, http_data_handler, &t);
+	if (err)
+		goto out;
+
+	if (user)
+		http_reqconn_set_auth(conn, user, pass);
+
+	if (met)
+		http_reqconn_set_method(conn, met);
+
+	if (body)
+		http_reqconn_set_body(conn, body);
+
+	err = http_reqconn_send(conn, uri);
+	if (err)
+		goto out;
+
+	err = re_main_timeout(10000);
+	if (err)
+		goto out;
+
+	if (t.err) {
+		err = t.err;
+		goto out;
+	}
+
+	/* verify results after HTTP traffic */
+	TEST_EQUALS(1, t.n_response);
+
+	mbuf_set_pos(t.mb_body, 0);
+	TEST_ASSERT(mbuf_get_left(t.mb_body) > 0);
+
+ out:
+	mem_deref(t.mb_body);
+	mem_deref(conn);
+	mem_deref(cli);
+	mem_deref(dnsc);
+
+	return err;
+}
+
+
+int test_http_request(void)
+{
+	int err;
+	struct pl uri1 = PL("http://jigsaw.w3.org/HTTP/Digest/");
+	struct pl uri2 = PL("https://jigsaw.w3.org/HTTP/Digest/");
+	struct pl user = PL("guest");
+	struct pl pass = PL("guest");
+
+	err  = test_request(&uri1, &user, &pass, NULL, NULL);
+	err |= test_request(&uri2, &user, &pass, NULL, NULL);
+	return err;
+}
