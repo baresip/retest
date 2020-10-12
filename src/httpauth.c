@@ -156,7 +156,8 @@ int test_httpauth_resp(void)
 			" response=\"bb996865add5a86217f39e1f369c29ea\","
 			" cnonce=\"66a7a21e46ad8edd\", qop=auth, nc=00000002"
 			,
-			{PL("creytiv.com"),
+			{NULL,
+			 PL("creytiv.com"),
 			 PL("9c916919cbc6ad7f54a4f64e5b5115074ee109fa"),
 			 PL("bb996865add5a86217f39e1f369c29ea"),
 			 PL("aeh"),
@@ -171,7 +172,8 @@ int test_httpauth_resp(void)
 		},
 		{
 			"Digest bogus tull",
-			{PL_INIT, PL_INIT, PL_INIT, PL_INIT,
+			{NULL,
+			 PL_INIT, PL_INIT, PL_INIT, PL_INIT,
 			 PL_INIT, PL_INIT, PL_INIT, PL_INIT},
 			PL_INIT,
 			"",
