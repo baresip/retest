@@ -4,6 +4,7 @@
  * Copyright (C) 2010 Creytiv.com
  */
 #include <string.h>
+#include <unistd.h>
 #include <re.h>
 #include "test.h"
 
@@ -360,6 +361,7 @@ int test_https_loop(void)
 static void http_resp_handler2(int err, const struct http_msg *msg, void *arg)
 {
 	struct test *t = arg;
+	TEST_ASSERT(msg);
 	TEST_EQUALS(200, msg->scode);
 	++t->n_response;
 out:
@@ -436,15 +438,106 @@ static int test_request(const struct pl *uri,
 }
 
 
+static void http_200_ok(struct http_conn *conn)
+{
+	const char body[] = "Success";
+		http_reply(conn, 200, "OK",
+				"Content-Type: text/plain;charset=UTF-8\r\n"
+				"Content-Length: %zu\r\n"
+				"\r\n"
+				"%s",
+				strlen(body), body);
+}
+
+
+int httpauth_basic_req_decode(struct httpauth_basic *basic,
+		const struct pl *hval)
+{
+	struct pl b64;
+	uint8_t *buf;
+	int err;
+	size_t pos;
+
+	if (!basic || !hval)
+		return EINVAL;
+
+	if (re_regex(hval->p, hval->l,
+			"[ \t\r\n]*Basic[ \t\r\n]+[~ \t\r\n,]*",
+				NULL, NULL, &b64) ||
+			!pl_isset(&b64))
+		return EBADMSG;
+
+	buf = mem_zalloc(b64.l, NULL);
+	err = base64_decode(b64.p, b64.l, buf, &b64.l);
+	if (err) {
+		re_printf("%s could not decode base64 of Basic auth.\n",
+				__func__);
+		return err;
+	}
+
+	pos = basic->mb->pos;
+	err = mbuf_write_mem(basic->mb, buf, b64.l);
+	mbuf_set_pos(basic->mb, pos);
+	pl_set_mbuf(&basic->auth, basic->mb);
+	return err;
+}
+
+
+static void http_req_handler2(struct http_conn *conn,
+			     const struct http_msg *msg, void *arg)
+{
+	const struct http_hdr *hdr;
+	const char body2[] = "Unauthorized";
+	(void)arg;
+
+	hdr = http_msg_hdr(msg, HTTP_HDR_AUTHORIZATION);
+	if (0 == pl_strcasecmp(&msg->path, "/")) {
+		http_200_ok(conn);
+	}
+	else if (0 == pl_strcasecmp(&msg->path, "/Digest/")) {
+	}
+	else if (0 == pl_strcasecmp(&msg->path, "/Basic/")) {
+		if (hdr) {
+
+			http_200_ok(conn);
+		} else
+			http_reply(conn, 401, "Unauthorized",
+				"Content-Type: text/plain;charset=UTF-8\r\n"
+				"Content-Length: %zu\r\n"
+				"www-authenticate: Basic realm=\"test\"\r\n"
+				"\r\n"
+				"%s",
+				strlen(body2), body2);
+	}
+	else {
+		goto error;
+	}
+
+	return;
+
+ error:
+	http_ereply(conn, 404, "Not Found");
+}
+
+
 int test_http_request(void)
 {
 	int err;
-	struct pl uri1 = PL("http://jigsaw.w3.org/HTTP/Digest/");
-	struct pl uri2 = PL("https://jigsaw.w3.org/HTTP/Digest/");
+	struct sa laddr;
+	struct http_sock *httpsock;
+	struct pl uri1 = PL("http://127.0.0.1:61616/");
+	struct pl uri2 = PL("http://127.0.0.1:61616/Basic/");
 	struct pl user = PL("guest");
 	struct pl pass = PL("guest");
 
+	sa_set_str(&laddr, "0.0.0.0", 61616);
+	err = http_listen(&httpsock, &laddr, http_req_handler2, NULL);
+	if (err)
+		return err;
+
 	err  = test_request(&uri1, &user, &pass, NULL, NULL);
 	err |= test_request(&uri2, &user, &pass, NULL, NULL);
+
+	mem_deref(httpsock);
 	return err;
 }
