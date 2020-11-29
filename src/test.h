@@ -121,6 +121,7 @@ int test_aac(void);
 int test_aes(void);
 int test_aes_gcm(void);
 int test_aubuf(void);
+int test_auringbuf(void);
 int test_auresamp(void);
 int test_base64(void);
 int test_bfcp(void);

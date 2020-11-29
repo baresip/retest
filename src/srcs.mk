@@ -7,6 +7,7 @@
 SRCS	+= aac.c
 SRCS	+= aes.c
 SRCS	+= aubuf.c
+SRCS	+= auringbuf.c
 SRCS	+= auresamp.c
 SRCS	+= base64.c
 SRCS	+= bfcp.c
