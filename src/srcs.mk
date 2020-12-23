@@ -57,6 +57,7 @@ SRCS	+= uri.c
 SRCS	+= vid.c
 SRCS	+= vidconv.c
 SRCS	+= websock.c
+SRCS	+= trace.c
 
 ifneq ($(USE_TLS),)
 SRCS	+= tls.c
