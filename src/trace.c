@@ -5,6 +5,10 @@
 #include <re.h>
 #include "test.h"
 
+#define DEBUG_MODULE "test_trace"
+#define DEBUG_LEVEL 5
+#include <re_dbg.h>
+
 static void test_loop(int count)
 {
 	int i;
@@ -19,8 +23,7 @@ int test_trace(void)
 	int err;
 
 	err = re_trace_init("test_trace.json");
-	if (err)
-		return err;
+	TEST_ERR(err);
 
 	RE_TRACE_PROCESS_NAME("retest");
 	RE_TRACE_THREAD_NAME("test_trace");
@@ -30,27 +33,30 @@ int test_trace(void)
 
 	RE_TRACE_BEGIN("test", "Flush");
 	err = re_trace_flush();
-	if (err)
-		return err;
+	TEST_ERR(err);
 
 	RE_TRACE_END("test", "Flush");
 
 	test_loop(25);
 
 	RE_TRACE_BEGIN_FUNC();
+
 	err = re_trace_flush();
-	if (err)
-		return err;
+	TEST_ERR(err);
+
 	RE_TRACE_END_FUNC();
 
 	RE_TRACE_END("test", "Test Loop End");
 
 	err = re_trace_close();
-	if (err)
-		return err;
+	TEST_ERR(err);
 
 	/* Test TRACE after close - should do nothing */
 	RE_TRACE_BEGIN("test", "test after close");
 
+	err = unlink("test_trace.json");
+	TEST_ERR(err);
+
+out:
 	return err;
 }
