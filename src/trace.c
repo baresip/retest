@@ -22,6 +22,9 @@ int test_trace(void)
 {
 	int err;
 
+	if (test_mode == TEST_THREAD)
+		return ESKIPPED;
+
 	err = re_trace_init("test_trace.json");
 	TEST_ERR(err);
 
