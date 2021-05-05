@@ -714,10 +714,10 @@ int test_sip_drequestf(void)
 			       "sip:test@127.0.0.1", NULL, 0);
 	TEST_ERR(err);
 
-	err = sip_auth_alloc(&sr->auth, NULL, NULL, false);
+	err = sip_alloc(&sr->sip, NULL, 32, 32, 32, "retest", NULL, NULL);
 	TEST_ERR(err);
 
-	err = sip_alloc(&sr->sip, NULL, 32, 32, 32, "retest", NULL, NULL);
+	err = sip_auth_alloc(&sr->auth, sr->sip, NULL, NULL, false);
 	TEST_ERR(err);
 
 	err  = sa_set_str(&laddr,  "127.0.0.1", 0);
