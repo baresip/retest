@@ -348,6 +348,62 @@ static int test_http_loop_base(bool secure)
 }
 
 
+int test_http_client_set_tls(void)
+{
+	struct sa dns;
+	struct dnsc *dnsc;
+	struct http_cli *cli;
+	struct tls *tls, *tls_test, *tls_cli;
+	int err;
+
+	TEST_EINVAL(http_client_get_tls, NULL, NULL);
+	TEST_EINVAL(http_client_set_tls, NULL, NULL);
+
+	/* Setup */
+	err = sa_set_str(&dns, "127.0.0.1", 53);    /* note: unused */
+	TEST_ERR(err);
+
+	err = dnsc_alloc(&dnsc, NULL, &dns, 1);
+	TEST_ERR(err);
+
+	err = http_client_alloc(&cli, dnsc);
+	TEST_ERR(err);
+
+	/* Test original Http Client TLS Context */
+	TEST_EINVAL(http_client_get_tls, cli, NULL);
+	err = http_client_get_tls(cli, &tls_cli);
+	TEST_ERR(err);
+	tls_cli = mem_ref(tls_cli);
+	TEST_EQUALS(2, mem_nrefs(tls_cli));
+
+	/* Allocate new TLS Context */
+	err = tls_alloc(&tls, TLS_METHOD_SSLV23, NULL, NULL);
+	TEST_ERR(err);
+	TEST_NOT_EQUALS(tls, tls_cli);
+
+	/* Set and verify new TLS Context */
+	TEST_EINVAL(http_client_set_tls, cli, NULL);
+	err = http_client_set_tls(cli, tls);
+	TEST_ERR(err);
+	TEST_EQUALS(2, mem_nrefs(tls));
+	TEST_EQUALS(1, mem_nrefs(tls_cli));
+
+	err = http_client_get_tls(cli, &tls_test);
+	TEST_ERR(err);
+
+	TEST_EQUALS(tls, tls_test);
+
+	mem_deref(cli);
+	TEST_EQUALS(1, mem_nrefs(tls));
+	mem_deref(dnsc);
+	mem_deref(tls);
+	mem_deref(tls_cli);
+
+out:
+	return err;
+}
+
+
 int test_http_loop(void)
 {
 	return test_http_loop_base(false);
