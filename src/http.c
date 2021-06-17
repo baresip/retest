@@ -398,7 +398,7 @@ out:
 		mem_deref(cli);
 		mem_deref(tls_cli);
 	}
-	
+
 	if (dnsc)
 		mem_deref(dnsc);
 
