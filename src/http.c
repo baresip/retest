@@ -351,9 +351,9 @@ static int test_http_loop_base(bool secure)
 int test_http_client_set_tls(void)
 {
 	struct sa dns;
-	struct dnsc *dnsc;
-	struct http_cli *cli;
-	struct tls *tls, *tls_test, *tls_cli;
+	struct dnsc *dnsc = NULL;
+	struct http_cli *cli = NULL;
+	struct tls *tls = NULL, *tls_test = NULL, *tls_cli = NULL;
 	int err;
 
 	TEST_EINVAL(http_client_get_tls, NULL, NULL);
@@ -393,13 +393,20 @@ int test_http_client_set_tls(void)
 
 	TEST_EQUALS(tls, tls_test);
 
-	mem_deref(cli);
-	TEST_EQUALS(1, mem_nrefs(tls));
-	mem_deref(dnsc);
-	mem_deref(tls);
-	mem_deref(tls_cli);
-
 out:
+	if (cli) {
+		mem_deref(cli);
+		mem_deref(tls_cli);
+	}
+	
+	if (dnsc)
+		mem_deref(dnsc);
+
+	if (tls) {
+		TEST_EQUALS(1, mem_nrefs(tls));
+		mem_deref(tls);
+	}
+
 	return err;
 }
 
