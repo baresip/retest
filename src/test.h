@@ -187,6 +187,7 @@ int test_mem(void);
 int test_mem_reallocarray(void);
 int test_mem_secure(void);
 int test_mqueue(void);
+int test_net_if(void);
 int test_net_dst_source_addr_get(void);
 int test_odict(void);
 int test_odict_array(void);
@@ -285,6 +286,10 @@ extern const char test_certificate_rsa[];
 extern const char test_certificate_ecdsa[];
 #endif
 
+/* Network specific tests */
+int  test_network(const char *name, bool verbose);
+int  test_sipevent_network(void);
+int  test_sip_drequestf_network(void);
 
 /* High-level API */
 int  test_reg(const char *name, bool verbose);

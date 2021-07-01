@@ -106,6 +106,7 @@ static const struct test tests[] = {
 	TEST(test_mem),
 	TEST(test_mem_reallocarray),
 	TEST(test_mem_secure),
+	TEST(test_net_if),
 	TEST(test_net_dst_source_addr_get),
 	TEST(test_mqueue),
 	TEST(test_odict),
@@ -196,6 +197,12 @@ static const struct test tests[] = {
 	/* combination tests: */
 	TEST(test_dtls_turn),
 #endif
+};
+
+
+static const struct test tests_network[] = {
+	TEST(test_sipevent_network),
+	TEST(test_sip_drequestf_network),
 };
 
 
@@ -899,4 +906,37 @@ void test_set_datapath(const char *path)
 const char *test_datapath(void)
 {
 	return datapath;
+}
+
+
+int  test_network(const char *name, bool verbose)
+{
+	size_t i;
+	int err;
+	const struct test *test;
+	(void) verbose;
+
+	(void)re_fprintf(stderr, "network tests\n");
+
+	for (i=0; i<ARRAY_SIZE(tests_network); i++) {
+
+		test = &tests_network[i];
+		if (str_isset(name) && test->name)
+			continue;
+
+		(void)re_fprintf(stderr, "  %-24s: ", test->name);
+
+		if (test->exec)
+			err = test->exec();
+
+		if (err) {
+			DEBUG_WARNING("  %-24s: NOK: %m\n", test->name, err);
+			break;
+		}
+		else {
+			(void)re_fprintf(stderr, "\x1b[32mOK\x1b[;m\t\n");
+		}
+	}
+
+	return 0;
 }
