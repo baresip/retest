@@ -329,8 +329,8 @@ int test_sa_pton(void)
 		TEST_EQUALS(testv[i].err, err);
 	}
 
-	net_default_source_addr_get(AF_INET6, &sa_default_ip);
-	net_if_getname(ifname, sizeof(ifname), AF_INET6, &sa_default_ip);
+	net_default_source_addr_get(AF_INET, &sa_default_ip);
+	net_if_getname(ifname, sizeof(ifname), AF_INET, &sa_default_ip);
 	re_snprintf(test_ipv6ll_scope, sizeof(test_ipv6ll_scope), "%s%s",
 		    test_ipv6ll_scope, ifname);
 
@@ -341,6 +341,9 @@ out:
 	if (err && i < ARRAY_SIZE(testv))
 		DEBUG_WARNING("%s failed with addr %s\n", __func__,
 				testv[i].addr);
+	else
+		DEBUG_WARNING("%s failed with addr %s\n", __func__,
+				test_ipv6ll_scope);
 
 	return err;
 }
