@@ -329,6 +329,7 @@ int test_sa_pton(void)
 		TEST_EQUALS(testv[i].err, err);
 	}
 
+	/* Use IPv4 since not all test systems have a default IPv6 route */
 	net_default_source_addr_get(AF_INET, &sa_default_ip);
 	net_if_getname(ifname, sizeof(ifname), AF_INET, &sa_default_ip);
 	re_snprintf(test_ipv6ll_scope, sizeof(test_ipv6ll_scope), "%s%s",
