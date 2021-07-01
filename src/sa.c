@@ -306,8 +306,16 @@ int test_sa_ntop(void)
 int test_sa_pton(void)
 {
 	struct sa sa;
+	struct sa sa_default_ip;
 	int err;
 	uint32_t i;
+	char ifname[64];
+	char test_ipv6ll_scope[128] = "fe80::3a28:d8d9:ddc3:25dd%";
+
+	net_default_source_addr_get(AF_INET6, &sa_default_ip);
+	net_if_getname(ifname, sizeof(ifname), AF_INET6, &sa_default_ip);
+	re_snprintf(test_ipv6ll_scope, sizeof(test_ipv6ll_scope), "%s%s",
+		    test_ipv6ll_scope, ifname);
 
 	const struct {
 		const char *addr;
@@ -319,7 +327,7 @@ int test_sa_pton(void)
 		{"fa01::2a29", 0},
 		{"127.0.0.1", 0},
 		{"192.168.110.2", 0},
-		{"fe80::3a28:d8d9:ddc3:25dd%eth0", 0},
+		{test_ipv6ll_scope, 0},
 		{"fe80::xxxx:d8d9:ddc3:25dd:%eth0", EADDRNOTAVAIL},
 	};
 
