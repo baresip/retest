@@ -342,7 +342,7 @@ out:
 	if (err && i < ARRAY_SIZE(testv))
 		DEBUG_WARNING("%s failed with addr %s\n", __func__,
 				testv[i].addr);
-	else
+	else if (err)
 		DEBUG_WARNING("%s failed with addr %s\n", __func__,
 				test_ipv6ll_scope);
 
