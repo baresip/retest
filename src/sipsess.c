@@ -20,6 +20,11 @@ struct test {
 	struct sipsess *b;
 	bool estab_a;
 	bool estab_b;
+	bool answr_a;
+	bool answr_b;
+	bool offer_a;
+	bool offer_b;
+	struct mbuf *desc;
 	bool blind_transfer;
 	uint16_t altaddr_port;
 	int err;
@@ -46,20 +51,62 @@ static void exit_handler(void *arg)
 }
 
 
-static int offer_handler(struct mbuf **descp, const struct sip_msg *msg,
-			 void *arg)
+static int desc_handler(struct mbuf **descp, const struct sa *src,
+				const struct sa *dst, void *arg)
 {
-	(void)descp;
-	(void)msg;
-	(void)arg;
+	struct test *test = arg;
+	(void)src;
+	(void)dst;
+
+	test->desc = mbuf_alloc(1);
+	if (!test->desc)
+		return ENOMEM;
+
+	*descp = test->desc;
 	return 0;
 }
 
 
-static int answer_handler(const struct sip_msg *msg, void *arg)
+static int offer_handler_a(struct mbuf **descp, const struct sip_msg *msg,
+			   void *arg)
 {
+	struct test *test = arg;
+	(void)descp;
 	(void)msg;
-	(void)arg;
+
+	test->offer_a = true;
+	return 0;
+}
+
+
+static int offer_handler_b(struct mbuf **descp, const struct sip_msg *msg,
+			   void *arg)
+{
+	struct test *test = arg;
+	(void)descp;
+	(void)msg;
+
+	test->offer_b = true;
+	return 0;
+}
+
+
+static int answer_handler_a(const struct sip_msg *msg, void *arg)
+{
+	struct test *test = arg;
+	(void)msg;
+
+	test->answr_a = true;
+	return 0;
+}
+
+
+static int answer_handler_b(const struct sip_msg *msg, void *arg)
+{
+	struct test *test = arg;
+	(void)msg;
+
+	test->answr_b = true;
 	return 0;
 }
 
@@ -111,7 +158,8 @@ static void conn_handler(const struct sip_msg *msg, void *arg)
 
 	err = sipsess_accept(&test->b, test->sock, msg, 200, "OK",
 			     "b", "application/sdp", NULL, NULL, NULL, false,
-			     offer_handler, answer_handler, estab_handler_b,
+			     offer_handler_b, answer_handler_b,
+			     estab_handler_b,
 			     NULL, NULL, close_handler, test, NULL);
 	if (err) {
 		abort_test(test, err);
@@ -197,8 +245,8 @@ int test_sipsess(void)
 	err = sipsess_connect(&test.a, test.sock, to_uri, NULL,
 			      "sip:a@127.0.0.1", "a", NULL, 0,
 			      "application/sdp", NULL, NULL, false,
-			      callid, NULL,
-			      offer_handler, answer_handler, NULL,
+			      callid, desc_handler,
+			      offer_handler_a, answer_handler_a, NULL,
 			      estab_handler_a, NULL, NULL,
 			      close_handler, &test, NULL);
 	mem_deref(callid);
@@ -217,6 +265,9 @@ int test_sipsess(void)
 	/* okay here -- verify */
 	TEST_ASSERT(test.estab_a);
 	TEST_ASSERT(test.estab_b);
+	TEST_ASSERT(test.desc);
+	TEST_ASSERT(test.answr_a);
+	TEST_ASSERT(!test.offer_b);
 
  out:
 	test.a = mem_deref(test.a);
@@ -283,8 +334,8 @@ int test_sipsess_blind_transfer(void)
 	err = sipsess_connect(&test.a, test.sock, to_uri, NULL,
 			      "sip:a@127.0.0.1", "a", NULL, 0,
 			      "application/sdp", NULL, NULL, false,
-			      callid, NULL,
-			      offer_handler, answer_handler, NULL,
+			      callid, desc_handler,
+			      offer_handler_a, answer_handler_a, NULL,
 			      estab_handler_a, NULL, NULL,
 			      close_handler, &test, NULL);
 	mem_deref(callid);
@@ -305,6 +356,9 @@ int test_sipsess_blind_transfer(void)
 	TEST_ASSERT(test.blind_transfer);
 	TEST_ASSERT(test.estab_a);
 	TEST_ASSERT(test.estab_b);
+	TEST_ASSERT(test.desc);
+	TEST_ASSERT(test.answr_a);
+	TEST_ASSERT(!test.offer_b);
 
  out:
 	test.a = mem_deref(test.a);
