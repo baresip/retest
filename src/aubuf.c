@@ -163,8 +163,8 @@ static int test_aubuf_sort_auframe(void)
 {
 	int err;
 	struct aubuf *ab = NULL;
-	float sampv_in[160];
-	float sampv_out[160];
+	int16_t sampv_in[160];
+	int16_t sampv_out[160];
 	struct auframe af[3] = {
 		{
 		 .fmt	    = AUFMT_S16LE,
@@ -188,7 +188,8 @@ static int test_aubuf_sort_auframe(void)
 	struct auframe af_out = {
 		 .fmt	    = AUFMT_S16LE,
 		 .sampv	    = sampv_out,
-		 .sampc	    = 160
+		 .sampc	    = 160,
+		 .timestamp = 0
 	};
 
 	err = aubuf_alloc(&ab, 160, 0);
@@ -216,6 +217,16 @@ static int test_aubuf_sort_auframe(void)
 
 	aubuf_read_auframe(ab, &af_out);
 	TEST_EQUALS(3, af_out.timestamp);
+
+	/* Test zero af.timestamp */
+	err = aubuf_write_samp(ab, sampv_in, 80);
+	err |= aubuf_write_samp(ab, sampv_in, 80);
+	err |= aubuf_write_samp(ab, sampv_in, 160);
+	TEST_ERR(err);
+
+	/* Sort - test not stuck */
+	aubuf_sort_auframe(ab);
+	TEST_EQUALS(640, aubuf_cur_size(ab));
 
 out:
 	mem_deref(ab);
