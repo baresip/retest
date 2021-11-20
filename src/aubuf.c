@@ -159,6 +159,70 @@ static int test_aubuf_auframe(void)
 }
 
 
+static int test_aubuf_sort_auframe(void)
+{
+	int err;
+	struct aubuf *ab = NULL;
+	float sampv_in[160];
+	float sampv_out[160];
+	struct auframe af[3] = {
+		{
+		 .fmt	    = AUFMT_S16LE,
+		 .sampv	    = sampv_in,
+		 .sampc	    = 160,
+		 .timestamp = 1
+		 },
+		{
+		 .fmt	    = AUFMT_S16LE,
+		 .sampv	    = sampv_in,
+		 .sampc	    = 160,
+		 .timestamp = 2
+		 },
+		{
+		 .fmt	    = AUFMT_S16LE,
+		 .sampv	    = sampv_in,
+		 .sampc	    = 160,
+		 .timestamp = 3
+		 },
+	};
+	struct auframe af_out = {
+		 .fmt	    = AUFMT_S16LE,
+		 .sampv	    = sampv_out,
+		 .sampc	    = 160
+	};
+
+	err = aubuf_alloc(&ab, 160, 0);
+	TEST_ERR(err);
+
+	/* Write auframes unsorted */
+	err = aubuf_write_auframe(ab, &af[0]);
+	TEST_ERR(err);
+
+	err = aubuf_write_auframe(ab, &af[2]);
+	TEST_ERR(err);
+
+	err = aubuf_write_auframe(ab, &af[1]);
+	TEST_ERR(err);
+
+	/* Sort */
+	aubuf_sort_auframe(ab);
+
+	/* Check */
+	aubuf_read_auframe(ab, &af_out);
+	TEST_EQUALS(1, af_out.timestamp);
+
+	aubuf_read_auframe(ab, &af_out);
+	TEST_EQUALS(2, af_out.timestamp);
+
+	aubuf_read_auframe(ab, &af_out);
+	TEST_EQUALS(3, af_out.timestamp);
+
+out:
+	mem_deref(ab);
+	return err;
+}
+
+
 int test_aubuf(void)
 {
 	int err;
@@ -170,6 +234,9 @@ int test_aubuf(void)
 	TEST_ERR(err);
 
 	err = test_aubuf_auframe();
+	TEST_ERR(err);
+
+	err = test_aubuf_sort_auframe();
 	TEST_ERR(err);
 
 out:
