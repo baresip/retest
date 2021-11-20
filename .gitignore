@@ -2,6 +2,9 @@
 retest
 .cache
 
+# clangd
+compile_commands.json
+
 # ctags
 tags
 
