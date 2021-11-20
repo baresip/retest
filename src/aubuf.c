@@ -171,19 +171,19 @@ static int test_aubuf_sort_auframe(void)
 		 .sampv	    = sampv_in,
 		 .sampc	    = 160,
 		 .timestamp = 1
-		 },
+		},
 		{
 		 .fmt	    = AUFMT_S16LE,
 		 .sampv	    = sampv_in,
 		 .sampc	    = 160,
 		 .timestamp = 2
-		 },
+		},
 		{
 		 .fmt	    = AUFMT_S16LE,
 		 .sampv	    = sampv_in,
 		 .sampc	    = 160,
 		 .timestamp = 3
-		 },
+		},
 	};
 	struct auframe af_out = {
 		 .fmt	    = AUFMT_S16LE,
