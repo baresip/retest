@@ -1,7 +1,6 @@
 /**
  * @file sipauth.c SIP Auth testcode
  */
-#include <string.h>
 #include <re.h>
 #include "test.h"
 
@@ -70,7 +69,7 @@ static int test_sip_auth_encode(void)
 	mbuf_set_pos(mb_enc, 0);
 	mbuf_read_str(mb_enc, buf, mbuf_get_left(mb_enc));
 
-	err = re_regex(buf, strlen(buf), "algorithm=MD5");
+	err = re_regex(buf, str_len(buf), "algorithm=MD5");
 	TEST_ERR(err);
 
 out:
