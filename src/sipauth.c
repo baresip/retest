@@ -1,7 +1,5 @@
 /**
- * @file sipreg.c SIP Register client regression testcode
- *
- * Copyright (C) 2010 - 2015 Creytiv.com
+ * @file sipauth.c SIP Auth testcode
  */
 #include <string.h>
 #include <re.h>
