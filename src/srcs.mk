@@ -42,6 +42,7 @@ SRCS	+= sa.c
 SRCS	+= sdp.c
 SRCS	+= sha.c
 SRCS	+= sip.c
+SRCS	+= sipauth.c
 SRCS	+= sipevent.c
 SRCS	+= sipreg.c
 SRCS	+= sipsess.c

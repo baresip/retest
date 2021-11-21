@@ -215,6 +215,7 @@ int test_sdp_extmap(void);
 int test_sdp_disabled_rejected(void);
 int test_sha1(void);
 int test_sip_addr(void);
+int test_sip_auth(void);
 int test_sip_drequestf(void);
 int test_sip_apply(void);
 int test_sip_hdr(void);
