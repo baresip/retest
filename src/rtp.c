@@ -508,7 +508,12 @@ static int test_rtp_listen_priv(bool clear)
 			 rtp_recv_handler, NULL, &test);
 	TEST_ERR(err);
 
-	test.mb = mbuf_alloc(2 * (RTP_HEADER_SIZE + 4));
+	test.mb = mbuf_alloc(2 * (RTP_HEADER_SIZE + 5));
+	if (!test.mb) {
+		err = ENOMEM;
+		goto out;
+	}
+
 	pos = RTP_HEADER_SIZE;
 	test.mb->pos = test.mb->end = pos;
 	mbuf_write_str(test.mb, "abcd");
