@@ -118,6 +118,7 @@ static const struct test tests[] = {
 	TEST(test_rtmps_publish),
 #endif
 	TEST(test_rtp),
+	TEST(test_rtp_listen),
 	TEST(test_rtcp_encode),
 	TEST(test_rtcp_encode_afb),
 	TEST(test_rtcp_decode),
