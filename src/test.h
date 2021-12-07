@@ -198,6 +198,7 @@ int test_rtmp_publish(void);
 int test_rtmps_publish(void);
 #endif
 int test_rtp(void);
+int test_rtp_listen(void);
 int test_rtcp_encode(void);
 int test_rtcp_encode_afb(void);
 int test_rtcp_decode(void);

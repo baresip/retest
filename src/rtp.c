@@ -460,3 +460,104 @@ int test_rtcp_encode_afb(void)
 	mem_deref(msg);
 	return err;
 }
+
+
+struct rtp_test {
+	struct rtp_sock *rtp;
+	struct mbuf *mb;
+	uint32_t n;
+	uint32_t f;
+};
+
+
+static void rtp_recv_handler(const struct sa *src,
+			     const struct rtp_header *hdr, struct mbuf *mb,
+			     void *arg)
+{
+	struct rtp_test *test = arg;
+	char bufs[5];
+	char bufr[5];
+	(void) src;
+	(void) hdr;
+
+	mbuf_read_str(test->mb, bufs, sizeof(bufs));
+	mbuf_read_str(mb, bufr, sizeof(bufr));
+
+	if (!strncmp(bufr, bufs, sizeof(bufs)))
+		test->n++;
+	else
+		test->f++;
+
+	if (test->n + test->f == 2)
+		re_cancel();
+	else
+		mbuf_advance(test->mb, RTP_HEADER_SIZE);
+}
+
+
+static int test_rtp_listen_priv(bool clear)
+{
+	struct rtp_test test;
+	struct sa sa;
+	size_t pos;
+	int err;
+
+	sa_init(&sa, AF_INET);
+	memset(&test, 0, sizeof(test));
+	err = rtp_listen(&test.rtp, IPPROTO_UDP, &sa, 1024, 49152, false,
+			 rtp_recv_handler, NULL, &test);
+	TEST_ERR(err);
+
+	test.mb = mbuf_alloc(2 * (RTP_HEADER_SIZE + 5));
+	if (!test.mb) {
+		err = ENOMEM;
+		goto out;
+	}
+
+	pos = RTP_HEADER_SIZE;
+	test.mb->pos = test.mb->end = pos;
+	mbuf_write_str(test.mb, "abcd");
+	mbuf_write_u8(test.mb, 0);
+	test.mb->pos = pos;
+	sa_set_str(&sa, "127.0.0.1", sa_port(rtp_local(test.rtp)));
+	err = rtp_send(test.rtp, &sa, false, true, 0, 160, test.mb);
+	TEST_ERR(err);
+
+	pos = test.mb->end + RTP_HEADER_SIZE;
+	test.mb->pos = test.mb->end = pos;
+	mbuf_write_str(test.mb, "bcde");
+	mbuf_write_u8(test.mb, 0);
+	test.mb->pos = pos;
+	err = rtp_send(test.rtp, &sa, false, false, 0, 320, test.mb);
+	TEST_ERR(err);
+
+	if (clear) {
+		err = rtp_clear(test.rtp);
+		TEST_ERR(err);
+	}
+
+	test.mb->pos = RTP_HEADER_SIZE;
+	(void)re_main_timeout(100);
+
+	TEST_EQUALS(clear ? 0 : 2, test.n);
+	TEST_EQUALS(0, test.f);
+
+out:
+	mem_deref(test.rtp);
+	mem_deref(test.mb);
+	return err;
+}
+
+
+int test_rtp_listen(void)
+{
+	int err;
+
+	err = test_rtp_listen_priv(false);
+	TEST_ERR(err);
+
+	err = test_rtp_listen_priv(true);
+	TEST_ERR(err);
+out:
+	return err;
+}
