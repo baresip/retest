@@ -187,7 +187,6 @@ int test_sipreg_udp(void)
 
 	err  = reg_test(SIP_TRANSP_UDP, true, 0);
 	err |= reg_test(SIP_TRANSP_UDP, false, 0);
-	err |= reg_test(SIP_TRANSP_UDP, false, 56060);
 	return err;
 }
 
