@@ -149,7 +149,7 @@ static int reg_test(enum sip_transp tp, bool deprecated, uint16_t srcport)
 			      3600, "x", NULL, 0, 0, NULL, NULL, false,
 			      sip_resp_handler, &test, NULL, NULL);
 		if (srcport)
-			err |= sipreg_set_srcport(reg, srcport);
+			sipreg_set_srcport(reg, srcport);
 
 		err |= sipreg_send(reg);
 	}
