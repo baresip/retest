@@ -20,6 +20,7 @@
 struct test {
 	enum sip_transp tp;
 	unsigned n_resp;
+	uint16_t srcport;
 	int err;
 };
 
@@ -99,6 +100,8 @@ static void sip_resp_handler(int err, const struct sip_msg *msg, void *arg)
 	TEST_EQUALS(200, msg->scode);
 	TEST_STRCMP("REGISTER", 8, msg->cseq.met.p, msg->cseq.met.l);
 	TEST_EQUALS(test->tp, msg->tp);
+	if (test->srcport)
+		TEST_EQUALS(test->srcport, sa_port(&msg->dst));
 
  out:
 	if (err)
@@ -107,7 +110,7 @@ static void sip_resp_handler(int err, const struct sip_msg *msg, void *arg)
 }
 
 
-static int reg_test(enum sip_transp tp)
+static int reg_test(enum sip_transp tp, bool deprecated, uint16_t srcport)
 {
 	struct test test;
 	struct sip_server *srv = NULL;
@@ -118,6 +121,7 @@ static int reg_test(enum sip_transp tp)
 
 	memset(&test, 0, sizeof(test));
 	test.tp = tp;
+	test.srcport = srcport;
 
 	err = sip_server_alloc(&srv);
 	if (err)
@@ -131,11 +135,25 @@ static int reg_test(enum sip_transp tp)
 	if (err)
 		goto out;
 
-	err = sipreg_register(&reg, sip, reg_uri,
+	if (deprecated) {
+		err = sipreg_register(&reg, sip, reg_uri,
 			      "sip:x@test", NULL,
 			      "sip:x@test",
 			      3600, "x", NULL, 0, 0, NULL, NULL, false,
 			      sip_resp_handler, &test, NULL, NULL);
+	}
+	else {
+		err = sipreg_alloc(&reg, sip, reg_uri,
+			      "sip:x@test", NULL,
+			      "sip:x@test",
+			      3600, "x", NULL, 0, 0, NULL, NULL, false,
+			      sip_resp_handler, &test, NULL, NULL);
+		if (srcport)
+			sipreg_set_srcport(reg, srcport);
+
+		err |= sipreg_send(reg);
+	}
+
 	if (err)
 		goto out;
 
@@ -165,19 +183,33 @@ static int reg_test(enum sip_transp tp)
 
 int test_sipreg_udp(void)
 {
-	return reg_test(SIP_TRANSP_UDP);
+	int err;
+
+	err  = reg_test(SIP_TRANSP_UDP, true, 0);
+	err |= reg_test(SIP_TRANSP_UDP, false, 0);
+	return err;
 }
 
 
 int test_sipreg_tcp(void)
 {
-	return reg_test(SIP_TRANSP_TCP);
+	int err;
+
+	err  = reg_test(SIP_TRANSP_TCP, true, 0);
+	err |= reg_test(SIP_TRANSP_TCP, false, 0);
+	err |= reg_test(SIP_TRANSP_TCP, false, 56060);
+	return err;
 }
 
 
 #ifdef USE_TLS
 int test_sipreg_tls(void)
 {
-	return reg_test(SIP_TRANSP_TLS);
+	int err;
+
+	err  = reg_test(SIP_TRANSP_TLS, true, 0);
+	err |= reg_test(SIP_TRANSP_TLS, false, 0);
+	err |= reg_test(SIP_TRANSP_TLS, false, 56060);
+	return err;
 }
 #endif
