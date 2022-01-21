@@ -57,8 +57,7 @@ int test_trace(void)
 	/* Test TRACE after close - should do nothing */
 	RE_TRACE_BEGIN("test", "test after close");
 
-	err = unlink("test_trace.json");
-	TEST_ERR(err);
+	(void)unlink("test_trace.json");
 
 out:
 	return err;
