@@ -250,7 +250,6 @@ int test_sys_fs_isdir(void);
 int test_sys_fs_isfile(void);
 int test_tcp(void);
 int test_telev(void);
-int test_tmr(void);
 int test_tmr_jiffies(void);
 int test_tmr_jiffies_usec(void);
 int test_turn(void);
