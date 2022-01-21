@@ -357,7 +357,11 @@ int test_tls_certificate(void)
 		goto out;
 
 	mb = mbuf_alloc(20);
-	TEST_NOT_EQUALS(NULL, mb);
+	if (!mb) {
+		err = ENOMEM;
+		goto out;
+	}
+
 	err = tls_get_subject(tls, mb);
 	TEST_EQUALS(ENOENT, err);
 
@@ -373,7 +377,7 @@ int test_tls_certificate(void)
 		    fp, sizeof(fp));
 
 	err = tls_get_subject(tls, mb);
-	TEST_EQUALS(0, err);
+	TEST_ERR(err);
 
  out:
 	mem_deref(tls);
