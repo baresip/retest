@@ -324,7 +324,9 @@ int test_sa_pton(void)
 	struct sa sa_default_ip;
 	int err;
 	uint32_t i;
+#ifndef WIN32
 	char ifname[64];
+#endif
 	char test_ipv6ll_scope[128] = "fe80::3a28:d8d9:ddc3:25dd%";
 	const struct {
 		const char *addr;
@@ -346,9 +348,14 @@ int test_sa_pton(void)
 
 	/* Use IPv4 since not all test systems have a default IPv6 route */
 	net_default_source_addr_get(AF_INET, &sa_default_ip);
+#ifdef WIN32
+	re_snprintf(test_ipv6ll_scope, sizeof(test_ipv6ll_scope), "%s%d",
+		    test_ipv6ll_scope, sa_scopeid(&sa_default_ip));
+#else
 	net_if_getname(ifname, sizeof(ifname), AF_INET, &sa_default_ip);
 	re_snprintf(test_ipv6ll_scope, sizeof(test_ipv6ll_scope), "%s%s",
 		    test_ipv6ll_scope, ifname);
+#endif
 
 	err = sa_pton(test_ipv6ll_scope, &sa);
 	TEST_ERR(err);
