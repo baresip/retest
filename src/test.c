@@ -107,7 +107,6 @@ static const struct test tests[] = {
 	TEST(test_mem_reallocarray),
 	TEST(test_mem_secure),
 	TEST(test_net_if),
-	TEST(test_net_dst_source_addr_get),
 	TEST(test_mqueue),
 	TEST(test_odict),
 	TEST(test_odict_array),
@@ -205,6 +204,7 @@ static const struct test tests[] = {
 static const struct test tests_network[] = {
 	TEST(test_sipevent_network),
 	TEST(test_sip_drequestf_network),
+	TEST(test_net_dst_source_addr_get),
 };
 
 
