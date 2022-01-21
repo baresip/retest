@@ -117,7 +117,6 @@ static const struct test tests[] = {
 	TEST(test_rtmps_publish),
 #endif
 	TEST(test_rtp),
-	TEST(test_rtp_listen),
 	TEST(test_rtcp_encode),
 	TEST(test_rtcp_encode_afb),
 	TEST(test_rtcp_decode),
@@ -146,11 +145,6 @@ static const struct test tests[] = {
 	TEST(test_sip_transp_add_client_cert),
 #endif
 	TEST(test_sipevent),
-	TEST(test_sipreg_udp),
-	TEST(test_sipreg_tcp),
-#ifdef USE_TLS
-	TEST(test_sipreg_tls),
-#endif
 	TEST(test_sipsess),
 	TEST(test_sipsess_blind_transfer),
 	TEST(test_srtp),
@@ -205,6 +199,12 @@ static const struct test tests_network[] = {
 	TEST(test_sipevent_network),
 	TEST(test_sip_drequestf_network),
 	TEST(test_net_dst_source_addr_get),
+	TEST(test_rtp_listen),
+	TEST(test_sipreg_udp),
+	TEST(test_sipreg_tcp),
+#ifdef USE_TLS
+	TEST(test_sipreg_tls),
+#endif
 };
 
 
