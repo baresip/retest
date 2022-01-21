@@ -406,23 +406,6 @@ static int test_unit(const char *name, bool verbose)
 }
 
 
-static uint64_t tmr_microseconds(void)
-{
-	struct timeval now;
-	uint64_t usec;
-
-	if (0 != gettimeofday(&now, NULL)) {
-		DEBUG_WARNING("jiffies: gettimeofday() failed (%m)\n", errno);
-		return 0;
-	}
-
-	usec  = (uint64_t)now.tv_sec * (uint64_t)1000000;
-	usec += now.tv_usec;
-
-	return usec;
-}
-
-
 /* baseunits here is [usec] (micro-seconds) */
 static int testcase_perf(const struct test *test, double *usec_avgp)
 {
@@ -440,14 +423,14 @@ static int testcase_perf(const struct test *test, double *usec_avgp)
 	int err = 0;
 
 	/* dry run */
-	usec_start = tmr_microseconds();
+	usec_start = tmr_jiffies_usec();
 	for (i = 1; i <= DRYRUN_MAX; i++) {
 
 		err = test->exec();
 		if (err)
 			return err;
 
-		usec_stop = tmr_microseconds();
+		usec_stop = tmr_jiffies_usec();
 
 		if ((usec_stop - usec_start) > DRYRUN_USEC)
 			break;
@@ -459,13 +442,13 @@ static int testcase_perf(const struct test *test, double *usec_avgp)
 	n = min(REPEATS_MAX, max(n, REPEATS_MIN));
 
 	/* now for the real measurement */
-	usec_start = tmr_microseconds();
+	usec_start = tmr_jiffies_usec();
 	for (i=0; i<n; i++) {
 		err = test->exec();
 		if (err)
 			return err;
 	}
-	usec_stop = tmr_microseconds();
+	usec_stop = tmr_jiffies_usec();
 
 	if (usec_stop <= usec_start) {
 		DEBUG_WARNING("perf: cannot measure, test is too fast\n");
