@@ -106,7 +106,7 @@ int test_tmr_jiffies(void)
 	diff = tmr_end - tmr_start;
 
 	TEST_ASSERT(diff >= 1);
-	TEST_ASSERT(diff < 10);
+	TEST_ASSERT(diff < 50);
 
 out:
 	return err;
