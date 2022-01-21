@@ -232,33 +232,28 @@ int main(int argc, char *argv[])
 
 	if (do_reg) {
 		err = test_reg(name, verbose);
-		if (err)
-			(void)re_fprintf(stderr, "Failed (%m)\n", err);
+		TEST_ERR(err);
 	}
 
 	if (do_oom) {
 		err = test_oom(name, verbose);
-		if (err)
-			(void)re_fprintf(stderr, "Failed (%m)\n", err);
+		TEST_ERR(err);
 	}
 
 	if (do_net) {
 		err = test_network(name, verbose);
-		if (err)
-			(void)re_fprintf(stderr, "Failed (%m)\n", err);
+		TEST_ERR(err);
 	}
 
 	if (do_perf) {
 		err = test_perf(name, verbose);
-		if (err)
-			(void)re_fprintf(stderr, "Failed (%m)\n", err);
+		TEST_ERR(err);
 	}
 
 	if (do_thread) {
 #ifdef HAVE_PTHREAD
 		err = test_multithread();
-		if (err)
-			(void)re_fprintf(stderr, "Failed (%m)\n", err);
+		TEST_ERR(err);
 #else
 		(void)re_fprintf(stderr, "no support for threads\n");
 		err = ENOSYS;
