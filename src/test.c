@@ -250,7 +250,7 @@ static void restore_output(int err)
 
 	f = fopen("stdout.out", "r");
 	if (!f)
-		return;
+		goto out;
 
 	for (;;) {
 		if (1 != fscanf(f, "%1023[^\n]\n", line))
