@@ -578,22 +578,18 @@ int test_perf(const char *name, bool verbose)
 
 	test_mode = TEST_PERF;
 
-	if (!verbose)
-		hide_output();
-
 	if (name) {
 		const struct test *test;
 
 		test = find_test(name);
 		if (!test) {
 			(void)re_fprintf(stderr, "no such test: %s\n", name);
-			err = ENOENT;
-			goto out;
+			return ENOENT;
 		}
 
 		err = testcase_perf(test, NULL);
 		if (err)
-			goto out;
+			return err;
 	}
 	else {
 		struct timing timingv[ARRAY_SIZE(tests)];
@@ -606,10 +602,17 @@ int test_perf(const char *name, bool verbose)
 			struct timing *tim = &timingv[i];
 			double usec_avg;
 
+			if (!verbose)
+				hide_output();
+
 			tim->test = &tests[i];
 
 			err = testcase_perf(&tests[i],
 					    &usec_avg);
+
+			if (!verbose)
+				restore_output(err);
+
 			if (err) {
 				if (err == ESKIPPED || err == ENOSYS) {
 					re_printf("skipped: %s\n",
@@ -619,7 +622,7 @@ int test_perf(const char *name, bool verbose)
 				}
 				DEBUG_WARNING("perf: %s failed (%m)\n",
 					      tests[i].name, err);
-				goto out;
+				return err;
 			}
 
 			tim->nsec_avg = 1000.0 * usec_avg;
@@ -645,10 +648,6 @@ int test_perf(const char *name, bool verbose)
 		}
 		re_fprintf(stderr, "\n");
 	}
-
-out:
-	if (!verbose)
-		restore_output(err);
 
 	return err;
 }
