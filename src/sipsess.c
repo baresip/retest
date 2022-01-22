@@ -211,11 +211,6 @@ int test_sipsess(void)
 
 	memset(&test, 0, sizeof(test));
 
-#ifndef WIN32
-	/* slurp warnings from SIP (todo: temp) */
-	(void)freopen("/dev/null", "w", stderr);
-#endif
-
 	err = sip_alloc(&test.sip, NULL, 32, 32, 32,
 			"retest", exit_handler, NULL);
 	if (err)
@@ -278,11 +273,6 @@ int test_sipsess(void)
 
 	sip_close(test.sip, false);
 	test.sip = mem_deref(test.sip);
-
-#ifndef WIN32
-	/* Restore stderr */
-	freopen("/dev/tty", "w", stderr);
-#endif
 
 	return err;
 }
