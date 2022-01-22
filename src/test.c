@@ -219,6 +219,66 @@ static uint32_t timeout_override;
 
 enum test_mode test_mode = TEST_NONE;
 
+
+static void hide_output(void)
+{
+	(void)freopen("stdout.out", "w", stdout);
+	(void)freopen("stderr.out", "w", stderr);
+}
+
+
+static void restore_output(int err)
+{
+	FILE *f = NULL;
+	char line[1024];
+
+	fflush(stdout);
+	fflush(stderr);
+
+	/* Restore stdout/stderr */
+#ifdef WIN32
+	freopen("CON", "w", stdout);
+	freopen("CON", "w", stderr);
+#else
+	freopen("/dev/tty", "w", stdout);
+	freopen("/dev/tty", "w", stderr);
+#endif
+
+	if (!err)
+		goto out;
+
+
+	f = fopen("stdout.out", "r");
+	if (!f)
+		return;
+
+	for (;;) {
+		if (1 != fscanf(f, "%1023[^\n]\n", line))
+			break;
+
+		re_fprintf(stdout, "%s\n", line);
+	}
+	(void)fclose(f);
+
+
+	f = fopen("stderr.out", "r");
+	if (!f)
+		goto out;
+
+	for (;;) {
+		if (1 != fscanf(f, "%1023[^\n]\n", line))
+			break;
+
+		re_fprintf(stderr, "%s\n", line);
+	}
+	(void)fclose(f);
+
+out:
+	(void)unlink("stdout.out");
+	(void)unlink("stderr.out");
+}
+
+
 static const struct test *find_test(const char *name)
 {
 	size_t i;
@@ -310,13 +370,17 @@ int test_oom(const char *name, bool verbose)
 
 	test_mode = TEST_MEMORY;
 
+	if (!verbose)
+		hide_output();
+
 	(void)re_fprintf(stderr, "oom tests %u levels: \n", levels);
 
 	if (name) {
 		const struct test *test = find_test(name);
 		if (!test) {
 			(void)re_fprintf(stderr, "no such test: %s\n", name);
-			return ENOENT;
+			err = ENOENT;
+			goto out;
 		}
 
 		err = testcase_oom(test, levels, verbose);
@@ -331,6 +395,10 @@ int test_oom(const char *name, bool verbose)
 	}
 
 	mem_threshold_set(-1);
+
+out:
+	if (!verbose)
+		restore_output(err);
 
 	if (err) {
 		DEBUG_WARNING("oom: %m\n", err);
@@ -349,17 +417,21 @@ static int test_unit(const char *name, bool verbose)
 	size_t i;
 	int err = 0;
 
+	if (!verbose)
+		hide_output();
+
 	if (name) {
 		const struct test *test = find_test(name);
 		if (!test) {
 			(void)re_fprintf(stderr, "no such test: %s\n", name);
-			return ENOENT;
+			err = ENOENT;
+			goto out;
 		}
 
 		err = test->exec();
 		if (err) {
 			DEBUG_WARNING("%s: test failed (%m)\n", name, err);
-			return err;
+			goto out;
 		}
 	}
 	else {
@@ -385,7 +457,7 @@ static int test_unit(const char *name, bool verbose)
 
 				DEBUG_WARNING("%s: test failed (%m)\n",
 					      tests[i].name, err);
-				return err;
+				goto out;
 			}
 		}
 
@@ -400,6 +472,10 @@ static int test_unit(const char *name, bool verbose)
 			}
 		}
 	}
+
+out:
+	if (!verbose)
+		restore_output(err);
 
 	return err;
 }
@@ -502,18 +578,22 @@ int test_perf(const char *name, bool verbose)
 
 	test_mode = TEST_PERF;
 
+	if (!verbose)
+		hide_output();
+
 	if (name) {
 		const struct test *test;
 
 		test = find_test(name);
 		if (!test) {
 			(void)re_fprintf(stderr, "no such test: %s\n", name);
-			return ENOENT;
+			err = ENOENT;
+			goto out;
 		}
 
 		err = testcase_perf(test, NULL);
 		if (err)
-			return err;
+			goto out;
 	}
 	else {
 		struct timing timingv[ARRAY_SIZE(tests)];
@@ -539,7 +619,7 @@ int test_perf(const char *name, bool verbose)
 				}
 				DEBUG_WARNING("perf: %s failed (%m)\n",
 					      tests[i].name, err);
-				return err;
+				goto out;
 			}
 
 			tim->nsec_avg = 1000.0 * usec_avg;
@@ -566,7 +646,11 @@ int test_perf(const char *name, bool verbose)
 		re_fprintf(stderr, "\n");
 	}
 
-	return 0;
+out:
+	if (!verbose)
+		restore_output(err);
+
+	return err;
 }
 
 
@@ -894,7 +978,7 @@ const char *test_datapath(void)
 }
 
 
-int  test_network(const char *name, bool verbose)
+int test_network(const char *name, bool verbose)
 {
 	size_t i;
 	int err;
