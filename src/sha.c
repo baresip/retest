@@ -41,29 +41,21 @@ static const char *test_results[] = {
 	"105104a6ee22de58c0888d2f9cdd56d95c14d4e7",
 	"9962f530d85f354304efcf35ceaa29a279a3208d",
 	"17307171329ed5aeaccf4cd4f6d02223a69af9fb",
-	"4f051b5c4fcd0916df00f9c9dbab8608cd3355a7"
-};
-
-/* special case */
-static const char *test_results_mill =
-	"34aa973cd4c4daa4f61eeb2bdbad27316534016f";
+	"4f051b5c4fcd0916df00f9c9dbab8608cd3355a7"};
 
 
 int test_sha1(void)
 {
 	uint32_t k;
-	SHA_CTX context;
 	uint8_t digest[20];
 	char output[80];
 
 	for (k = 0; k < ARRAY_SIZE(test_data); k++) {
-		SHA1_Init(&context);
-		SHA1_Update(&context, (uint8_t*)test_data[k],
-			    strlen(test_data[k]));
-		SHA1_Final(digest, &context);
-		(void)re_snprintf(output, sizeof(output), "%02w",
-				  digest, sizeof(digest));
 
+		sha1((uint8_t *)test_data[k], strlen(test_data[k]), digest);
+
+		(void)re_snprintf(output, sizeof(output), "%02w", digest,
+				  sizeof(digest));
 		if (strcmp(output, test_results[k])) {
 			DEBUG_WARNING("* hash of \"%s\" incorrect:\n",
 				      test_data[k]);
@@ -71,19 +63,6 @@ int test_sha1(void)
 			DEBUG_WARNING("\t%s is correct\n", test_results[k]);
 			return EINVAL;
 		}
-	}
-	/* million 'a' vector we feed separately */
-	SHA1_Init(&context);
-	for (k = 0; k < 50000; k++)
-		SHA1_Update(&context, (uint8_t*)"aaaaaaaaaaaaaaaaaaaa", 20);
-	SHA1_Final(digest, &context);
-	(void)re_snprintf(output, sizeof(output), "%02w",
-			  digest, sizeof(digest));
-	if (strcmp(output, test_results_mill)) {
-		DEBUG_WARNING("* hash of \"%s\" incorrect:\n", test_data[2]);
-		DEBUG_WARNING("\t%s returned\n", output);
-		DEBUG_WARNING("\t%s is correct\n", test_results_mill);
-		return EINVAL;
 	}
 
 	/* success */
