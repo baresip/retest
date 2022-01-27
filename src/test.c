@@ -252,11 +252,8 @@ static void restore_output(int err)
 	if (!f)
 		goto out;
 
-	for (;;) {
-		if (1 != fscanf(f, "%1023[^\n]\n", line))
-			break;
-
-		re_fprintf(stdout, "%s\n", line);
+	while (fgets(line, sizeof(line), f)) {
+		re_fprintf(stdout, "%s", line);
 	}
 	(void)fclose(f);
 
@@ -265,11 +262,8 @@ static void restore_output(int err)
 	if (!f)
 		goto out;
 
-	for (;;) {
-		if (1 != fscanf(f, "%1023[^\n]\n", line))
-			break;
-
-		re_fprintf(stderr, "%s\n", line);
+	while (fgets(line, sizeof(line), f)) {
+		re_fprintf(stderr, "%s", line);
 	}
 	(void)fclose(f);
 
