@@ -318,7 +318,6 @@ int test_tls_ec(void)
 }
 
 
-/* XXX: replace with ECDSA certs */
 int test_tls_selfsigned(void)
 {
 	struct tls *tls = NULL;
@@ -329,11 +328,17 @@ int test_tls_selfsigned(void)
 	if (err)
 		goto out;
 
-	err = tls_set_selfsigned(tls, "re@test");
+	err = tls_set_selfsigned_rsa(tls, "re@test", 2048);
 	TEST_ERR(err);
 
 	/* verify fingerprint of the self-signed certificate */
 	err = tls_fingerprint(tls, TLS_FINGERPRINT_SHA1, fp, sizeof(fp));
+	TEST_ERR(err);
+
+	err = tls_set_selfsigned_ec(tls, "re_ec@test", "unknown");
+	TEST_EQUALS(err, ENOTSUP);
+
+	err = tls_set_selfsigned_ec(tls, "re_ec@test", "prime256v1");
 	TEST_ERR(err);
 
  out:
