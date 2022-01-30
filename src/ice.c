@@ -499,7 +499,7 @@ static int agent_alloc(struct agent **agentp, struct ice_test *it,
 	lrole = offerer ? ICE_ROLE_CONTROLLING : ICE_ROLE_CONTROLLED;
 	tiebrk = offerer ? 2 : 1;
 
-	err = icem_alloc(&agent->icem, ICE_MODE_FULL, lrole, IPPROTO_UDP, 0,
+	err = icem_alloc(&agent->icem, lrole, IPPROTO_UDP, 0,
 			 tiebrk, agent->lufrag, agent->lpwd,
 			 agent_connchk_handler, agent);
 	if (err)
