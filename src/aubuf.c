@@ -195,7 +195,7 @@ static int test_aubuf_sort_auframe(void)
 	err = aubuf_alloc(&ab, 160, 0);
 	TEST_ERR(err);
 
-	/* Write auframes unsorted */
+	/* Write auframes sorted */
 	err = aubuf_write_auframe(ab, &af[0]);
 	TEST_ERR(err);
 
@@ -204,9 +204,6 @@ static int test_aubuf_sort_auframe(void)
 
 	err = aubuf_write_auframe(ab, &af[1]);
 	TEST_ERR(err);
-
-	/* Sort */
-	aubuf_sort_auframe(ab);
 
 	/* Check */
 	aubuf_read_auframe(ab, &af_out);
