@@ -121,7 +121,7 @@ static bool sort_handler(struct le *le1, struct le *le2, void *arg)
 
 
 #define NUM_ELEMENTS 100
-int test_list_sort(void)
+static int test_sort(bool sorted)
 {
 	struct list lst;
 	struct le *le;
@@ -147,11 +147,16 @@ int test_list_sort(void)
 		node->value = -50 + (value_counter % 100);
 		value_counter *= 3;
 
-		list_append(&lst, &node->le, node);
+		if (sorted)
+			list_insert_sorted(&lst, sort_handler, NULL, &node->le,
+					   node);
+		else
+			list_append(&lst, &node->le, node);
 	}
 
 	/* sort the list in ascending order */
-	list_sort(&lst, sort_handler, NULL);
+	if (!sorted)
+		list_sort(&lst, sort_handler, NULL);
 
 	/* verify that the list is sorted */
 	for (le = lst.head; le; le = le->next) {
@@ -169,5 +174,19 @@ int test_list_sort(void)
  out:
 	list_flush(&lst);
 
+	return err;
+}
+
+
+int test_list_sort(void)
+{
+	int err;
+
+	err = test_sort(false);
+	TEST_ERR(err);
+
+	err = test_sort(true);
+	TEST_ERR(err);
+ out:
 	return err;
 }
