@@ -189,3 +189,28 @@ int test_sys_fs_isfile(void)
  out:
 	return err;
 }
+
+
+int test_sys_fs_fopen(void)
+{
+	FILE *file;
+	int err;
+
+	err = fs_fopen(&file, "retest_fs_fopen", "w+");
+	TEST_ERR(err);
+	TEST_EQUALS(true, fs_isfile("retest_fs_fopen"));
+
+	err = fclose(file);
+	TEST_ERR(err);
+
+	/* Try reopen */
+	err = fs_fopen(&file, "retest_fs_fopen", "w+");
+	TEST_ERR(err);
+
+	err = fclose(file);
+	TEST_ERR(err);
+
+	(void)unlink("retest_fs_fopen");
+out:
+	return err;
+}
