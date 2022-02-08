@@ -5,6 +5,7 @@
  */
 #include <ctype.h>
 #include <string.h>
+#include <unistd.h>
 #include <re.h>
 #include "test.h"
 

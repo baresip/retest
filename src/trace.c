@@ -2,6 +2,7 @@
  * @file trace.c  Trace testcode
  */
 
+#include <unistd.h>
 #include <re.h>
 #include "test.h"
 
