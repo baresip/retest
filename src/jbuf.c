@@ -45,6 +45,7 @@ int test_jbuf(void)
 
 	/* One frame */
 	DEBUG_INFO("test frame: One frame\n");
+	memset(&hdr, 0, sizeof(hdr));
 	hdr.seq = 160;
 	err = jbuf_put(jb, &hdr, frv[0]);
 	if (err)
