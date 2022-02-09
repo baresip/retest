@@ -289,8 +289,8 @@ extern const char test_certificate_rsa[];
 extern const char test_certificate_ecdsa[];
 #endif
 
-/* Network specific tests */
-int  test_network(const char *name, bool verbose);
+/* Integration tests */
+int  test_integration(const char *name, bool verbose);
 int  test_sipevent_network(void);
 int  test_sip_drequestf_network(void);
 

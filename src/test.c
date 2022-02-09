@@ -171,8 +171,6 @@ static const struct test tests[] = {
 	TEST(test_tls_false_cafile_path),
 	TEST(test_tls_cli_conn_change_cert),
 #endif
-	TEST(test_tmr_jiffies),
-	TEST(test_tmr_jiffies_usec),
 	TEST(test_turn),
 	TEST(test_turn_tcp),
 	TEST(test_udp),
@@ -196,16 +194,18 @@ static const struct test tests[] = {
 };
 
 
-static const struct test tests_network[] = {
+static const struct test tests_integration[] = {
+	TEST(test_net_dst_source_addr_get),
 	TEST(test_sipevent_network),
 	TEST(test_sip_drequestf_network),
-	TEST(test_net_dst_source_addr_get),
 	TEST(test_rtp_listen),
 	TEST(test_sipreg_udp),
 	TEST(test_sipreg_tcp),
 #ifdef USE_TLS
 	TEST(test_sipreg_tls),
 #endif
+	TEST(test_tmr_jiffies),
+	TEST(test_tmr_jiffies_usec),
 };
 
 
@@ -972,18 +972,18 @@ const char *test_datapath(void)
 }
 
 
-int test_network(const char *name, bool verbose)
+int test_integration(const char *name, bool verbose)
 {
 	size_t i;
 	int err;
 	const struct test *test;
 	(void) verbose;
 
-	(void)re_fprintf(stderr, "network tests\n");
+	(void)re_fprintf(stderr, "integration tests\n");
 
-	for (i=0; i<ARRAY_SIZE(tests_network); i++) {
+	for (i=0; i<ARRAY_SIZE(tests_integration); i++) {
 
-		test = &tests_network[i];
+		test = &tests_integration[i];
 		if (str_isset(name) && test->name)
 			continue;
 
@@ -1001,5 +1001,5 @@ int test_network(const char *name, bool verbose)
 		}
 	}
 
-	return 0;
+	return err;
 }
