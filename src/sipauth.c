@@ -26,7 +26,7 @@ static int test_sip_auth_encode(void)
 	int err;
 	struct mbuf *mb, *mb_enc;
 	struct sip_auth *auth = NULL;
-	char buf[1024];
+	char buf[1024] = {0};
 	struct sip_msg *msg = NULL;
 	const char met[]    = "REGISTER";
 	const char uri[]    = "<sip:user@host:5060;transport=udp>";
