@@ -1,0 +1,104 @@
+#
+# CMakeLists.txt
+#
+# Copyright (C) 2010 - 2022 Alfred E. Heggestad
+#
+
+cmake_minimum_required(VERSION 3.12)
+
+project(retest)
+include_directories(
+  src
+  /usr/local/include
+  /usr/local/include/re
+  /usr/local/include/rem
+)
+link_directories(/usr/local/lib)
+
+add_compile_definitions(
+  HAVE_GETOPT
+  HAVE_INET6
+  HAVE_INTTYPES_H
+  HAVE_PTHREAD
+  HAVE_SIGNAL
+  HAVE_UNISTD_H
+  USE_DTLS
+  USE_OPENSSL
+  USE_OPENSSL_AES
+  USE_OPENSSL_DTLS
+  USE_OPENSSL_HMAC
+  USE_OPENSSL_SRTP
+  USE_TLS
+  USE_ZLIB
+  )
+
+add_executable(${PROJECT_NAME}
+  src/aac.c
+  src/aes.c
+  src/aubuf.c
+  src/auresamp.c
+  src/base64.c
+  src/bfcp.c
+  src/combo/dtls_turn.c
+  src/conf.c
+  src/crc32.c
+  src/dns.c
+  src/dsp.c
+  src/dtls.c
+  src/dtmf.c
+  src/fir.c
+  src/fmt.c
+  src/g711.c
+  src/h264.c
+  src/hash.c
+  src/hmac.c
+  src/http.c
+  src/httpauth.c
+  src/ice.c
+  src/jbuf.c
+  src/json.c
+  src/list.c
+  src/main.c
+  src/mbuf.c
+  src/md5.c
+  src/mem.c
+  src/mock/cert.c
+  src/mock/fuzz.c
+  src/mock/nat.c
+  src/mock/pf.c
+  src/mock/sipsrv.c
+  src/mock/stunsrv.c
+  src/mock/tcpsrv.c
+  src/mock/turnsrv.c
+  src/mqueue.c
+  src/net.c
+  src/odict.c
+  src/remain.c
+  src/rtcp.c
+  src/rtmp.c
+  src/rtp.c
+  src/sa.c
+  src/sdp.c
+  src/sha.c
+  src/sip.c
+  src/sipauth.c
+  src/sipevent.c
+  src/sipreg.c
+  src/sipsess.c
+  src/srtp.c
+  src/stun.c
+  src/sys.c
+  src/tcp.c
+  src/telev.c
+  src/test.c
+  src/tls.c
+  src/tmr.c
+  src/trace.c
+  src/turn.c
+  src/udp.c
+  src/uri.c
+  src/vid.c
+  src/vidconv.c
+  src/websock.c
+)
+target_link_libraries(${PROJECT_NAME} -lrem -lre -lz -lpthread)
