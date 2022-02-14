@@ -119,6 +119,23 @@ extern enum test_mode test_mode;
 		goto out;						\
 	}
 
+/*
+ * NOTE: try to reuse macros from Gtest.
+ */
+
+#define ASSERT_EQ(expected, actual)					\
+	if ((expected) != (actual)) {					\
+		DEBUG_WARNING("ASSERT_EQ: %s:%u: %s():"			\
+			      " expected=%d(0x%x), actual=%d(0x%x)\n",	\
+			      __FILE__, __LINE__, __func__,		\
+			      (expected), (expected),			\
+			      (actual), (actual));			\
+		err = EINVAL;						\
+		goto out;						\
+	}
+
+#define EXPECT_EQ ASSERT_EQ
+
 
 /* Module API */
 int test_aac(void);
