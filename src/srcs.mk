@@ -19,6 +19,7 @@ SRCS	+= fir.c
 SRCS	+= fmt.c
 SRCS	+= g711.c
 SRCS	+= h264.c
+SRCS	+= h265.c
 SRCS	+= hash.c
 SRCS	+= hmac.c
 SRCS	+= http.c

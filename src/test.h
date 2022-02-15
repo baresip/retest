@@ -175,6 +175,7 @@ int test_g711_alaw(void);
 int test_g711_ulaw(void);
 int test_h264(void);
 int test_h264_sps(void);
+int test_h265(void);
 int test_hash(void);
 int test_hmac_sha1(void);
 int test_hmac_sha256(void);
