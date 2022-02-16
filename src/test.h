@@ -134,7 +134,16 @@ extern enum test_mode test_mode;
 		goto out;						\
 	}
 
-#define EXPECT_EQ ASSERT_EQ
+#define ASSERT_TRUE(cond)					\
+	if (!(cond)) {						\
+		DEBUG_WARNING("ASSERT_TRUE: %s:%u:\n",		\
+			      __FILE__, __LINE__);		\
+		err = EINVAL;					\
+		goto out;					\
+	}
+
+#define EXPECT_EQ    ASSERT_EQ
+#define EXPECT_TRUE  ASSERT_TRUE
 
 
 /* Module API */
