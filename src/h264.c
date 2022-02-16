@@ -312,3 +312,223 @@ int test_h264_sps(void)
  out:
 	return err;
 }
+
+
+struct state {
+
+	/* depacketizer */
+	struct mbuf *mb;
+	size_t frag_start;
+	bool frag;
+
+	/* test */
+	uint8_t buf[256];
+	size_t len;
+	unsigned count;
+	bool complete;
+};
+
+
+static void fragment_rewind(struct state *vds)
+{
+	vds->mb->pos = vds->frag_start;
+	vds->mb->end = vds->frag_start;
+}
+
+
+static int depack_handle_h264(struct state *st, bool marker,
+			      struct mbuf *src)
+{
+	static const uint8_t nal_seq[3] = {0, 0, 1};
+	struct h264_nal_header h264_hdr;
+	int err;
+
+	err = h264_nal_header_decode(&h264_hdr, src);
+	if (err)
+		return err;
+
+#if 0
+	re_printf("decode: %s %s type=%2d %s  \n",
+		  marker ? "[M]" : "   ",
+		  h264_is_keyframe(h264_hdr.type) ? "<KEY>" : "     ",
+		  h264_hdr.type,
+		  h264_nal_unit_name(h264_hdr.type));
+#endif
+
+	if (h264_hdr.f) {
+		DEBUG_WARNING("H264 forbidden bit set!\n");
+		return EBADMSG;
+	}
+
+	/* handle NAL types */
+	if (1 <= h264_hdr.type && h264_hdr.type <= 23) {
+
+		--src->pos;
+
+		/* prepend H.264 NAL start sequence */
+		err  = mbuf_write_mem(st->mb, nal_seq, sizeof(nal_seq));
+
+		err |= mbuf_write_mem(st->mb, mbuf_buf(src),
+				      mbuf_get_left(src));
+		if (err)
+			goto out;
+	}
+	else if (H264_NALU_FU_A == h264_hdr.type) {
+
+		struct h264_fu fu;
+
+		err = h264_fu_hdr_decode(&fu, src);
+		if (err)
+			return err;
+
+		h264_hdr.type = fu.type;
+
+		if (fu.s) {
+			if (st->frag) {
+				DEBUG_WARNING("start: lost fragments;"
+					      " ignoring previous NAL\n");
+				fragment_rewind(st);
+			}
+
+			st->frag_start = st->mb->pos;
+			st->frag = true;
+
+			/* prepend H.264 NAL start sequence */
+			mbuf_write_mem(st->mb, nal_seq, sizeof(nal_seq));
+
+			/* encode NAL header back to buffer */
+			err = h264_nal_header_encode(st->mb, &h264_hdr);
+			if (err)
+				goto out;
+		}
+		else {
+			if (!st->frag) {
+				re_printf("ignoring fragment"
+				      " (nal=%u)\n", fu.type);
+				return 0;
+			}
+		}
+
+		err = mbuf_write_mem(st->mb, mbuf_buf(src),
+				     mbuf_get_left(src));
+		if (err)
+			goto out;
+
+		if (fu.e)
+			st->frag = false;
+	}
+	else if (H264_NALU_STAP_A == h264_hdr.type) {
+
+		while (mbuf_get_left(src) >= 2) {
+
+			uint16_t len = ntohs(mbuf_read_u16(src));
+			struct h264_nal_header lhdr;
+
+			if (mbuf_get_left(src) < len)
+				return EBADMSG;
+
+			err = h264_nal_header_decode(&lhdr, src);
+			if (err)
+				return err;
+
+			--src->pos;
+
+			err  = mbuf_write_mem(st->mb,
+					      nal_seq, sizeof(nal_seq));
+			err |= mbuf_write_mem(st->mb, mbuf_buf(src), len);
+			if (err)
+				goto out;
+
+			src->pos += len;
+		}
+	}
+	else {
+		DEBUG_WARNING("decode: unknown NAL type %u\n",
+			      h264_hdr.type);
+		return EBADMSG;
+	}
+
+	if (!marker)
+		return 0;
+
+	/* verify complete packet */
+	st->complete = true;
+	TEST_MEMCMP(st->buf, st->len, st->mb->buf, st->mb->end);
+
+ out:
+	mbuf_rewind(st->mb);
+	st->frag = false;
+
+	return err;
+}
+
+
+enum { DUMMY_TS = 36000 };
+
+
+static int packet_handler(bool marker, uint64_t rtp_ts,
+			  const uint8_t *hdr, size_t hdr_len,
+			  const uint8_t *pld, size_t pld_len,
+			  void *arg)
+{
+	struct state *state = arg;
+	struct mbuf *mb_pkt = mbuf_alloc(hdr_len + pld_len);
+	int err;
+
+	if (!mb_pkt)
+		return ENOMEM;
+
+	ASSERT_EQ(DUMMY_TS, rtp_ts);
+
+	++state->count;
+
+	err  = mbuf_write_mem(mb_pkt, hdr, hdr_len);
+	err |= mbuf_write_mem(mb_pkt, pld, pld_len);
+	if (err)
+		goto out;
+
+	mb_pkt->pos = 0;
+
+	err = depack_handle_h264(state, marker, mb_pkt);
+
+ out:
+	mem_deref(mb_pkt);
+	return err;
+}
+
+
+/* bitstream in Annex-B format (with startcode 00 00 01) */
+static const char *bitstream = "000001650010e2238712983719283719823798";
+
+
+int test_h264_packet(void)
+{
+	struct state state;
+	const size_t pktsize = 8;
+	int err;
+
+	memset(&state, 0, sizeof(state));
+
+	state.len = strlen(bitstream)/2;
+
+	err = str_hex(state.buf, state.len, bitstream);
+	if (err)
+		return err;
+
+	state.mb = mbuf_alloc(1024);
+	if (!state.mb)
+		return ENOMEM;
+
+	err = h264_packetize(DUMMY_TS, state.buf, state.len, pktsize,
+			     packet_handler, &state);
+	if (err)
+		goto out;
+
+	ASSERT_TRUE(state.count >= 1);
+	ASSERT_TRUE(state.complete);
+
+ out:
+	mem_deref(state.mb);
+
+	return err;
+}
