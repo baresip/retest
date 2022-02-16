@@ -501,7 +501,7 @@ static int packet_handler(bool marker, uint64_t rtp_ts,
 static const char *bitstream = "000001650010e2238712983719283719823798";
 
 
-int test_h264_packet()
+int test_h264_packet(void)
 {
 	struct state state;
 	const size_t pktsize = 8;
