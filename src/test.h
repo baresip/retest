@@ -186,6 +186,7 @@ int test_h264(void);
 int test_h264_sps(void);
 int test_h264_packet(void);
 int test_h265(void);
+int test_h265_packet(void);
 int test_hash(void);
 int test_hmac_sha1(void);
 int test_hmac_sha256(void);
