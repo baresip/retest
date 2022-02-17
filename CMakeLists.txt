@@ -4,7 +4,7 @@
 # Copyright (C) 2010 - 2022 Alfred E. Heggestad
 #
 
-cmake_minimum_required(VERSION 3.12)
+cmake_minimum_required(VERSION 3.10)
 
 project(retest)
 include_directories(
@@ -50,6 +50,7 @@ add_executable(${PROJECT_NAME}
   src/fmt.c
   src/g711.c
   src/h264.c
+  src/h265.c
   src/hash.c
   src/hmac.c
   src/http.c
