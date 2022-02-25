@@ -4,7 +4,7 @@
 # Copyright (C) 2010 - 2022 Alfred E. Heggestad
 #
 
-cmake_minimum_required(VERSION 3.10)
+cmake_minimum_required(VERSION 3.7)
 
 project(retest)
 include_directories(
