@@ -21,7 +21,7 @@
 
 
 struct data {
-	pthread_t tid;
+	thread tid;
 	pthread_mutex_t mutex;
 	bool thread_started;
 	bool thread_exited;
@@ -38,7 +38,7 @@ static void tmr_handler(void *arg)
 	pthread_mutex_lock(&data->mutex);
 
 	/* verify that timer is called from the new thread */
-	TEST_ASSERT(0 != pthread_equal(data->tid, pthread_self()));
+	TEST_ASSERT(0 != thread_equal(data->tid, thread_current()));
 
 	++data->tmr_called;
 
@@ -52,7 +52,7 @@ static void tmr_handler(void *arg)
 }
 
 
-static void *thread_handler(void *arg)
+static int thread_handler(void *arg)
 {
 	struct data *data = arg;
 	struct tmr tmr;
@@ -66,7 +66,7 @@ static void *thread_handler(void *arg)
 	if (err) {
 		DEBUG_WARNING("re thread init: %m\n", err);
 		data->err = err;
-		return NULL;
+		return 0;
 	}
 
 	tmr_start(&tmr, 1, tmr_handler, data);
@@ -85,7 +85,7 @@ static void *thread_handler(void *arg)
 
 	data->thread_exited = true;
 
-	return NULL;
+	return 0;
 }
 
 
@@ -98,7 +98,7 @@ static int test_remain_thread(void)
 
 	pthread_mutex_init(&data.mutex, NULL);
 
-	err = pthread_create(&data.tid, NULL, thread_handler, &data);
+	err = thread_create(&data.tid, thread_handler, &data);
 	if (err)
 		return err;
 
@@ -118,7 +118,7 @@ static int test_remain_thread(void)
 	}
 
 	/* wait for thread to end */
-	pthread_join(data.tid, NULL);
+	thread_join(data.tid, NULL);
 
 	if (data.err)
 		return data.err;

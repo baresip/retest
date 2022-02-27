@@ -16,9 +16,6 @@
 #include <stdlib.h>
 #include <sys/time.h>
 #include <math.h>
-#ifdef HAVE_PTHREAD
-#include <pthread.h>
-#endif
 #include <re.h>
 #include "test.h"
 
@@ -682,12 +679,12 @@ int test_reg(const char *name, bool verbose)
 #ifdef HAVE_PTHREAD
 struct thread {
 	const struct test *test;
-	pthread_t tid;
+	thrd_t tid;
 	int err;
 };
 
 
-static void *thread_handler(void *arg)
+static int thread_handler(void *arg)
 {
 	struct thread *thr = arg;
 	int err;
@@ -696,7 +693,7 @@ static void *thread_handler(void *arg)
 	if (err) {
 		DEBUG_WARNING("thread: re_thread_init failed %m\n", err);
 		thr->err = err;
-		return NULL;
+		return 0;
 	}
 
 	err = thr->test->exec();
@@ -715,7 +712,7 @@ static void *thread_handler(void *arg)
 	/* safe to write it, main thread is waiting for us */
 	thr->err = err;
 
-	return NULL;
+	return 0;
 }
 
 
@@ -748,10 +745,10 @@ int test_multithread(void)
 		threadv[i].test = &tests[ti];
 		threadv[i].err = -1;           /* error not set */
 
-		err = pthread_create(&threadv[i].tid, NULL,
+		err = thread_create(&threadv[i].tid,
 				     thread_handler, (void *)&threadv[i]);
 		if (err) {
-			DEBUG_WARNING("pthread_create failed (%m)\n", err);
+			DEBUG_WARNING("thread_create failed (%m)\n", err);
 			break;
 		}
 
@@ -760,7 +757,7 @@ int test_multithread(void)
 
 	for (i=0; i<ARRAY_SIZE(threadv); i++) {
 
-		pthread_join(threadv[i].tid, NULL);
+		thread_join(threadv[i].tid, NULL);
 	}
 
 	for (i=0; i<ARRAY_SIZE(threadv); i++) {
