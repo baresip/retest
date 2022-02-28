@@ -231,6 +231,44 @@ out:
 }
 
 
+static int test_aubuf_resize(void)
+{
+	struct aubuf *ab      = NULL;
+	int16_t sampv_in[160] = {1};
+	int err;
+
+	err = aubuf_alloc(&ab, 160, 160);
+	TEST_ERR(err);
+
+	TEST_EQUALS(0, aubuf_cur_size(ab));
+
+	err = aubuf_write_samp(ab, sampv_in, 80);
+	TEST_ERR(err);
+
+	err = aubuf_write_samp(ab, sampv_in, 80);
+	TEST_ERR(err);
+
+	TEST_EQUALS(160, aubuf_cur_size(ab));
+
+	err = aubuf_resize(ab, 160, 320);
+	TEST_ERR(err);
+
+	TEST_EQUALS(0, aubuf_cur_size(ab));
+
+	err = aubuf_write_samp(ab, sampv_in, 80);
+	TEST_ERR(err);
+
+	err = aubuf_write_samp(ab, sampv_in, 80);
+	TEST_ERR(err);
+
+	TEST_EQUALS(320, aubuf_cur_size(ab));
+
+out:
+	mem_deref(ab);
+	return err;
+}
+
+
 int test_aubuf(void)
 {
 	int err;
@@ -245,6 +283,9 @@ int test_aubuf(void)
 	TEST_ERR(err);
 
 	err = test_aubuf_sort_auframe();
+	TEST_ERR(err);
+
+	err = test_aubuf_resize();
 	TEST_ERR(err);
 
 out:
