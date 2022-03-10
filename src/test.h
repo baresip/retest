@@ -232,6 +232,7 @@ int test_rtcp_encode(void);
 int test_rtcp_encode_afb(void);
 int test_rtcp_decode(void);
 int test_rtcp_packetloss(void);
+int test_rtcp_twcc(void);
 int test_sa_class(void);
 int test_sa_cmp(void);
 int test_sa_decode(void);

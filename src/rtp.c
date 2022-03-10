@@ -562,3 +562,106 @@ int test_rtp_listen(void)
 out:
 	return err;
 }
+
+
+int test_rtcp_twcc(void)
+{
+	/*
+	  A RTCP transport-cc parser test. Done as part of WebRtcTransport
+	  which uses it. TWCC rtcp packets have been extracted from what
+	  Chrome sends using Wireshark and concatenated to form a single
+	  compound packet.
+	*/
+	uint8_t packets[] = {
+
+		/* First packet */
+		0xaf, 0xcd, 0x00, 0x07, 0xfa, 0x17,
+		0xfa, 0x17, 0x00, 0x00, 0x00,
+		0x02, 0x00, 0x03, 0x00, 0x09, 0x00,
+		0x42, 0x6d, 0x00, 0xad, 0xe0,
+		0x14, 0x18, 0x18, 0x38, 0x00, 0x00, 0x00, 0x00, 0x00, 0x03,
+
+		/* Second packet */
+		0xaf, 0xcd, 0x00, 0x0c, 0xfa, 0x17,
+		0xfa, 0x17, 0x00, 0x00, 0x00, 0x02, 0x00,
+		0x0c, 0x00, 0x1e, 0x00, 0x42, 0x6d,
+		0x01, 0x96, 0xf7, 0xbb, 0xf3, 0x20, 0x02,
+		0xb0, 0x14, 0x08, 0x58, 0x18, 0x00,
+		0x00, 0x14, 0x00, 0x00, 0x00, 0x00, 0x00,
+		0x00, 0x00, 0x00, 0x00, 0x04, 0x00,
+		0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x03,
+
+		/* Third packet */
+		0xaf, 0xcd, 0x00, 0x07, 0xfa, 0x17,
+		0xfa, 0x17, 0x00, 0x00, 0x00,
+		0x02, 0x00, 0x2a, 0x00, 0x0b, 0x00,
+		0x42, 0x6e, 0x02, 0x9b, 0xf8,
+		0xb8, 0x00, 0x48, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01
+	};
+
+	struct mbuf *buf = mbuf_alloc(sizeof(packets));
+
+	struct rtcp_msg *msg = NULL;
+	int err = 0;
+
+	if (!buf)
+		return ENOMEM;
+
+	mbuf_rewind(buf);
+	mbuf_write_mem(buf, packets, sizeof(packets));
+	mbuf_set_pos(buf, 0);
+
+	/* TWCC n=5 base=3 count=9 reftime=17005 fbcount=0 chunks=2 deltas=7
+	   (with padding 00 00 03) */
+	err = rtcp_decode(&msg, buf);
+	TEST_ERR(err);
+	EXPECT_EQ(err, 0);
+	EXPECT_EQ(msg->hdr.count, RTCP_RTPFB_TWCC);
+	EXPECT_EQ(msg->r.fb.n, 5);
+	EXPECT_TRUE(msg->r.fb.fci.twccv != NULL);
+	EXPECT_EQ(msg->r.fb.fci.twccv->seq, 3);
+	EXPECT_EQ(msg->r.fb.fci.twccv->count, 9);
+	EXPECT_EQ(msg->r.fb.fci.twccv->reftime, 17005);
+	EXPECT_EQ(msg->r.fb.fci.twccv->fbcount, 0);
+	EXPECT_EQ(mbuf_get_left(msg->r.fb.fci.twccv->chunks), 2);
+	EXPECT_EQ(mbuf_get_left(msg->r.fb.fci.twccv->deltas), 7);
+	msg = mem_deref(msg);
+
+	/* TWCC n=10 base=12 count=30 reftime=17005 fbcount=1 chunks=6
+	   deltas=23 (with padding 00 00 03) */
+	err = rtcp_decode(&msg, buf);
+	TEST_ERR(err);
+	EXPECT_EQ(err, 0);
+	EXPECT_EQ(msg->hdr.count, RTCP_RTPFB_TWCC);
+	EXPECT_EQ(msg->r.fb.n, 10);
+	EXPECT_EQ(msg->r.fb.fci.twccv->seq, 12);
+	EXPECT_EQ(msg->r.fb.fci.twccv->count, 30);
+	EXPECT_EQ(msg->r.fb.fci.twccv->reftime, 17005);
+	EXPECT_EQ(msg->r.fb.fci.twccv->fbcount, 1);
+	EXPECT_EQ(mbuf_get_left(msg->r.fb.fci.twccv->chunks), 6);
+	EXPECT_EQ(mbuf_get_left(msg->r.fb.fci.twccv->deltas), 23);
+	msg = mem_deref(msg);
+
+	/* TWCC n=5 base=42 count=11 reftime=17006 fbcount=2 chunks=2
+	   deltas=9 (with padding 01) */
+	err = rtcp_decode(&msg, buf);
+	TEST_ERR(err);
+	EXPECT_EQ(err, 0);
+	EXPECT_EQ(msg->hdr.count, RTCP_RTPFB_TWCC);
+	EXPECT_EQ(msg->r.fb.n, 5);
+	EXPECT_EQ(msg->r.fb.fci.twccv->seq, 42);
+	EXPECT_EQ(msg->r.fb.fci.twccv->count, 11);
+	EXPECT_EQ(msg->r.fb.fci.twccv->reftime, 17006);
+	EXPECT_EQ(msg->r.fb.fci.twccv->fbcount, 2);
+	EXPECT_EQ(mbuf_get_left(msg->r.fb.fci.twccv->chunks), 2);
+	EXPECT_EQ(mbuf_get_left(msg->r.fb.fci.twccv->deltas), 9);
+	msg = mem_deref(msg);
+
+	/* Assert we have processed everything. */
+	EXPECT_EQ(mbuf_get_left(buf), 0);
+
+ out:
+	mem_deref(buf);
+	mem_deref(msg);
+	return err;
+}
