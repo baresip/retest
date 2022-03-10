@@ -601,15 +601,15 @@ int test_rtcp_twcc(void)
 
 	struct mbuf *buf = mbuf_alloc(sizeof(packets));
 
+	struct rtcp_msg *msg;
+	int err = 0;
+
 	if (!buf)
 		return ENOMEM;
 
 	mbuf_rewind(buf);
 	mbuf_write_mem(buf, packets, sizeof(packets));
 	mbuf_set_pos(buf, 0);
-
-	struct rtcp_msg *msg;
-	int err = 0;
 
 	/* TWCC n=5 base=3 count=9 reftime=17005 fbcount=0 chunks=2 deltas=7
 	   (with padding 00 00 03) */
