@@ -614,8 +614,7 @@ int test_rtcp_twcc(void)
 	/* TWCC n=5 base=3 count=9 reftime=17005 fbcount=0 chunks=2 deltas=7
 	   (with padding 00 00 03) */
 	err = rtcp_decode(&msg, buf);
-	if (err)
-		goto out;
+	TEST_ERR(err);
 	EXPECT_EQ(err, 0);
 	EXPECT_EQ(msg->hdr.count, RTCP_RTPFB_TWCC);
 	EXPECT_EQ(msg->r.fb.n, 5);
@@ -631,8 +630,7 @@ int test_rtcp_twcc(void)
 	/* TWCC n=10 base=12 count=30 reftime=17005 fbcount=1 chunks=6
 	   deltas=23 (with padding 00 00 03) */
 	err = rtcp_decode(&msg, buf);
-	if (err)
-		goto out;
+	TEST_ERR(err);
 	EXPECT_EQ(err, 0);
 	EXPECT_EQ(msg->hdr.count, RTCP_RTPFB_TWCC);
 	EXPECT_EQ(msg->r.fb.n, 10);
@@ -647,8 +645,7 @@ int test_rtcp_twcc(void)
 	/* TWCC n=5 base=42 count=11 reftime=17006 fbcount=2 chunks=2
 	   deltas=9 (with padding 01) */
 	err = rtcp_decode(&msg, buf);
-	if (err)
-		goto out;
+	TEST_ERR(err);
 	EXPECT_EQ(err, 0);
 	EXPECT_EQ(msg->hdr.count, RTCP_RTPFB_TWCC);
 	EXPECT_EQ(msg->r.fb.n, 5);
