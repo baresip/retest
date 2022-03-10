@@ -601,7 +601,7 @@ int test_rtcp_twcc(void)
 
 	struct mbuf *buf = mbuf_alloc(sizeof(packets));
 
-	struct rtcp_msg *msg;
+	struct rtcp_msg *msg = NULL;
 	int err = 0;
 
 	if (!buf)
