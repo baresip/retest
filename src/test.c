@@ -979,7 +979,7 @@ const char *test_datapath(void)
 int test_integration(const char *name, bool verbose)
 {
 	size_t i;
-	int err;
+	int err = 0;
 	const struct test *test;
 	(void) verbose;
 

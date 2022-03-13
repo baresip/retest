@@ -308,8 +308,11 @@ static int test_http_loop_base(bool secure)
 		goto out;
 
 #ifdef USE_TLS
-	if (secure)
+	if (secure) {
 		err = http_client_add_ca(cli, path);
+		if (err)
+			goto out;
+	}
 #endif
 
 	(void)re_snprintf(url, sizeof(url),
