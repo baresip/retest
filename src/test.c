@@ -175,6 +175,10 @@ static const struct test tests[] = {
 	TEST(test_tls_false_cafile_path),
 	TEST(test_tls_cli_conn_change_cert),
 #endif
+	TEST(test_trice_cand),
+	TEST(test_trice_candpair),
+	TEST(test_trice_checklist),
+	TEST(test_trice_loop),
 	TEST(test_turn),
 	TEST(test_turn_tcp),
 	TEST(test_udp),

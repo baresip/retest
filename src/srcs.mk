@@ -54,6 +54,7 @@ SRCS	+= tcp.c
 SRCS	+= telev.c
 SRCS	+= test.c
 SRCS	+= tmr.c
+SRCS	+= trice.c
 SRCS	+= turn.c
 SRCS	+= udp.c
 SRCS	+= uri.c
