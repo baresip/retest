@@ -128,6 +128,7 @@ add_executable(${PROJECT_NAME}
   src/tls.c
   src/tmr.c
   src/trace.c
+  src/trice.c
   src/turn.c
   src/udp.c
   src/uri.c
