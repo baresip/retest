@@ -1031,13 +1031,13 @@ int test_trice_checklist(void)
 	int err = 0;
 
 	err |= checklist_verify_states();
+	TEST_ERR(err);
 	err |= checklist_tcp_simple(ICE_TCP_ACTIVE);
+	TEST_ERR(err);
 	err |= checklist_tcp_simple(ICE_TCP_PASSIVE);
-	err |= checklist_tcp_simple(ICE_TCP_SO);
-	if (err)
-		return err;
+	TEST_ERR(err);
 
-
+out:
 	return err;
 }
 
