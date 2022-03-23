@@ -179,6 +179,7 @@ static const struct test tests[] = {
 	TEST(test_trice_candpair),
 	TEST(test_trice_checklist),
 	TEST(test_trice_loop),
+	TEST(test_try_into),
 	TEST(test_turn),
 	TEST(test_turn_tcp),
 	TEST(test_udp),

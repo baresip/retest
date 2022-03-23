@@ -11,6 +11,7 @@ SRCS	+= auresamp.c
 SRCS	+= base64.c
 SRCS	+= bfcp.c
 SRCS	+= conf.c
+SRCS	+= convert.c
 SRCS	+= crc32.c
 SRCS	+= dns.c
 SRCS	+= dsp.c
