@@ -74,6 +74,7 @@ add_executable(${PROJECT_NAME}
   src/bfcp.c
   src/combo/dtls_turn.c
   src/conf.c
+  src/convert.c
   src/crc32.c
   src/dns.c
   src/dsp.c
