@@ -290,6 +290,13 @@ int test_sa_ntop(void)
 			break;
 		}
 
+		err = sa_ntop(&sa0, buf, 2);
+#ifdef WIN32
+		TEST_EQUALS(ERROR_INVALID_PARAMETER, err);
+#else
+		TEST_EQUALS(ENOSPC, err);
+#endif
+
 		err = sa_ntop(&sa0, buf, sizeof(buf));
 		if (err)
 			break;
@@ -314,6 +321,7 @@ int test_sa_ntop(void)
 		}
 	}
 
+out:
 	return err;
 }
 
