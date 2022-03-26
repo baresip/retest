@@ -291,11 +291,7 @@ int test_sa_ntop(void)
 		}
 
 		err = sa_ntop(&sa0, buf, 2);
-#ifdef WIN32
-		TEST_EQUALS(EINVAL, err);
-#else
-		TEST_EQUALS(ENOSPC, err);
-#endif
+		TEST_NOT_EQUALS(0, err);
 
 		err = sa_ntop(&sa0, buf, sizeof(buf));
 		if (err)
