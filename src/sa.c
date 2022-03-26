@@ -292,7 +292,7 @@ int test_sa_ntop(void)
 
 		err = sa_ntop(&sa0, buf, 2);
 #ifdef WIN32
-		TEST_EQUALS(ERROR_INVALID_PARAMETER, err);
+		TEST_EQUALS(EINVAL, err);
 #else
 		TEST_EQUALS(ENOSPC, err);
 #endif
