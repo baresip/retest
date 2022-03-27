@@ -145,7 +145,7 @@ int test_sa_decode(void)
 		if (testv[i].err != e) {
 			DEBUG_WARNING("sa_decode: test %u:"
 				      " expected (%m) got (%m) [%s]\n", i,
-				      testv[i].err, err, testv[i].str);
+				      testv[i].err, e, testv[i].str);
 			err = EINVAL;
 			break;
 		}
