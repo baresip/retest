@@ -60,8 +60,7 @@ static int send_data(struct dtls_test *t, const char *data)
 	mb.size = str_len(data);
 
 	err = dtls_send(t->conn_cli, &mb);
-	if (err)
-		goto out;
+	TEST_ERR(err);
 
  out:
 	return err;
@@ -79,7 +78,7 @@ static void srv_estab_handler(void *arg)
 		err = tls_srtp_keyinfo(t->conn_srv, &t->srv.suite,
 				       t->srv.cli_key, sizeof(t->srv.cli_key),
 				       t->srv.srv_key, sizeof(t->srv.srv_key));
-		TEST_EQUALS(0, err);
+		TEST_ERR(err);
 	}
 
  out:
@@ -97,9 +96,11 @@ static void srv_recv_handler(struct mbuf *mb, void *arg)
 
 	/* echo */
 	err = dtls_send(t->conn_srv, mb);
-	if (err) {
+	TEST_ERR(err);
+
+ out:
+	if (err)
 		abort_test(t, err);
-	}
 }
 
 
@@ -121,20 +122,21 @@ static void cli_estab_handler(void *arg)
 
 	err = tls_peer_fingerprint(t->conn_cli, TLS_FINGERPRINT_SHA1,
 				   t->fp, sizeof(t->fp));
-	TEST_EQUALS(0, err);
+	TEST_ERR(err);
 
 	err = tls_peer_common_name(t->conn_cli, t->cn, sizeof(t->cn));
-	TEST_EQUALS(0, err);
+	TEST_ERR(err);
 
 	if (t->dtls_srtp) {
 
 		err = tls_srtp_keyinfo(t->conn_cli, &t->cli.suite,
 				       t->cli.cli_key, sizeof(t->cli.cli_key),
 				       t->cli.srv_key, sizeof(t->cli.srv_key));
-		TEST_EQUALS(0, err);
+		TEST_ERR(err);
 	}
 
 	err = send_data(t, payload_str);
+	TEST_ERR(err);
 
  out:
 	if (err)
@@ -182,7 +184,7 @@ static void conn_handler(const struct sa *src, void *arg)
 	if (err) {
 		if (err == EPROTO)
 			err = ENOMEM;
-		goto out;
+		TEST_ERR(err);
 	}
 
  out:
@@ -207,13 +209,11 @@ static int test_dtls_srtp_base(enum tls_method method, bool dtls_srtp)
 	test.dtls_srtp = dtls_srtp;
 
 	err = tls_alloc(&test.tls, method, NULL, NULL);
-	if (err)
-		goto out;
+	TEST_ERR(err);
 
 	err = tls_set_certificate(test.tls, test_certificate_rsa,
 				  strlen(test_certificate_rsa));
-	if (err)
-		goto out;
+	TEST_ERR(err);
 
 	if (dtls_srtp) {
 		err = tls_set_srtp(test.tls, srtp_suites);
@@ -234,20 +234,16 @@ static int test_dtls_srtp_base(enum tls_method method, bool dtls_srtp)
 	(void)sa_set_str(&srv, "127.0.0.1", 0);
 
 	err = udp_listen(&us, &srv, NULL, NULL);
-	if (err)
-		goto out;
+	TEST_ERR(err);
 
 	err = udp_local_get(us, &srv);
-	if (err)
-		goto out;
+	TEST_ERR(err);
 
 	err = dtls_listen(&test.sock_srv, NULL, us, 4, 0, conn_handler, &test);
-	if (err)
-		goto out;
+	TEST_ERR(err);
 
 	err = dtls_listen(&test.sock_cli, &cli, NULL, 4, 0, NULL, NULL);
-	if (err)
-		goto out;
+	TEST_ERR(err);
 
 	err = dtls_connect(&test.conn_cli, test.tls, test.sock_cli,
 			   &srv, cli_estab_handler,
@@ -255,12 +251,11 @@ static int test_dtls_srtp_base(enum tls_method method, bool dtls_srtp)
 	if (err) {
 		if (err == EPROTO)
 			err = ENOMEM;
-		goto out;
+		TEST_ERR(err);
 	}
 
 	err = re_main_timeout(800);
-	if (err)
-		goto out;
+	TEST_ERR(err);
 
 	if (test.err) {
 		err = test.err;
