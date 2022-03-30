@@ -15,6 +15,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include <sys/time.h>
+#include <math.h>
 #ifdef HAVE_PTHREAD
 #include <pthread.h>
 #endif
@@ -41,6 +42,7 @@ static const struct test tests[] = {
 	TEST(test_aes),
 	TEST(test_aes_gcm),
 	TEST(test_aubuf),
+	TEST(test_aulevel),
 	TEST(test_auresamp),
 	TEST(test_base64),
 	TEST(test_bfcp),
@@ -800,6 +802,12 @@ void test_listcases(void)
 	}
 
 	(void)re_printf("\n");
+}
+
+
+bool test_cmp_double(double a, double b, double precision)
+{
+	return fabs(a - b) < precision;
 }
 
 

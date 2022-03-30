@@ -69,6 +69,7 @@ add_executable(${PROJECT_NAME}
   src/aac.c
   src/aes.c
   src/aubuf.c
+  src/aulevel.c
   src/auresamp.c
   src/base64.c
   src/bfcp.c

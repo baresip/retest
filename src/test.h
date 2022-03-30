@@ -134,6 +134,16 @@ extern enum test_mode test_mode;
 		goto out;						\
 	}
 
+#define ASSERT_DOUBLE_EQ(expected, actual, prec)			\
+	if (!test_cmp_double((expected), (actual), (prec))) {		\
+		DEBUG_WARNING("selftest: ASSERT_DOUBLE_EQ: %s:%u:"	\
+			" expected=%f, actual=%f\n",			\
+			__FILE__, __LINE__,				\
+			(double)(expected), (double)(actual));		\
+		err = EINVAL;						\
+		goto out;						\
+	}
+
 #define ASSERT_TRUE(cond)					\
 	if (!(cond)) {						\
 		DEBUG_WARNING("ASSERT_TRUE: %s:%u:\n",		\
@@ -151,6 +161,7 @@ int test_aac(void);
 int test_aes(void);
 int test_aes_gcm(void);
 int test_aubuf(void);
+int test_aulevel(void);
 int test_auresamp(void);
 int test_base64(void);
 int test_bfcp(void);
@@ -340,6 +351,7 @@ void test_listcases(void);
 void test_hexdump_dual(FILE *f,
 		       const void *ep, size_t elen,
 		       const void *ap, size_t alen);
+bool test_cmp_double(double a, double b, double precision);
 int re_main_timeout(uint32_t timeout_ms);
 int test_load_file(struct mbuf *mb, const char *filename);
 int test_write_file(struct mbuf *mb, const char *filename);
