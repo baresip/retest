@@ -92,12 +92,12 @@ int test_jbuf(void)
 
 	/* Three frames */
 	DEBUG_INFO("test frame: Three frames\n");
-	hdr.seq = 640;
-	err = jbuf_put(jb, &hdr, frv[0]);
-	if (err)
-		goto out;
 	hdr.seq = 800;
 	err = jbuf_put(jb, &hdr, frv[1]);
+	if (err)
+		goto out;
+	hdr.seq = 640;
+	err = jbuf_put(jb, &hdr, frv[0]);
 	if (err)
 		goto out;
 	hdr.seq = 960;
