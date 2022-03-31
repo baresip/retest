@@ -8,7 +8,7 @@
 #include "test.h"
 
 
-#define DEBUG_MODULE "testjbuf"
+#define DEBUG_MODULE "test jbuf"
 #define DEBUG_LEVEL 5
 #include <re_dbg.h>
 
@@ -157,8 +157,6 @@ int test_jbuf_adaptive(void)
 	TEST_ERR(err);
 	err = jbuf_set_type(jb, JBUF_ADAPTIVE);
 	TEST_ERR(err);
-	err = jbuf_set_wish(jb, 2);
-	TEST_ERR(err);
 
 	for (i=0; i<ARRAY_SIZE(frv); i++) {
 		frv[i] = mem_zalloc(32, NULL);
@@ -183,76 +181,55 @@ int test_jbuf_adaptive(void)
 	TEST_EQUALS(ENOENT, jbuf_get(jb, &hdr2, &mem));
 
 	hdr.seq = 161;
-	hdr.ts = 20 * 8;
 	err = jbuf_put(jb, &hdr, frv[1]);
 	TEST_ERR(err);
 
 	/* wish size reached */
+	DEBUG_INFO("n > min reached, read first frame\n");
 	err = jbuf_get(jb, &hdr2, &mem);
 	TEST_ERR(err);
 	TEST_EQUALS(160, hdr2.seq);
 	TEST_EQUALS(mem, frv[0]);
 	mem = mem_deref(mem);
 
-	err = jbuf_get(jb, &hdr2, &mem);
-	TEST_ERR(err);
-	TEST_EQUALS(161, hdr2.seq);
-	TEST_EQUALS(mem, frv[1]);
-	mem = mem_deref(mem);
-
-	err = jbuf_get(jb, &hdr2, &mem);
-	TEST_EQUALS(ENOENT, err);
-	mem = mem_deref(mem);
+	DEBUG_INFO("n <= min, leads to ENOENT\n");
+	TEST_EQUALS(ENOENT, jbuf_get(jb, &hdr2, &mem));
 
 	/* Four  frames */
 	DEBUG_INFO("test frame: Four frames\n");
+	jbuf_flush(jb);
 	hdr.seq = 320;
-	hdr.ts += 20 * 8;
 	err = jbuf_put(jb, &hdr, frv[0]);
 	TEST_ERR(err);
 
 	hdr.seq = 480;
-	hdr.ts += 20 * 8;
 	err = jbuf_put(jb, &hdr, frv[1]);
 	TEST_ERR(err);
 
 	hdr.seq = 490;
-	hdr.ts += 20 * 8;
 	err = jbuf_put(jb, &hdr, frv[2]);
 	TEST_ERR(err);
 
 	hdr.seq = 491;
-	hdr.ts += 20 * 8;
 	err = jbuf_put(jb, &hdr, frv[3]);
 	TEST_ERR(err);
 
-	err = jbuf_get(jb, &hdr2, &mem);
-	TEST_ERR(err);
+	TEST_EQUALS(EAGAIN, jbuf_get(jb, &hdr2, &mem));
 	TEST_EQUALS(320, hdr2.seq);
 	TEST_EQUALS(mem, frv[0]);
 	mem = mem_deref(mem);
 
-	err = jbuf_get(jb, &hdr2, &mem);
-	TEST_ERR(err);
+	TEST_EQUALS(EAGAIN, jbuf_get(jb, &hdr2, &mem));
 	TEST_EQUALS(480, hdr2.seq);
 	TEST_EQUALS(mem, frv[1]);
 	mem = mem_deref(mem);
 
-	err = jbuf_get(jb, &hdr2, &mem);
-	TEST_ERR(err);
+	TEST_EQUALS(0, jbuf_get(jb, &hdr2, &mem));
 	TEST_EQUALS(490, hdr2.seq);
 	TEST_EQUALS(mem, frv[2]);
 	mem = mem_deref(mem);
 
-	err = jbuf_get(jb, &hdr2, &mem);
-	TEST_ERR(err);
-	TEST_EQUALS(491, hdr2.seq);
-	TEST_EQUALS(mem, frv[3]);
-	mem = mem_deref(mem);
-
-	err = jbuf_get(jb, &hdr2, &mem);
-	TEST_EQUALS(ENOENT, err);
-	mem = mem_deref(mem);
+	TEST_EQUALS(ENOENT, jbuf_get(jb, &hdr2, &mem));
 	err = 0;
 
  out:
