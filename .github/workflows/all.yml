@@ -40,5 +40,5 @@ jobs:
 
     - name: retest
       run: |
-        make CCACHE= EXTRA_CFLAGS=-Werror
+        cmake -DCMAKE_C_FLAGS="-Werror" . && make
         ./retest -a

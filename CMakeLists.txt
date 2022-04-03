@@ -65,7 +65,7 @@ endif()
 # Source section
 #
 
-add_executable(${PROJECT_NAME}
+set (SRCS
   src/aac.c
   src/aes.c
   src/aubuf.c
@@ -73,13 +73,11 @@ add_executable(${PROJECT_NAME}
   src/auresamp.c
   src/base64.c
   src/bfcp.c
-  src/combo/dtls_turn.c
   src/conf.c
   src/convert.c
   src/crc32.c
   src/dns.c
   src/dsp.c
-  src/dtls.c
   src/dtmf.c
   src/fir.c
   src/fmt.c
@@ -98,7 +96,6 @@ add_executable(${PROJECT_NAME}
   src/mbuf.c
   src/md5.c
   src/mem.c
-  src/mock/cert.c
   src/mock/fuzz.c
   src/mock/nat.c
   src/mock/pf.c
@@ -127,7 +124,6 @@ add_executable(${PROJECT_NAME}
   src/tcp.c
   src/telev.c
   src/test.c
-  src/tls.c
   src/tmr.c
   src/trace.c
   src/trice.c
@@ -137,5 +133,18 @@ add_executable(${PROJECT_NAME}
   src/vid.c
   src/vidconv.c
   src/websock.c
+)
+
+if(USE_OPENSSL)
+  list(APPEND SRCS
+    src/tls.c
+    src/dtls.c
+    src/combo/dtls_turn.c
+    src/mock/cert.c
+  )
+endif()
+
+add_executable(${PROJECT_NAME}
+  ${SRCS}
 )
 target_link_libraries(${PROJECT_NAME} -lrem -lre -lz -lpthread)
