@@ -48,6 +48,13 @@ int test_aulevel(void)
 		{  {32767, -32768},      0.0  },
 	};
 
+	static struct {
+		int16_t sampv[4];
+		double level;
+	} testv4[] = {
+		{  {32767, -32768, 16384, -16384},  -2.0  },
+	};
+
 	auframe_init(&af, AUFMT_RAW, testv[0].sampv,
 		     ARRAY_SIZE(testv[0].sampv), 48000, 2);
 	TEST_EQUALS(AULEVEL_UNDEF, af.level);
@@ -66,6 +73,15 @@ int test_aulevel(void)
 		level = auframe_level(&af);
 
 		ASSERT_DOUBLE_EQ(testv[i].level, level, PREC);
+	}
+
+	for (size_t i = 0; i < ARRAY_SIZE(testv4); i++) {
+		auframe_init(&af, AUFMT_S16LE, testv4[i].sampv,
+			     ARRAY_SIZE(testv4[i].sampv), 48000, 2);
+
+		level = auframe_level(&af);
+
+		ASSERT_DOUBLE_EQ(testv4[i].level, level, PREC);
 	}
 
 out:
