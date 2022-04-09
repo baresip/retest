@@ -147,4 +147,4 @@ endif()
 add_executable(${PROJECT_NAME}
   ${SRCS}
 )
-target_link_libraries(${PROJECT_NAME} -lrem -lre -lz -lpthread)
+target_link_libraries(${PROJECT_NAME} rem re -lz -lpthread -lm)
