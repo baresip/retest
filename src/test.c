@@ -177,6 +177,7 @@ static const struct test tests[] = {
 	TEST(test_tls_certificate),
 	TEST(test_tls_false_cafile_path),
 	TEST(test_tls_cli_conn_change_cert),
+	TEST(test_tls_session_reuse_tls_v12),
 #endif
 	TEST(test_trice_cand),
 	TEST(test_trice_candpair),

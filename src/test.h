@@ -324,6 +324,8 @@ int test_tls_selfsigned(void);
 int test_tls_certificate(void);
 int test_tls_false_cafile_path(void);
 int test_tls_cli_conn_change_cert(void);
+int test_tls_session_reuse_tls_v12(void);
+int test_tls_session_reuse(void);
 #endif
 
 #ifdef USE_TLS
