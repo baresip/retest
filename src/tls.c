@@ -11,6 +11,7 @@
 #define DEBUG_MODULE "tlstest"
 #define DEBUG_LEVEL 5
 #include <re_dbg.h>
+#include <openssl/ssl.h>
 
 
 struct tls_test {
@@ -118,7 +119,7 @@ static void client_recv_handler(struct mbuf *mb, void *arg)
 	++tt->recv_cli;
 
 	TEST_MEMCMP(payload, strlen(payload),
-		    mbuf_buf(mb), mbuf_get_left(mb));
+			mbuf_buf(mb), mbuf_get_left(mb));
 
  out:
 	check(tt, err);
@@ -195,11 +196,13 @@ static void server_conn_handler(const struct sa *peer, void *arg)
 }
 
 
-static int test_tls_base(enum tls_keytype keytype, bool add_ca, int exp_verr)
+static int test_tls_base(enum tls_keytype keytype, bool add_ca, int exp_verr,
+	bool test_sess_reuse, int forced_version)
 {
 	struct tls_test tt;
 	struct sa srv;
 	int err, verr;
+	unsigned long int i, rounds = 1 + (unsigned long int) test_sess_reuse;
 
 	memset(&tt, 0, sizeof(tt));
 
@@ -212,6 +215,13 @@ static int test_tls_base(enum tls_keytype keytype, bool add_ca, int exp_verr)
 	err = tls_alloc(&tt.tls, TLS_METHOD_SSLV23, NULL, NULL);
 	if (err)
 		goto out;
+
+	if (forced_version >= 0) {
+		TEST_EQUALS(0,
+			tls_set_min_proto_version(tt.tls, forced_version));
+		TEST_EQUALS(0,
+			tls_set_max_proto_version(tt.tls, forced_version));
+	}
 
 	switch (keytype) {
 
@@ -253,38 +263,58 @@ static int test_tls_base(enum tls_keytype keytype, bool add_ca, int exp_verr)
 	if (err)
 		goto out;
 
-	err = tcp_connect(&tt.tc_cli, &srv, client_estab_handler,
-			  client_recv_handler, client_close_handler, &tt);
+	err = tls_set_session_reuse(tt.tls, test_sess_reuse);
 	if (err)
 		goto out;
 
-	err = tls_start_tcp(&tt.sc_cli, tt.tls, tt.tc_cli, 0);
-	if (err)
-		goto out;
-
-	if (exp_verr == 0) {
-
-		err = tls_set_verify_server(tt.sc_cli, "127.0.0.1");
+	for (i = 0; i < rounds; i++) {
+		tt.send_done_cli = false;
+		err = tcp_connect(&tt.tc_cli, &srv, client_estab_handler,
+			client_recv_handler, client_close_handler, &tt);
 		if (err)
 			goto out;
+
+		err = tls_start_tcp(&tt.sc_cli, tt.tls, tt.tc_cli, 0);
+		if (err)
+			goto out;
+
+		if (exp_verr == 0) {
+
+			err = tls_set_verify_server(tt.sc_cli, "127.0.0.1");
+			if (err)
+				goto out;
+		}
+
+		err = re_main_timeout(800);
+		if (err)
+			goto out;
+
+		if (tt.err) {
+			err = tt.err;
+			goto out;
+		}
+
+		TEST_EQUALS(true, tt.estab_cli);
+		TEST_EQUALS(true, tt.estab_srv);
+		TEST_EQUALS(1, tt.recv_cli);
+		TEST_EQUALS(1+i, tt.recv_srv);
+
+		verr = tls_peer_verify(tt.sc_cli);
+		TEST_EQUALS(exp_verr, verr);
+
+		if (test_sess_reuse) {
+			TEST_EQUALS(MIN(i, 1),
+				MIN(1, (unsigned long int)
+					tls_session_reused(tt.sc_cli)));
+		}
+
+		tt.sc_cli = mem_deref(tt.sc_cli);
+		tt.sc_srv = mem_deref(tt.sc_srv);
+		tt.tc_cli = mem_deref(tt.tc_cli);
+		tt.tc_srv = mem_deref(tt.tc_srv);
+		tt.estab_cli = false;
+		tt.recv_cli = 0;
 	}
-
-	err = re_main_timeout(800);
-	if (err)
-		goto out;
-
-	if (tt.err) {
-		err = tt.err;
-		goto out;
-	}
-
-	TEST_EQUALS(true, tt.estab_cli);
-	TEST_EQUALS(true, tt.estab_srv);
-	TEST_EQUALS(1, tt.recv_cli);
-	TEST_EQUALS(1, tt.recv_srv);
-
-	verr = tls_peer_verify(tt.sc_cli);
-	TEST_EQUALS(exp_verr, verr);
 
  out:
 	/* NOTE: close context first */
@@ -300,9 +330,23 @@ static int test_tls_base(enum tls_keytype keytype, bool add_ca, int exp_verr)
 }
 
 
+int test_tls_session_reuse_tls_v12(void)
+{
+	return test_tls_base(TLS_KEYTYPE_RSA, false, EAUTH, true,
+		TLS1_2_VERSION);
+}
+
+
+/* TLS v1.3 session reuse is not yet supported by libre */
+int test_tls_session_reuse(void)
+{
+	return test_tls_base(TLS_KEYTYPE_RSA, false, EAUTH, true, -1);
+}
+
+
 int test_tls(void)
 {
-	return test_tls_base(TLS_KEYTYPE_RSA, false, EAUTH);
+	return test_tls_base(TLS_KEYTYPE_RSA, false, EAUTH, false, -1);
 }
 
 
@@ -310,11 +354,11 @@ int test_tls_ec(void)
 {
 	int err;
 
-	err = test_tls_base(TLS_KEYTYPE_EC, false, EAUTH);
+	err = test_tls_base(TLS_KEYTYPE_EC, false, EAUTH, false, -1);
 	if (err)
 		return err;
 
-	err = test_tls_base(TLS_KEYTYPE_EC, true, 0);
+	err = test_tls_base(TLS_KEYTYPE_EC, true, 0, false, -1);
 	if (err)
 		return err;
 
