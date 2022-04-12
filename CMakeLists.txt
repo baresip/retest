@@ -67,7 +67,7 @@ endif()
 # Source section
 #
 
-set (SRCS
+set(SRCS
   src/aac.c
   src/aes.c
   src/aubuf.c
