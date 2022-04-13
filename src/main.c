@@ -4,9 +4,6 @@
  * Copyright (C) 2010 Creytiv.com
  */
 #include <stdlib.h>
-#ifdef SOLARIS
-#define __EXTENSIONS__ 1
-#endif
 #include <stdio.h>
 #include <signal.h>
 #include <string.h>
