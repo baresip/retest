@@ -465,23 +465,6 @@ int tcp_server_alloc(struct tcp_server **srvp, enum behavior behavior);
 
 
 /*
- * PCP Server
- */
-
-struct pcpserver {
-	struct udp_sock *us;
-	struct sa addr;
-
-	/* Server behaviour */
-	enum pcp_result result;
-
-	uint32_t n_req;
-};
-
-int pcpserver_alloc(struct pcpserver **srvp, enum pcp_result result);
-
-
-/*
  * SIP Server
  */
 
