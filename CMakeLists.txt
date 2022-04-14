@@ -110,6 +110,7 @@ set(SRCS
   src/mqueue.c
   src/net.c
   src/odict.c
+  src/pcp.c
   src/remain.c
   src/rtcp.c
   src/rtmp.c
