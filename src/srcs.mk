@@ -37,6 +37,7 @@ SRCS	+= mem.c
 SRCS	+= mqueue.c
 SRCS	+= net.c
 SRCS	+= odict.c
+SRCS	+= pcp.c
 SRCS	+= remain.c
 SRCS	+= rtmp.c
 SRCS	+= rtp.c

@@ -231,6 +231,7 @@ int test_net_if(void);
 int test_net_dst_source_addr_get(void);
 int test_odict(void);
 int test_odict_array(void);
+int test_pcp(void);
 int test_trice_cand(void);
 int test_trice_candpair(void);
 int test_trice_checklist(void);
@@ -461,6 +462,23 @@ struct tcp_server {
 };
 
 int tcp_server_alloc(struct tcp_server **srvp, enum behavior behavior);
+
+
+/*
+ * PCP Server
+ */
+
+struct pcpserver {
+	struct udp_sock *us;
+	struct sa addr;
+
+	/* Server behaviour */
+	enum pcp_result result;
+
+	uint32_t n_req;
+};
+
+int pcpserver_alloc(struct pcpserver **srvp, enum pcp_result result);
 
 
 /*
