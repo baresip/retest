@@ -745,7 +745,7 @@ int test_multithread(void)
 		threadv[i].test = &tests[ti];
 		threadv[i].err = -1;           /* error not set */
 
-		err = thread_create(&threadv[i].tid,
+		err = thrd_create(&threadv[i].tid,
 				     thread_handler, (void *)&threadv[i]);
 		if (err) {
 			DEBUG_WARNING("thread_create failed (%m)\n", err);
@@ -757,7 +757,7 @@ int test_multithread(void)
 
 	for (i=0; i<ARRAY_SIZE(threadv); i++) {
 
-		thread_join(threadv[i].tid, NULL);
+		thrd_join(threadv[i].tid, NULL);
 	}
 
 	for (i=0; i<ARRAY_SIZE(threadv); i++) {
