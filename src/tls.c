@@ -23,6 +23,7 @@ struct tls_test {
 	enum tls_keytype keytype;
 	bool estab_cli;
 	bool estab_srv;
+	bool send_done_cli;
 	size_t recv_cli;
 	size_t recv_srv;
 	int err;
@@ -47,7 +48,7 @@ static void can_send(struct tls_test *tt)
 	struct mbuf *mb;
 	int err = 0;
 
-	if (!tt->estab_cli || !tt->estab_srv)
+	if (!tt->estab_cli || !tt->estab_srv || tt->send_done_cli)
 		return;
 
 	mb = mbuf_alloc(256);
@@ -62,6 +63,9 @@ static void can_send(struct tls_test *tt)
 
 	mb->pos = 0;
 	err = tcp_send(tt->tc_cli, mb);
+
+	if (!err)
+		tt->send_done_cli = true;
 
  out:
 	mem_deref(mb);
