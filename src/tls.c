@@ -3,6 +3,7 @@
  *
  * Copyright (C) 2010 Creytiv.com
  */
+#include <openssl/ssl.h>
 #include <string.h>
 #include <re.h>
 #include "test.h"
@@ -11,7 +12,6 @@
 #define DEBUG_MODULE "tlstest"
 #define DEBUG_LEVEL 5
 #include <re_dbg.h>
-#include <openssl/ssl.h>
 
 
 struct tls_test {
