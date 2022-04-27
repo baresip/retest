@@ -156,4 +156,5 @@ endif()
 #
 
 add_executable(${PROJECT_NAME} ${SRCS})
-target_link_libraries(${PROJECT_NAME} rem re -lz -lpthread -lm)
+target_link_libraries(${PROJECT_NAME} ${OPENSSL_LIBRARIES} rem re -lz -lpthread -lm)
+target_include_directories(${PROJECT_NAME} PRIVATE ${OPENSSL_INCLUDE_DIR})
