@@ -99,6 +99,7 @@ static int test_aubuf_auframe(void)
 	struct aubuf *ab = NULL;
 	float sampv_in[160];
 	float sampv_out[160];
+	uint64_t dt;
 
 	struct auframe af_in;
 	struct auframe af_out;
@@ -109,48 +110,60 @@ static int test_aubuf_auframe(void)
 		sampv_in[i] = (float)i;
 	memset(sampv_out, 0, sizeof(sampv_out));
 
-	err = aubuf_alloc(&ab, 320, 0);
+	err = aubuf_alloc(&ab, 80 * sizeof(float), 0);
 	TEST_ERR(err);
 
 	TEST_EQUALS(0, aubuf_cur_size(ab));
 
+	/* write one frame */
 	auframe_init(&af_in, AUFMT_FLOAT, sampv_in, 80, 48000, 2);
 	af_in.timestamp = 0;
 
 	err |= aubuf_write_auframe(ab, &af_in);
 
+	dt = 80 * AUDIO_TIMEBASE / (af_in.srate * af_in.ch);
 	af_in.sampv = &sampv_in[80];
 	af_in.sampc = 80;
-	af_in.timestamp = 80 * AUDIO_TIMEBASE / (af_in.srate * af_in.ch);
+	af_in.timestamp = dt;
+
+	/* write one frame (drops first during startup) */
 	err |= aubuf_write_auframe(ab, &af_in);
 	TEST_ERR(err);
+	TEST_EQUALS(80 * sizeof(float), aubuf_cur_size(ab));
 
-	TEST_EQUALS(160 * sizeof(float), aubuf_cur_size(ab));
-
+	/* read half frame */
 	af_out.fmt = AUFMT_FLOAT;
 	af_out.sampv = sampv_out;
 	af_out.sampc = 40;
-	aubuf_read_auframe(ab, &af_out);
-	TEST_EQUALS(120 * sizeof(float), aubuf_cur_size(ab));
-	TEST_EQUALS(0, af_out.timestamp);
 
+	aubuf_read_auframe(ab, &af_out);
+	TEST_EQUALS(40 * sizeof(float), aubuf_cur_size(ab));
+	TEST_EQUALS(dt, af_out.timestamp);
+
+	/* write another frame (which is appended now) */
+	af_in.timestamp += dt;
+	err |= aubuf_write_auframe(ab, &af_in);
+	TEST_EQUALS(120 * sizeof(float), aubuf_cur_size(ab));
+
+	/* read half frame */
 	af_out.sampv = &sampv_out[40];
 	af_out.sampc = 40;
 	aubuf_read_auframe(ab, &af_out);
 	TEST_EQUALS(80 * sizeof(float), aubuf_cur_size(ab));
-	TEST_EQUALS(40 * AUDIO_TIMEBASE / (af_in.srate * af_in.ch),
-		    af_out.timestamp);
+	TEST_EQUALS(dt + dt / 2, af_out.timestamp);
 
+	/* read whole frame */
 	af_out.sampv = &sampv_out[80];
 	af_out.sampc = 80;
 	aubuf_read_auframe(ab, &af_out);
 
 	TEST_EQUALS(2, af_out.ch);
 	TEST_EQUALS(48000, af_out.srate);
-	TEST_EQUALS(80 * AUDIO_TIMEBASE / (af_in.srate * af_in.ch),
-		    af_out.timestamp);
+	TEST_EQUALS(2*dt, af_out.timestamp);
 
-	TEST_MEMCMP(sampv_in, sizeof(sampv_in), sampv_out, sizeof(sampv_out));
+	TEST_MEMCMP(sampv_in + 80,
+		    sizeof(sampv_in) - 80 * sizeof(float),
+		    sampv_out, sizeof(sampv_out) - 80 * sizeof(float));
 	TEST_EQUALS(0, aubuf_cur_size(ab));
 
  out:
@@ -192,7 +205,7 @@ static int test_aubuf_sort_auframe(void)
 		 .timestamp = 0
 	};
 
-	err = aubuf_alloc(&ab, 160, 0);
+	err = aubuf_alloc(&ab, 3*sizeof(sampv_in), 0);
 	TEST_ERR(err);
 
 	/* Write auframes sorted */
@@ -235,6 +248,13 @@ static int test_aubuf_resize(void)
 {
 	struct aubuf *ab      = NULL;
 	int16_t sampv_in[160] = {1};
+	int16_t sampv_out[160];
+	struct auframe af_out = {
+		 .fmt	    = AUFMT_S16LE,
+		 .sampv	    = sampv_out,
+		 .sampc	    = 80,
+		 .timestamp = 0
+	};
 	int err;
 
 	err = aubuf_alloc(&ab, 160, 160);
@@ -255,7 +275,9 @@ static int test_aubuf_resize(void)
 
 	TEST_EQUALS(0, aubuf_cur_size(ab));
 
-	err = aubuf_write_samp(ab, sampv_in, 80);
+	err  = aubuf_write_samp(ab, sampv_in, 80);
+	aubuf_read_auframe(ab, &af_out);
+	err |= aubuf_write_samp(ab, sampv_in, 80);
 	TEST_ERR(err);
 
 	err = aubuf_write_samp(ab, sampv_in, 80);
