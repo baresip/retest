@@ -110,7 +110,7 @@ static int test_aubuf_auframe(void)
 		sampv_in[i] = (float)i;
 	memset(sampv_out, 0, sizeof(sampv_out));
 
-	err = aubuf_alloc(&ab, 80 * sizeof(float), 0);
+	err = aubuf_alloc(&ab, 80 * sizeof(float), 4 * 80 * sizeof(float));
 	TEST_ERR(err);
 
 	TEST_EQUALS(0, aubuf_cur_size(ab));
