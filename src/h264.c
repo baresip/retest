@@ -6,6 +6,7 @@
 
 #include <string.h>
 #include <re.h>
+#include <re_h264.h>
 #include <rem.h>
 #include "test.h"
 
@@ -241,7 +242,7 @@ int test_h264_sps(void)
 		if (err)
 			return err;
 
-		h264_sps_resolution(&sps, &size);
+		h264_sps_resolution(&sps, &size.w, &size.h);
 
 		TEST_EQUALS(ref.profile_idc, sps.profile_idc);
 
