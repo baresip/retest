@@ -129,6 +129,7 @@ set(SRCS
   src/tcp.c
   src/telev.c
   src/test.c
+  src/thread.c
   src/tmr.c
   src/trace.c
   src/trice.c
