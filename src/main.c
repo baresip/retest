@@ -248,14 +248,8 @@ int main(int argc, char *argv[])
 	}
 
 	if (do_thread) {
-#ifdef HAVE_PTHREAD
 		err = test_multithread();
 		TEST_ERR(err);
-#else
-		(void)re_fprintf(stderr, "no support for threads\n");
-		err = ENOSYS;
-		goto out;
-#endif
 	}
 
  out:

@@ -677,7 +677,6 @@ int test_reg(const char *name, bool verbose)
 }
 
 
-#ifdef HAVE_PTHREAD
 struct thread {
 	const struct test *test;
 	thrd_t tid;
@@ -777,7 +776,6 @@ int test_multithread(void)
 
 	return err;
 }
-#endif
 
 
 void test_listcases(void)
