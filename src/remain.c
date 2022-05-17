@@ -63,6 +63,10 @@ static int thread_handler(void *arg)
 		return 0;
 	}
 
+#ifndef WIN32
+	err = fd_setsize(-1);
+	TEST_ERR(err);
+#endif
 	err = re_thread_init();
 	TEST_EQUALS(EALREADY, err);
 
