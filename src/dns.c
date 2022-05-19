@@ -368,7 +368,7 @@ int test_dns_integration(void)
 	err = dns_server_alloc(&srv, false);
 	TEST_ERR(err);
 
-	err = dns_server_add_a(srv, "test1.example.net", 0x7f000001);
+	err = dns_server_add_a(srv, "test1.example.net", 0x7f000001, 1);
 	TEST_ERR(err);
 
 	err = dnsc_alloc(&data.dnsc, NULL, &srv->addr, 1);
@@ -378,18 +378,12 @@ int test_dns_integration(void)
 	TEST_ERR(err);
 
 	/* Test DNS Cache */
-	srv = mem_deref(srv);
+	dns_server_flush(srv);
 
-	err = dns_server_alloc(&srv, false);
+	err = dns_server_add_a(srv, "test1.example.net", 0x7f000002, 1);
 	TEST_ERR(err);
 
-	err = dnsc_srv_set(data.dnsc, &srv->addr, 1);
-	TEST_ERR(err);
-
-	err = dns_server_add_a(srv, "test1.example.net", 0x7f000002);
-	TEST_ERR(err);
-
-	err = dns_server_add_a(srv, "test2.example.net", 0x7f000003);
+	err = dns_server_add_a(srv, "test2.example.net", 0x7f000003, 1);
 	TEST_ERR(err);
 
 	err = check_dns(&data, "test1.example.net", 0x7f000001, false);
@@ -397,6 +391,13 @@ int test_dns_integration(void)
 
 	/* Check another resource record afterwards */
 	err = check_dns(&data, "test2.example.net", 0x7f000003, true);
+	TEST_ERR(err);
+
+	sys_msleep(1000);   /* wait until TTL timer expires */
+	re_main_timeout(1); /* execute tmr callbacks */
+
+	/* Check expired TTL */
+	err = check_dns(&data, "test1.example.net", 0x7f000002, true);
 	TEST_ERR(err);
 
 out:

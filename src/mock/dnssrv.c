@@ -26,9 +26,9 @@ static void dns_server_match(struct dns_server *srv, struct list *rrl,
 	while (le) {
 
 		struct dnsrr *rr = le->data;
-		le = le->next;
+		le		 = le->next;
 
-		if (type == rr->type && 0==str_casecmp(name, rr->name)) {
+		if (type == rr->type && 0 == str_casecmp(name, rr->name)) {
 
 			if (!rr0)
 				rr0 = rr;
@@ -45,8 +45,8 @@ static void dns_server_match(struct dns_server *srv, struct list *rrl,
 }
 
 
-static void decode_dns_query(struct dns_server *srv,
-			     const struct sa *src, struct mbuf *mb)
+static void decode_dns_query(struct dns_server *srv, const struct sa *src,
+			     struct mbuf *mb)
 {
 	struct list rrl = LIST_INIT;
 	struct dnshdr hdr;
@@ -75,20 +75,20 @@ static void decode_dns_query(struct dns_server *srv,
 		goto out;
 	}
 
-	type     = ntohs(mbuf_read_u16(mb));
+	type	 = ntohs(mbuf_read_u16(mb));
 	dnsclass = ntohs(mbuf_read_u16(mb));
 
-	DEBUG_INFO("dnssrv: type=%s query-name='%s'\n",
-		   dns_rr_typename(type), qname);
+	DEBUG_INFO("dnssrv: type=%s query-name='%s'\n", dns_rr_typename(type),
+		   qname);
 
 	if (dnsclass == DNS_CLASS_IN) {
 		dns_server_match(srv, &rrl, qname, type);
 	}
 
-	hdr.qr    = true;
-	hdr.tc    = false;
+	hdr.qr	  = true;
+	hdr.tc	  = false;
 	hdr.rcode = DNS_RCODE_OK;
-	hdr.nq    = 1;
+	hdr.nq	  = 1;
 	hdr.nans  = list_count(&rrl);
 
 	mb->pos = start;
@@ -99,8 +99,8 @@ static void decode_dns_query(struct dns_server *srv,
 
 	mb->pos = end;
 
-	DEBUG_INFO("dnssrv: @@ found %u answers for %s\n",
-		   list_count(&rrl), qname);
+	DEBUG_INFO("dnssrv: @@ found %u answers for %s\n", list_count(&rrl),
+		   qname);
 
 	for (le = rrl.head; le; le = le->next) {
 		struct dnsrr *rr = le->data;
@@ -114,7 +114,7 @@ static void decode_dns_query(struct dns_server *srv,
 
 	(void)udp_send(srv->us, src, mb);
 
- out:
+out:
 	list_clear(&rrl);
 	mem_deref(qname);
 }
@@ -134,6 +134,12 @@ static void destructor(void *arg)
 
 	list_flush(&srv->rrl);
 	mem_deref(srv->us);
+}
+
+
+void dns_server_flush(struct dns_server *srv)
+{
+	list_flush(&srv->rrl);
 }
 
 
@@ -163,7 +169,7 @@ int dns_server_alloc(struct dns_server **srvp, bool rotate)
 
 	srv->rotate = rotate;
 
- out:
+out:
 	if (err)
 		mem_deref(srv);
 	else
@@ -173,7 +179,8 @@ int dns_server_alloc(struct dns_server **srvp, bool rotate)
 }
 
 
-int dns_server_add_a(struct dns_server *srv, const char *name, uint32_t addr)
+int dns_server_add_a(struct dns_server *srv, const char *name, uint32_t addr,
+		     int64_t ttl)
 {
 	struct dnsrr *rr;
 	int err;
@@ -189,16 +196,16 @@ int dns_server_add_a(struct dns_server *srv, const char *name, uint32_t addr)
 	if (err)
 		goto out;
 
-	rr->type = DNS_TYPE_A;
+	rr->type     = DNS_TYPE_A;
 	rr->dnsclass = DNS_CLASS_IN;
-	rr->ttl = 3600;
-	rr->rdlen = 0;
+	rr->ttl	     = ttl;
+	rr->rdlen    = 0;
 
 	rr->rdata.a.addr = addr;
 
 	list_append(&srv->rrl, &rr->le, rr);
 
- out:
+out:
 	if (err)
 		mem_deref(rr);
 
@@ -223,16 +230,16 @@ int dns_server_add_aaaa(struct dns_server *srv, const char *name,
 	if (err)
 		goto out;
 
-	rr->type = DNS_TYPE_AAAA;
+	rr->type     = DNS_TYPE_AAAA;
 	rr->dnsclass = DNS_CLASS_IN;
-	rr->ttl = 3600;
-	rr->rdlen = 0;
+	rr->ttl	     = 3600;
+	rr->rdlen    = 0;
 
 	memcpy(rr->rdata.aaaa.addr, addr, 16);
 
 	list_append(&srv->rrl, &rr->le, rr);
 
- out:
+out:
 	if (err)
 		mem_deref(rr);
 
@@ -240,9 +247,8 @@ int dns_server_add_aaaa(struct dns_server *srv, const char *name,
 }
 
 
-int dns_server_add_srv(struct dns_server *srv, const char *name,
-		       uint16_t pri, uint16_t weight, uint16_t port,
-		       const char *target)
+int dns_server_add_srv(struct dns_server *srv, const char *name, uint16_t pri,
+		       uint16_t weight, uint16_t port, const char *target)
 {
 	struct dnsrr *rr;
 	int err;
@@ -258,19 +264,19 @@ int dns_server_add_srv(struct dns_server *srv, const char *name,
 	if (err)
 		goto out;
 
-	rr->type = DNS_TYPE_SRV;
+	rr->type     = DNS_TYPE_SRV;
 	rr->dnsclass = DNS_CLASS_IN;
-	rr->ttl = 3600;
-	rr->rdlen = 0;
+	rr->ttl	     = 3600;
+	rr->rdlen    = 0;
 
-	rr->rdata.srv.pri = pri;
+	rr->rdata.srv.pri    = pri;
 	rr->rdata.srv.weight = weight;
-	rr->rdata.srv.port = port;
+	rr->rdata.srv.port   = port;
 	str_dup(&rr->rdata.srv.target, target);
 
 	list_append(&srv->rrl, &rr->le, rr);
 
- out:
+out:
 	if (err)
 		mem_deref(rr);
 
