@@ -14,7 +14,9 @@
 #endif
 #include <string.h>
 #include <stdlib.h>
+#ifdef HAVE_SYS_TIME_H
 #include <sys/time.h>
+#endif
 #include <math.h>
 #include <re.h>
 #include "test.h"
@@ -217,6 +219,7 @@ static const struct test tests_integration[] = {
 #endif
 	TEST(test_tmr_jiffies),
 	TEST(test_tmr_jiffies_usec),
+	TEST(test_dns_integration),
 };
 
 

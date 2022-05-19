@@ -9,7 +9,7 @@
 
 
 #define DEBUG_MODULE "dns"
-#define DEBUG_LEVEL 5
+#define DEBUG_LEVEL 6
 #include <re_dbg.h>
 
 
@@ -290,6 +290,113 @@ int test_dns_dname(void)
 
  out:
 	mem_deref(mb);
+
+	return err;
+}
+
+struct test_dns {
+	int err;
+	struct sa addr;
+};
+
+static void query_handler(int err, const struct dnshdr *hdr, struct list *ansl,
+			  struct list *authl, struct list *addl, void *arg)
+{
+	struct dnsrr *rr      = list_ledata(list_head(ansl));
+	struct test_dns *data = arg;
+	struct sa sa;
+	(void)hdr;
+	(void)authl;
+	(void)addl;
+	(void)arg;
+
+	if (!data)
+		return;
+
+	TEST_ERR(err);
+	TEST_EQUALS(DNS_TYPE_A, rr->type);
+	TEST_EQUALS(sa_in(&data->addr), rr->rdata.a.addr);
+
+	sa_set_in(&sa, rr->rdata.a.addr, 0);
+
+	DEBUG_INFO("%s. IN A %j\n", rr->name, &sa);
+
+out:
+	data->err = err;
+	re_cancel();
+}
+
+
+int test_dns_integration(void)
+{
+	struct dns_server *srv = NULL;
+	struct dnsc *dnsc = NULL;
+	struct dns_query *q = NULL;
+	struct test_dns data;
+	int err;
+	
+
+	sa_init(&data.addr, AF_INET);
+	sa_set_str(&data.addr, "127.0.0.1", 0);
+
+	err = dns_server_alloc(&srv, false);
+	TEST_ERR(err);
+
+	err = dns_server_add_a(srv, "test1.example.net", sa_in(&data.addr));
+	TEST_ERR(err);
+
+	err = dnsc_alloc(&dnsc, NULL, &srv->addr, 1);
+	TEST_ERR(err);
+
+	err = dnsc_query(&q, dnsc, "test1.example.net", DNS_TYPE_A,
+			 DNS_CLASS_IN, true, query_handler, &data);
+
+	data.err = ENODATA;
+	err = re_main_timeout(100);
+	TEST_ERR(err);
+
+	/* check query handler result */
+	err = data.err;
+	TEST_ERR(err);
+
+	q = mem_deref(q); 
+
+	/* Test DNS Cache */
+	srv = mem_deref(srv);
+
+	err = dns_server_alloc(&srv, false);
+	TEST_ERR(err);
+
+	err = dnsc_srv_set(dnsc, &srv->addr, 1);
+	TEST_ERR(err);
+
+	err = dns_server_add_a(srv, "test1.example.net", 0x7f000002);
+	TEST_ERR(err);
+
+	err = dns_server_add_a(srv, "test2.example.net", 0x7f000003);
+	TEST_ERR(err);
+
+	data.err = ENODATA;
+	err = dnsc_query(&q, dnsc, "test1.example.net", DNS_TYPE_A,
+			 DNS_CLASS_IN, true, query_handler, &data);
+	TEST_ERR(err);
+	err = data.err;
+	TEST_ERR(err);
+
+	data.err = ENODATA;
+	sa_set_in(&data.addr, 0x7f000003, 0);
+	err = dnsc_query(&q, dnsc, "test2.example.net", DNS_TYPE_A,
+			 DNS_CLASS_IN, true, query_handler, &data);
+	err = re_main_timeout(100);
+	TEST_ERR(err);
+
+	err = data.err;
+	TEST_ERR(err);
+
+out:
+	mem_deref(q);
+	mem_deref(dnsc);
+	mem_deref(srv);
 
 	return err;
 }
