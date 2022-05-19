@@ -9,7 +9,7 @@
 
 
 #define DEBUG_MODULE "dns"
-#define DEBUG_LEVEL 6
+#define DEBUG_LEVEL 5
 #include <re_dbg.h>
 
 
@@ -294,10 +294,13 @@ int test_dns_dname(void)
 	return err;
 }
 
+
 struct test_dns {
 	int err;
-	struct sa addr;
+	uint32_t addr;
+	struct dnsc *dnsc;
 };
+
 
 static void query_handler(int err, const struct dnshdr *hdr, struct list *ansl,
 			  struct list *authl, struct list *addl, void *arg)
@@ -315,7 +318,7 @@ static void query_handler(int err, const struct dnshdr *hdr, struct list *ansl,
 
 	TEST_ERR(err);
 	TEST_EQUALS(DNS_TYPE_A, rr->type);
-	TEST_EQUALS(sa_in(&data->addr), rr->rdata.a.addr);
+	TEST_EQUALS(data->addr, rr->rdata.a.addr);
 
 	sa_set_in(&sa, rr->rdata.a.addr, 0);
 
@@ -327,39 +330,52 @@ out:
 }
 
 
+static int check_dns(struct test_dns *data, const char *name, uint32_t addr,
+		     bool main)
+{
+	struct dns_query *q = NULL;
+	int err;
+
+	data->addr = addr;
+	data->err  = ENODATA;
+
+	err = dnsc_query(&q, data->dnsc, name, DNS_TYPE_A, DNS_CLASS_IN, true,
+			 query_handler, data);
+	TEST_ERR(err);
+
+	if (main) {
+		err = re_main_timeout(100);
+		TEST_ERR(err);
+	}
+
+	/* check query handler result */
+	err = data->err;
+	TEST_ERR(err);
+
+out:
+	q = mem_deref(q);
+	return err;
+}
+
+
 int test_dns_integration(void)
 {
 	struct dns_server *srv = NULL;
-	struct dnsc *dnsc = NULL;
-	struct dns_query *q = NULL;
 	struct test_dns data;
 	int err;
-	
 
-	sa_init(&data.addr, AF_INET);
-	sa_set_str(&data.addr, "127.0.0.1", 0);
 
 	err = dns_server_alloc(&srv, false);
 	TEST_ERR(err);
 
-	err = dns_server_add_a(srv, "test1.example.net", sa_in(&data.addr));
+	err = dns_server_add_a(srv, "test1.example.net", 0x7f000001);
 	TEST_ERR(err);
 
-	err = dnsc_alloc(&dnsc, NULL, &srv->addr, 1);
+	err = dnsc_alloc(&data.dnsc, NULL, &srv->addr, 1);
 	TEST_ERR(err);
 
-	err = dnsc_query(&q, dnsc, "test1.example.net", DNS_TYPE_A,
-			 DNS_CLASS_IN, true, query_handler, &data);
-
-	data.err = ENODATA;
-	err = re_main_timeout(100);
+	err = check_dns(&data, "test1.example.net", 0x7f000001, true);
 	TEST_ERR(err);
-
-	/* check query handler result */
-	err = data.err;
-	TEST_ERR(err);
-
-	q = mem_deref(q); 
 
 	/* Test DNS Cache */
 	srv = mem_deref(srv);
@@ -367,7 +383,7 @@ int test_dns_integration(void)
 	err = dns_server_alloc(&srv, false);
 	TEST_ERR(err);
 
-	err = dnsc_srv_set(dnsc, &srv->addr, 1);
+	err = dnsc_srv_set(data.dnsc, &srv->addr, 1);
 	TEST_ERR(err);
 
 	err = dns_server_add_a(srv, "test1.example.net", 0x7f000002);
@@ -376,26 +392,15 @@ int test_dns_integration(void)
 	err = dns_server_add_a(srv, "test2.example.net", 0x7f000003);
 	TEST_ERR(err);
 
-	data.err = ENODATA;
-	err = dnsc_query(&q, dnsc, "test1.example.net", DNS_TYPE_A,
-			 DNS_CLASS_IN, true, query_handler, &data);
-	TEST_ERR(err);
-	err = data.err;
+	err = check_dns(&data, "test1.example.net", 0x7f000001, false);
 	TEST_ERR(err);
 
-	data.err = ENODATA;
-	sa_set_in(&data.addr, 0x7f000003, 0);
-	err = dnsc_query(&q, dnsc, "test2.example.net", DNS_TYPE_A,
-			 DNS_CLASS_IN, true, query_handler, &data);
-	err = re_main_timeout(100);
-	TEST_ERR(err);
-
-	err = data.err;
+	/* Check another resource record afterwards */
+	err = check_dns(&data, "test2.example.net", 0x7f000003, true);
 	TEST_ERR(err);
 
 out:
-	mem_deref(q);
-	mem_deref(dnsc);
+	mem_deref(data.dnsc);
 	mem_deref(srv);
 
 	return err;
