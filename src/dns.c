@@ -313,8 +313,10 @@ static void query_handler(int err, const struct dnshdr *hdr, struct list *ansl,
 	(void)addl;
 	(void)arg;
 
-	if (!data)
+	if (!data || !rr) {
+		re_cancel();
 		return;
+	}
 
 	TEST_ERR(err);
 	TEST_EQUALS(DNS_TYPE_A, rr->type);
@@ -350,10 +352,9 @@ static int check_dns(struct test_dns *data, const char *name, uint32_t addr,
 
 	/* check query handler result */
 	err = data->err;
-	TEST_ERR(err);
 
 out:
-	q = mem_deref(q);
+	mem_deref(q);
 	return err;
 }
 
@@ -362,6 +363,7 @@ int test_dns_integration(void)
 {
 	struct dns_server *srv = NULL;
 	struct test_dns data;
+	struct dns_query *q;
 	int err;
 
 
@@ -377,7 +379,10 @@ int test_dns_integration(void)
 	err = check_dns(&data, "test1.example.net", 0x7f000001, true);
 	TEST_ERR(err);
 
-	/* Test DNS Cache */
+	/* Test does not exist */
+	err = check_dns(&data, "test2.example.net", 0x7f000001, true);
+	TEST_EQUALS(ENODATA, err);
+
 	dns_server_flush(srv);
 
 	err = dns_server_add_a(srv, "test1.example.net", 0x7f000002, 1);
@@ -386,18 +391,47 @@ int test_dns_integration(void)
 	err = dns_server_add_a(srv, "test2.example.net", 0x7f000003, 1);
 	TEST_ERR(err);
 
-	err = check_dns(&data, "test1.example.net", 0x7f000001, false);
+	err = dns_server_add_a(srv, "test3.example.net", 0x7f000004, 1);
 	TEST_ERR(err);
 
-	/* Check another resource record afterwards */
+	/* Test DNS Cache */
+	err = check_dns(&data, "test1.example.net", 0x7f000001, true);
+	TEST_ERR(err);
+
 	err = check_dns(&data, "test2.example.net", 0x7f000003, true);
 	TEST_ERR(err);
 
-	sys_msleep(1000);   /* wait until TTL timer expires */
+	err = check_dns(&data, "test2.example.net", 0x7f000003, true);
+	TEST_ERR(err);
+
+	/* Check another resource record afterwards */
+	err = check_dns(&data, "test3.example.net", 0x7f000004, true);
+	TEST_ERR(err);
+
+	sys_msleep(100);    /* wait until TTL timer expires */
 	re_main_timeout(1); /* execute tmr callbacks */
 
 	/* Check expired TTL */
 	err = check_dns(&data, "test1.example.net", 0x7f000002, true);
+	TEST_ERR(err);
+
+	/* Test explicit DNS cache flush */
+	dns_server_flush(srv);
+	err = dns_server_add_a(srv, "test1.example.net", 0x7f000005, 1);
+	TEST_ERR(err);
+	dnsc_cache_flush(data.dnsc);
+	err = check_dns(&data, "test1.example.net", 0x7f000005, true);
+	TEST_ERR(err);
+
+	/* Test early query cancellation */
+	err = dnsc_query(&q, data.dnsc, "test1.example.net", DNS_TYPE_A,
+			 DNS_CLASS_IN, true, query_handler, &data);
+	TEST_ERR(err);
+	mem_deref(q);
+
+	/* Leave query open for cleanup test */
+	err = dnsc_query(&q, data.dnsc, "test1.example.net", DNS_TYPE_A,
+			 DNS_CLASS_IN, true, query_handler, &data);
 	TEST_ERR(err);
 
 out:
