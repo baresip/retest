@@ -319,6 +319,7 @@ static void query_handler(int err, const struct dnshdr *hdr, struct list *ansl,
 	}
 
 	TEST_ERR(err);
+
 	TEST_EQUALS(DNS_TYPE_A, rr->type);
 	TEST_EQUALS(data->addr, rr->rdata.a.addr);
 
@@ -366,7 +367,7 @@ int test_dns_integration(void)
 	struct dns_query *q;
 	int err;
 
-
+	/* Setup Mocking DNS Server */
 	err = dns_server_alloc(&srv, false);
 	TEST_ERR(err);
 
@@ -394,7 +395,7 @@ int test_dns_integration(void)
 	err = dns_server_add_a(srv, "test3.example.net", 0x7f000004, 1);
 	TEST_ERR(err);
 
-	/* Test DNS Cache */
+	/* --- Test DNS Cache --- */
 	err = check_dns(&data, "test1.example.net", 0x7f000001, true);
 	TEST_ERR(err);
 
@@ -411,11 +412,11 @@ int test_dns_integration(void)
 	sys_msleep(100);    /* wait until TTL timer expires */
 	re_main_timeout(1); /* execute tmr callbacks */
 
-	/* Check expired TTL */
+	/* --- Check expired TTL --- */
 	err = check_dns(&data, "test1.example.net", 0x7f000002, true);
 	TEST_ERR(err);
 
-	/* Test explicit DNS cache flush */
+	/* --- Test explicit DNS cache flush --- */
 	dns_server_flush(srv);
 	err = dns_server_add_a(srv, "test1.example.net", 0x7f000005, 1);
 	TEST_ERR(err);
@@ -423,13 +424,16 @@ int test_dns_integration(void)
 	err = check_dns(&data, "test1.example.net", 0x7f000005, true);
 	TEST_ERR(err);
 
-	/* Test early query cancellation */
+	/* --- Test early query cancellation --- */
 	err = dnsc_query(&q, data.dnsc, "test1.example.net", DNS_TYPE_A,
 			 DNS_CLASS_IN, true, query_handler, &data);
 	TEST_ERR(err);
 	mem_deref(q);
 
-	/* Leave query open for cleanup test */
+	err = check_dns(&data, "test1.example.net", 0x7f000005, true);
+	TEST_ERR(err);
+
+	/* --- Leave query open for cleanup test --- */
 	err = dnsc_query(&q, data.dnsc, "test1.example.net", DNS_TYPE_A,
 			 DNS_CLASS_IN, true, query_handler, &data);
 	TEST_ERR(err);
