@@ -100,6 +100,7 @@ set(SRCS
   src/mbuf.c
   src/md5.c
   src/mem.c
+  src/mock/dnssrv.c
   src/mock/fuzz.c
   src/mock/nat.c
   src/mock/pf.c

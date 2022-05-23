@@ -293,3 +293,154 @@ int test_dns_dname(void)
 
 	return err;
 }
+
+
+struct test_dns {
+	int err;
+	uint32_t addr;
+	struct dnsc *dnsc;
+};
+
+
+static void query_handler(int err, const struct dnshdr *hdr, struct list *ansl,
+			  struct list *authl, struct list *addl, void *arg)
+{
+	struct dnsrr *rr      = list_ledata(list_head(ansl));
+	struct test_dns *data = arg;
+	struct sa sa;
+	(void)hdr;
+	(void)authl;
+	(void)addl;
+	(void)arg;
+
+	if (!data || !rr) {
+		re_cancel();
+		return;
+	}
+
+	TEST_ERR(err);
+
+	TEST_EQUALS(DNS_TYPE_A, rr->type);
+	TEST_EQUALS(data->addr, rr->rdata.a.addr);
+
+	sa_set_in(&sa, rr->rdata.a.addr, 0);
+
+	DEBUG_INFO("%s. IN A %j\n", rr->name, &sa);
+
+out:
+	data->err = err;
+	re_cancel();
+}
+
+
+static int check_dns(struct test_dns *data, const char *name, uint32_t addr,
+		     bool main)
+{
+	struct dns_query *q = NULL;
+	int err;
+
+	data->addr = addr;
+	data->err  = ENODATA;
+
+	err = dnsc_query(&q, data->dnsc, name, DNS_TYPE_A, DNS_CLASS_IN, true,
+			 query_handler, data);
+	TEST_ERR(err);
+
+	if (main) {
+		err = re_main_timeout(100);
+		TEST_ERR(err);
+	}
+
+	/* check query handler result */
+	err = data->err;
+
+out:
+	mem_deref(q);
+	return err;
+}
+
+
+int test_dns_integration(void)
+{
+	struct dns_server *srv = NULL;
+	struct test_dns data;
+	struct dns_query *q;
+	int err;
+
+	/* Setup Mocking DNS Server */
+	err = dns_server_alloc(&srv, false);
+	TEST_ERR(err);
+
+	err = dns_server_add_a(srv, "test1.example.net", 0x7f000001, 1);
+	TEST_ERR(err);
+
+	err = dnsc_alloc(&data.dnsc, NULL, &srv->addr, 1);
+	TEST_ERR(err);
+
+	err = check_dns(&data, "test1.example.net", 0x7f000001, true);
+	TEST_ERR(err);
+
+	/* Test does not exist */
+	err = check_dns(&data, "test2.example.net", 0x7f000001, true);
+	TEST_EQUALS(ENODATA, err);
+
+	dns_server_flush(srv);
+
+	err = dns_server_add_a(srv, "test1.example.net", 0x7f000002, 1);
+	TEST_ERR(err);
+
+	err = dns_server_add_a(srv, "test2.example.net", 0x7f000003, 1);
+	TEST_ERR(err);
+
+	err = dns_server_add_a(srv, "test3.example.net", 0x7f000004, 1);
+	TEST_ERR(err);
+
+	/* --- Test DNS Cache --- */
+	err = check_dns(&data, "test1.example.net", 0x7f000001, true);
+	TEST_ERR(err);
+
+	err = check_dns(&data, "test2.example.net", 0x7f000003, true);
+	TEST_ERR(err);
+
+	err = check_dns(&data, "test2.example.net", 0x7f000003, true);
+	TEST_ERR(err);
+
+	/* Check another resource record afterwards */
+	err = check_dns(&data, "test3.example.net", 0x7f000004, true);
+	TEST_ERR(err);
+
+	sys_msleep(100);    /* wait until TTL timer expires */
+	re_main_timeout(1); /* execute tmr callbacks */
+
+	/* --- Check expired TTL --- */
+	err = check_dns(&data, "test1.example.net", 0x7f000002, true);
+	TEST_ERR(err);
+
+	/* --- Test explicit DNS cache flush --- */
+	dns_server_flush(srv);
+	err = dns_server_add_a(srv, "test1.example.net", 0x7f000005, 1);
+	TEST_ERR(err);
+	dnsc_cache_flush(data.dnsc);
+	err = check_dns(&data, "test1.example.net", 0x7f000005, true);
+	TEST_ERR(err);
+
+	/* --- Test early query cancellation --- */
+	err = dnsc_query(&q, data.dnsc, "test1.example.net", DNS_TYPE_A,
+			 DNS_CLASS_IN, true, query_handler, &data);
+	TEST_ERR(err);
+	mem_deref(q);
+
+	err = check_dns(&data, "test1.example.net", 0x7f000005, true);
+	TEST_ERR(err);
+
+	/* --- Leave query open for cleanup test --- */
+	err = dnsc_query(&q, data.dnsc, "test1.example.net", DNS_TYPE_A,
+			 DNS_CLASS_IN, true, query_handler, &data);
+	TEST_ERR(err);
+
+out:
+	mem_deref(data.dnsc);
+	mem_deref(srv);
+
+	return err;
+}

@@ -217,6 +217,7 @@ static const struct test tests_integration[] = {
 #endif
 	TEST(test_tmr_jiffies),
 	TEST(test_tmr_jiffies_usec),
+	TEST(test_dns_integration),
 };
 
 
