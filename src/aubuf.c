@@ -97,16 +97,15 @@ static int test_aubuf_samp(void)
 static int test_aubuf_auframe(void)
 {
 	struct aubuf *ab = NULL;
-	float sampv_in[160];
-	float sampv_out[160];
+	float sampv_in[280];
+	float sampv_out[280];
 	uint64_t dt;
 
 	struct auframe af_in;
 	struct auframe af_out;
-	unsigned i;
 	int err;
 
-	for (i=0; i<ARRAY_SIZE(sampv_in); i++)
+	for (unsigned i = 0; i < ARRAY_SIZE(sampv_in); i++)
 		sampv_in[i] = (float)i;
 	memset(sampv_out, 0, sizeof(sampv_out));
 
@@ -115,56 +114,76 @@ static int test_aubuf_auframe(void)
 
 	TEST_EQUALS(0, aubuf_cur_size(ab));
 
-	/* write one frame */
+	/* write first frame (filling with wish_sz) */
 	auframe_init(&af_in, AUFMT_FLOAT, sampv_in, 80, 48000, 2);
 	af_in.timestamp = 0;
 
-	err |= aubuf_write_auframe(ab, &af_in);
-
 	dt = 80 * AUDIO_TIMEBASE / (af_in.srate * af_in.ch);
-	af_in.sampv = &sampv_in[80];
-	af_in.sampc = 80;
+
+	err = aubuf_write_auframe(ab, &af_in);
+	TEST_ERR(err);
+	TEST_EQUALS(80 * sizeof(float), aubuf_cur_size(ab));
+
+	/* first read after filling should start aubuf */
+	af_out.fmt   = AUFMT_FLOAT;
+	af_out.sampv = sampv_out;
+	af_out.sampc = 80;
+	aubuf_read_auframe(ab, &af_out);
+	TEST_EQUALS(0, aubuf_cur_size(ab));
+	TEST_EQUALS(0, af_out.timestamp);
+
+	/* write one frame */
+	af_in.sampv	= &sampv_in[80];
+	af_in.sampc	= 80;
 	af_in.timestamp = dt;
 
-	/* write second frame */
-	err |= aubuf_write_auframe(ab, &af_in);
+	err = aubuf_write_auframe(ab, &af_in);
 	TEST_ERR(err);
 	TEST_EQUALS(160 * sizeof(float), aubuf_cur_size(ab));
 
 	/* read half frame */
-	af_out.fmt = AUFMT_FLOAT;
-	af_out.sampv = sampv_out;
 	af_out.sampc = 40;
-
+	af_out.sampv = &sampv_out[80];
 	aubuf_read_auframe(ab, &af_out);
 	/* the first read drops old data: 80 - 40 = 40 */
 	TEST_EQUALS(40 * sizeof(float), aubuf_cur_size(ab));
 	TEST_EQUALS(dt, af_out.timestamp);
 
-	/* write another frame (which is appended now) */
-	af_in.timestamp += dt;
-	err |= aubuf_write_auframe(ab, &af_in);
+	/* write one frame */
+	af_in.sampv	= &sampv_in[160];
+	af_in.sampc	= 80;
+	af_in.timestamp = dt * 2;
+
+	err = aubuf_write_auframe(ab, &af_in);
+	TEST_ERR(err);
 	TEST_EQUALS(120 * sizeof(float), aubuf_cur_size(ab));
 
+	/* write half frame */
+	af_in.sampv	= &sampv_in[240];
+	af_in.sampc	= 40;
+	af_in.timestamp = dt * 3;
+
+	err = aubuf_write_auframe(ab, &af_in);
+	TEST_ERR(err);
+	TEST_EQUALS(160 * sizeof(float), aubuf_cur_size(ab));
+
 	/* read half frame */
-	af_out.sampv = &sampv_out[40];
+	af_out.sampv = &sampv_out[120];
 	af_out.sampc = 40;
 	aubuf_read_auframe(ab, &af_out);
-	TEST_EQUALS(80 * sizeof(float), aubuf_cur_size(ab));
-	TEST_EQUALS(dt + dt / 2, af_out.timestamp);
+	TEST_EQUALS(120 * sizeof(float), aubuf_cur_size(ab));
+	TEST_EQUALS((dt / 2) * 3 + 1, af_out.timestamp);
 
-	/* read whole frame */
-	af_out.sampv = &sampv_out[80];
-	af_out.sampc = 80;
+	/* read one and a half frame */
+	af_out.sampv = &sampv_out[160];
+	af_out.sampc = 120;
 	aubuf_read_auframe(ab, &af_out);
 
 	TEST_EQUALS(2, af_out.ch);
 	TEST_EQUALS(48000, af_out.srate);
-	TEST_EQUALS(2*dt, af_out.timestamp);
+	TEST_EQUALS(dt * 3, af_out.timestamp);
 
-	TEST_MEMCMP(sampv_in + 80,
-		    sizeof(sampv_in) - 80 * sizeof(float),
-		    sampv_out, sizeof(sampv_out) - 80 * sizeof(float));
+	TEST_MEMCMP(sampv_in, sizeof(sampv_in), sampv_out, sizeof(sampv_out));
 	TEST_EQUALS(0, aubuf_cur_size(ab));
 
 	/* test automatic timestamps */
