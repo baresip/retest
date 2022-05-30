@@ -75,6 +75,7 @@ set(SRCS
   src/aubuf.c
   src/aulevel.c
   src/auresamp.c
+  src/av1.c
   src/base64.c
   src/bfcp.c
   src/conf.c

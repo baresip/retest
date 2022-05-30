@@ -163,6 +163,7 @@ int test_aes_gcm(void);
 int test_aubuf(void);
 int test_aulevel(void);
 int test_auresamp(void);
+int test_av1(void);
 int test_base64(void);
 int test_bfcp(void);
 int test_bfcp_bin(void);
