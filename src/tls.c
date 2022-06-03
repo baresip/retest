@@ -368,7 +368,7 @@ int test_tls_ec(void)
 int test_tls_selfsigned(void)
 {
 	struct tls *tls = NULL;
-	uint8_t fp[20];
+	uint8_t fp[32];
 	int err;
 
 	err = tls_alloc(&tls, TLS_METHOD_SSLV23, NULL, NULL);
@@ -379,7 +379,7 @@ int test_tls_selfsigned(void)
 	TEST_ERR(err);
 
 	/* verify fingerprint of the self-signed certificate */
-	err = tls_fingerprint(tls, TLS_FINGERPRINT_SHA1, fp, sizeof(fp));
+	err = tls_fingerprint(tls, TLS_FINGERPRINT_SHA256, fp, sizeof(fp));
 	TEST_ERR(err);
 
 	err = tls_set_selfsigned_ec(tls, "re_ec@test", "unknown");

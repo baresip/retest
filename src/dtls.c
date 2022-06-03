@@ -27,7 +27,7 @@ struct dtls_test {
 		uint8_t srv_key[30];
 	} cli, srv;
 
-	uint8_t fp[20];
+	uint8_t fp[32];
 	char cn[64];
 	unsigned n_srv_estab;
 	unsigned n_srv_recv;
@@ -120,7 +120,7 @@ static void cli_estab_handler(void *arg)
 
 	++t->n_cli_estab;
 
-	err = tls_peer_fingerprint(t->conn_cli, TLS_FINGERPRINT_SHA1,
+	err = tls_peer_fingerprint(t->conn_cli, TLS_FINGERPRINT_SHA256,
 				   t->fp, sizeof(t->fp));
 	TEST_ERR(err);
 
@@ -201,7 +201,7 @@ static int test_dtls_srtp_base(enum tls_method method, bool dtls_srtp)
 	struct dtls_test test;
 	struct udp_sock *us = NULL;
 	struct sa cli, srv;
-	uint8_t fp[20];
+	uint8_t fp[32];
 	int err;
 
 	memset(&test, 0, sizeof(test));
@@ -227,7 +227,7 @@ static int test_dtls_srtp_base(enum tls_method method, bool dtls_srtp)
 		TEST_ERR(err);
 	}
 
-	err = tls_fingerprint(test.tls, TLS_FINGERPRINT_SHA1, fp, sizeof(fp));
+	err = tls_fingerprint(test.tls, TLS_FINGERPRINT_SHA256, fp, sizeof(fp));
 	TEST_EQUALS(0, err);
 
 	(void)sa_set_str(&cli, "127.0.0.1", 0);
