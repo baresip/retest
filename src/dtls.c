@@ -227,7 +227,8 @@ static int test_dtls_srtp_base(enum tls_method method, bool dtls_srtp)
 		TEST_ERR(err);
 	}
 
-	err = tls_fingerprint(test.tls, TLS_FINGERPRINT_SHA256, fp, sizeof(fp));
+	err = tls_fingerprint(test.tls, TLS_FINGERPRINT_SHA256,
+			      fp, sizeof(fp));
 	TEST_EQUALS(0, err);
 
 	(void)sa_set_str(&cli, "127.0.0.1", 0);
