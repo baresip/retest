@@ -45,7 +45,6 @@ link_directories(/usr/local/lib)
 add_definitions(
   -DHAVE_GETOPT
   -DHAVE_INET6
-  -DHAVE_PTHREAD
   -DHAVE_SIGNAL
   -DHAVE_UNISTD_H
   -DUSE_ZLIB
