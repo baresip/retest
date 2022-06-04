@@ -325,13 +325,7 @@ out:
 int test_sa_pton(void)
 {
 	struct sa sa;
-	struct sa sa_default_ip;
 	int err = 0;
-	uint32_t i;
-#ifndef WIN32
-	char ifname[64];
-#endif
-	char test_ipv6ll_scope[128] = "fe80::3a28:d8d9:ddc3:25dd%";
 	const struct {
 		const char *addr;
 		int err;
@@ -345,13 +339,30 @@ int test_sa_pton(void)
 		{"fe80::xxxx:d8d9:ddc3:25dd:%eth0", EADDRNOTAVAIL},
 	};
 
-	for (i=0; i<ARRAY_SIZE(testv); i++) {
+	for (size_t i=0; i<ARRAY_SIZE(testv); i++) {
 		int e = sa_pton(testv[i].addr, &sa);
 		TEST_EQUALS(testv[i].err, e);
 	}
 
+ out:
+	return err;
+}
+
+
+int test_sa_pton_linklocal(void)
+{
+	char test_ipv6ll_scope[128] = "fe80::3a28:d8d9:ddc3:25dd%";
+	struct sa sa_default_ip, sa;
+	int err;
+#ifndef WIN32
+	char ifname[64];
+#endif
+
 	/* Use IPv4 since not all test systems have a default IPv6 route */
 	net_default_source_addr_get(AF_INET, &sa_default_ip);
+
+	DEBUG_NOTICE("default_ip: %j\n", &sa_default_ip);
+
 #ifdef WIN32
 	re_snprintf(test_ipv6ll_scope, sizeof(test_ipv6ll_scope), "%s%d",
 		    test_ipv6ll_scope, sa_scopeid(&sa_default_ip));
@@ -359,18 +370,18 @@ int test_sa_pton(void)
 	net_if_getname(ifname, sizeof(ifname), AF_INET, &sa_default_ip);
 	re_snprintf(test_ipv6ll_scope, sizeof(test_ipv6ll_scope), "%s%s",
 		    test_ipv6ll_scope, ifname);
+
+	DEBUG_NOTICE("default ip: %s\n", ifname);
 #endif
 
 	err = sa_pton(test_ipv6ll_scope, &sa);
 	TEST_ERR(err);
 
-out:
-	if (err && i < ARRAY_SIZE(testv))
-		DEBUG_WARNING("%s failed with addr %s\n", __func__,
-				testv[i].addr);
-	else if (err)
-		DEBUG_WARNING("%s failed with addr %s\n", __func__,
-				test_ipv6ll_scope);
+	DEBUG_NOTICE("output: %j\n", &sa);
 
+	ASSERT_EQ(AF_INET6, sa_af(&sa));
+	ASSERT_TRUE(sa_is_linklocal(&sa));
+
+ out:
 	return err;
 }

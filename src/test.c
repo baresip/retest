@@ -131,6 +131,7 @@ static const struct test tests[] = {
 	TEST(test_sa_decode),
 	TEST(test_sa_ntop),
 	TEST(test_sa_pton),
+	TEST(test_sa_pton_linklocal),
 	TEST(test_sdp_all),
 	TEST(test_sdp_bfcp),
 	TEST(test_sdp_parse),
