@@ -358,6 +358,9 @@ int test_sa_pton_linklocal(void)
 	char ifname[64];
 #endif
 
+	if (0 != net_if_getlinklocal(NULL, AF_INET6, &sa_default_ip))
+		return ESKIPPED;
+
 	/* Use IPv4 since not all test systems have a default IPv6 route */
 	net_default_source_addr_get(AF_INET, &sa_default_ip);
 
