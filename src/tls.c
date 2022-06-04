@@ -375,17 +375,14 @@ int test_tls_selfsigned(void)
 	if (err)
 		goto out;
 
-	err = tls_set_selfsigned_rsa(tls, "re@test", 2048);
-	TEST_ERR(err);
-
-	/* verify fingerprint of the self-signed certificate */
-	err = tls_fingerprint(tls, TLS_FINGERPRINT_SHA256, fp, sizeof(fp));
-	TEST_ERR(err);
-
 	err = tls_set_selfsigned_ec(tls, "re_ec@test", "unknown");
 	TEST_EQUALS(err, ENOTSUP);
 
 	err = tls_set_selfsigned_ec(tls, "re_ec@test", "prime256v1");
+	TEST_ERR(err);
+
+	/* verify fingerprint of the self-signed certificate */
+	err = tls_fingerprint(tls, TLS_FINGERPRINT_SHA256, fp, sizeof(fp));
 	TEST_ERR(err);
 
  out:
