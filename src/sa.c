@@ -326,7 +326,7 @@ int test_sa_pton(void)
 {
 	struct sa sa;
 	struct sa sa_default_ip;
-	int err;
+	int err = 0;
 	uint32_t i;
 #ifndef WIN32
 	char ifname[64];
@@ -336,18 +336,18 @@ int test_sa_pton(void)
 		const char *addr;
 		int err;
 	} testv[] = {
-		{"github.com", EINVAL},
-		{"6002", EINVAL},
-		{"ga01::3a28", EINVAL},
-		{"fa01::2a29", 0},
-		{"127.0.0.1", 0},
-		{"192.168.110.2", 0},
+		{"github.com",                      EINVAL       },
+		{"6002",                            EINVAL       },
+		{"ga01::3a28",                      EINVAL       },
+		{"fa01::2a29",                      0            },
+		{"127.0.0.1",                       0            },
+		{"192.168.110.2",                   0            },
 		{"fe80::xxxx:d8d9:ddc3:25dd:%eth0", EADDRNOTAVAIL},
 	};
 
 	for (i=0; i<ARRAY_SIZE(testv); i++) {
-		err = sa_pton(testv[i].addr, &sa);
-		TEST_EQUALS(testv[i].err, err);
+		int e = sa_pton(testv[i].addr, &sa);
+		TEST_EQUALS(testv[i].err, e);
 	}
 
 	/* Use IPv4 since not all test systems have a default IPv6 route */
