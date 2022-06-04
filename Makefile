@@ -13,3 +13,7 @@ dist: build
 .PHONY: clean
 clean:
 	@rm -Rf build dist CMakeCache.txt CMakeFiles
+
+.PHONY: test
+test: build
+	build/retest -r -d data
