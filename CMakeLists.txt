@@ -13,12 +13,16 @@ cmake_minimum_required(VERSION 3.7)
 
 project(retest)
 
+list(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_LIST_DIR}/cmake)
+
 
 ##############################################################################
 #
 # Module/Package Includes
 #
 
+find_package(re REQUIRED)
+find_package(rem REQUIRED)
 find_package(OpenSSL)
 
 
@@ -36,8 +40,8 @@ include_directories(
   ../re/include
   ../rem/include
   /usr/local/include
-  /usr/local/include/re
-  /usr/local/include/rem
+  ${RE_INCLUDE_DIRS}
+  ${REM_INCLUDE_DIRS}
 )
 
 link_directories(/usr/local/lib)
@@ -158,5 +162,5 @@ endif()
 
 add_executable(${PROJECT_NAME} ${SRCS})
 target_link_libraries(${PROJECT_NAME}
-    PRIVATE ${OPENSSL_LIBRARIES} rem re -lz -lpthread -lm)
+    PRIVATE ${OPENSSL_LIBRARIES} ${REM_LIBRARIES} ${RE_LIBRARIES} -lz -lpthread -lm)
 target_include_directories(${PROJECT_NAME} PRIVATE ${OPENSSL_INCLUDE_DIR})
