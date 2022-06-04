@@ -50,4 +50,4 @@ jobs:
       run: |
         export PKG_CONFIG_PATH="/usr/local/lib/pkgconfig/:$PKG_CONFIG_PATH"
         cmake -DCMAKE_C_FLAGS="-Werror" . && make
-        ./retest -r
+        ./retest -v -r
