@@ -479,8 +479,7 @@ int test_tls_cli_conn_change_cert(void)
 
 	memset(&tt, 0, sizeof(tt));
 
-
-	tt.keytype = TLS_KEYTYPE_RSA;
+	tt.keytype = TLS_KEYTYPE_EC;
 
 	err = sa_set_str(&srv, "127.0.0.1", 0);
 	if (err)
@@ -492,8 +491,8 @@ int test_tls_cli_conn_change_cert(void)
 
 	tls_set_verify_client(tt.tls);
 
-	err = tls_set_certificate(tt.tls, test_certificate_rsa,
-		strlen(test_certificate_rsa));
+	err = tls_set_certificate(tt.tls, test_certificate_ecdsa,
+		strlen(test_certificate_ecdsa));
 	if (err)
 		goto out;
 
