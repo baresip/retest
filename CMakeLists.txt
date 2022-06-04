@@ -47,7 +47,6 @@ add_definitions(
   -DHAVE_INET6
   -DHAVE_SIGNAL
   -DHAVE_UNISTD_H
-  -DUSE_ZLIB
 )
 
 if(USE_OPENSSL)
