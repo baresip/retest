@@ -36,7 +36,7 @@ struct dtls_test {
 	unsigned n_conn;
 };
 
-static const char *common_name = "retest";
+static const char *common_name = "127.0.0.1";
 static const char *payload_str = "hello from a cute DTLS client";
 
 
@@ -211,8 +211,8 @@ static int test_dtls_srtp_base(enum tls_method method, bool dtls_srtp)
 	err = tls_alloc(&test.tls, method, NULL, NULL);
 	TEST_ERR(err);
 
-	err = tls_set_certificate(test.tls, test_certificate_rsa,
-				  strlen(test_certificate_rsa));
+	err = tls_set_certificate(test.tls, test_certificate_ecdsa,
+				  strlen(test_certificate_ecdsa));
 	TEST_ERR(err);
 
 	if (dtls_srtp) {
