@@ -19,7 +19,7 @@ jobs:
     - uses: actions/checkout@v2
     - name: install devel tools
       run: |
-        yum -y install git gcc clang cmake openssl-devel
+        yum -y install git gcc clang cmake openssl-devel pkgconfig
 
     - uses: sreimers/pr-dependency-action@v0.3
       with:
