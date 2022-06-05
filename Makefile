@@ -1,6 +1,7 @@
 .PHONY: build
 build:
 	cmake -B build && cmake --build build --parallel
+	mv build/retest retest
 
 .PHONY: ninja
 ninja:
@@ -16,4 +17,4 @@ clean:
 
 .PHONY: test
 test: build
-	build/retest -r -d data
+	./retest -r -d data
