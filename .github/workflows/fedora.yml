@@ -1,0 +1,54 @@
+name: Fedora
+
+on: [push, pull_request]
+
+jobs:
+  build:
+    runs-on: ${{ matrix.os }}
+    container: fedora
+
+    strategy:
+      matrix:
+        compiler: [clang]
+        os: [ubuntu-latest]
+
+    env:
+      CC: ${{ matrix.compiler }}
+
+    steps:
+    - uses: actions/checkout@v2
+    - name: install devel tools
+      run: |
+        yum -y install git gcc clang cmake openssl-devel pkgconfig zlib-devel net-tools
+
+    - uses: sreimers/pr-dependency-action@v0.3
+      with:
+        name: re
+        repo: https://github.com/baresip/re
+        secret: ${{ secrets.GITHUB_TOKEN }}
+
+    - uses: sreimers/pr-dependency-action@v0.3
+      with:
+        name: rem
+        repo: https://github.com/baresip/rem
+        secret: ${{ secrets.GITHUB_TOKEN }}
+
+    - name: make info
+      run: |
+        echo "OS: ${{ matrix.os }}"
+        echo "--- ${{ matrix.compiler }} DEBUG VERSION ---"
+        ${{ matrix.compiler }} - --version
+        /sbin/ifconfig
+
+    - name: make re/rem
+      run: |
+        for p in re rem; do cd $p && sudo PATH="$PATH" make install && cd - && sudo rm -Rf $p; done
+
+    - name: ldconfig
+      run: sudo ldconfig
+
+    - name: retest
+      run: |
+        export PKG_CONFIG_PATH="/usr/local/lib/pkgconfig/:$PKG_CONFIG_PATH"
+        cmake -DCMAKE_C_FLAGS="-Werror" . && make
+        ./retest -v -r
