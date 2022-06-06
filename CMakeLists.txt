@@ -161,6 +161,8 @@ endif()
 #
 
 add_executable(${PROJECT_NAME} ${SRCS})
+set_property(TARGET ${PROJECT_NAME} PROPERTY ENABLE_EXPORTS 1)
+
 target_link_libraries(${PROJECT_NAME}
     PRIVATE ${REM_LIBRARIES} ${RE_LIBRARIES} ${OPENSSL_LIBRARIES}
     -lz -lpthread -lm)
