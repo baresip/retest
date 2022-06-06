@@ -13,3 +13,9 @@ jobs:
       run: |
         wget "https://raw.githubusercontent.com/baresip/baresip/main/test/ccheck.py"
         python3 ccheck.py
+
+    - name: CMakeLint
+      run: |
+        pip install cmakelint
+        find . -name "CMakeLists.txt" -exec ~/.local/bin/cmakelint {} +
+        find . -name "*.cmake" -exec ~/.local/bin/cmakelint {} +
