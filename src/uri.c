@@ -232,7 +232,6 @@ int test_uri_user(void)
 
 int test_uri_headers(void)
 {
-	/* TODO: These are header _values_ only. -- should decode headers? */
 	const struct {
 		struct pl enc;
 		struct pl dec;
@@ -246,16 +245,6 @@ int test_uri_headers(void)
 		{PL("%3Chttp://www.foo.com%3E"),
 		 PL("<http://www.foo.com>")
 		}
-#if 0
-		{PL("88edf54%2Da493a459%40192%2E168%2E15%2E123"
-		    "%3Bfrom-tag%3Db6a79b1834ba7b65o0"
-		    "%3Bto-tag%3D407bf99cfb3d8f23i0"),
-
-		 PL("88edf54-a493a459@192.168.15.123"
-		    ";from-tag=b6a79b1834ba7b65o0"
-		    ";to-tag=407bf99cfb3d8f23i0")
-		}
-#endif
 	};
 	struct mbuf mbe, mbd;
 	int err = EINVAL;
