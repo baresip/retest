@@ -3,9 +3,35 @@ name: Fedora
 on: [push, pull_request]
 
 jobs:
+  prepare:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v2
+
+    - uses: sreimers/pr-dependency-action@v0.3
+      with:
+        name: re
+        repo: https://github.com/baresip/re
+        secret: ${{ secrets.GITHUB_TOKEN }}
+
+    - uses: sreimers/pr-dependency-action@v0.3
+      with:
+        name: rem
+        repo: https://github.com/baresip/rem
+        secret: ${{ secrets.GITHUB_TOKEN }}
+
+    - uses: actions/upload-artifact@v3
+      with:
+        name: prepare
+        path: |
+          re
+          rem
+
   build:
     runs-on: ${{ matrix.os }}
     container: fedora
+    needs: prepare
 
     strategy:
       matrix:
@@ -21,17 +47,10 @@ jobs:
       run: |
         yum -y install git gcc clang cmake openssl-devel pkgconfig zlib-devel net-tools
 
-    - uses: sreimers/pr-dependency-action@v0.3
+    - name: Download re/rem
+      uses: actions/download-artifact@v3
       with:
-        name: re
-        repo: https://github.com/baresip/re
-        secret: ${{ secrets.GITHUB_TOKEN }}
-
-    - uses: sreimers/pr-dependency-action@v0.3
-      with:
-        name: rem
-        repo: https://github.com/baresip/rem
-        secret: ${{ secrets.GITHUB_TOKEN }}
+        name: prepare
 
     - name: make info
       run: |
