@@ -97,6 +97,8 @@ static int test_av1_obu(void)
 	ASSERT_EQ(1, hdr.s);
 	ASSERT_EQ(12, hdr.size);
 
+	ASSERT_EQ(2, av1_obu_count(buf, sizeof(buf)));
+
  out:
 	return err;
 }
