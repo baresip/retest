@@ -1,11 +1,13 @@
 .PHONY: build
 build:
-	cmake -B build && cmake --build build --parallel
+	[ -d build ] || cmake -B build
+	cmake --build build --parallel
 	mv build/retest retest
 
 .PHONY: ninja
 ninja:
-	cmake -B build -G Ninja && cmake --build build --parallel
+	[ -d build ] || cmake -B build -G Ninja
+	make build
 
 .PHONY: dist
 dist: build
