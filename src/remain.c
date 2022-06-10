@@ -16,7 +16,7 @@
 
 struct data {
 	thrd_t tid;
-	mtx_t mutex;
+	mtx_t *mutex;
 	bool thread_started;
 	bool thread_exited;
 	unsigned tmr_called;
@@ -29,7 +29,7 @@ static void tmr_handler(void *arg)
 	struct data *data = arg;
 	int err = 0;
 
-	mtx_lock(&data->mutex);
+	mtx_lock(data->mutex);
 
 	/* verify that timer is called from the new thread */
 	TEST_ASSERT(0 != thrd_equal(data->tid, thrd_current()));
@@ -40,7 +40,7 @@ static void tmr_handler(void *arg)
 	if (err)
 		data->err = err;
 
-	mtx_unlock(&data->mutex);
+	mtx_unlock(data->mutex);
 
 	re_cancel();
 }
@@ -98,7 +98,8 @@ static int test_remain_thread(void)
 
 	memset(&data, 0, sizeof(data));
 
-	mtx_init(&data.mutex, mtx_plain);
+	err = mtx_alloc(&data.mutex);
+	TEST_ERR(err);
 
 	err = thrd_create(&data.tid, thread_handler, &data);
 	if (err)
@@ -107,17 +108,19 @@ static int test_remain_thread(void)
 	/* wait for timer to be called */
 	for (i=0; i<500; i++) {
 
-		mtx_lock(&data.mutex);
+		mtx_lock(data.mutex);
 
 		if (data.tmr_called || data.err) {
-			mtx_unlock(&data.mutex);
+			mtx_unlock(data.mutex);
 			break;
 		}
 
-		mtx_unlock(&data.mutex);
+		mtx_unlock(data.mutex);
 
 		sys_msleep(1);
 	}
+
+	mem_deref(data.mutex);
 
 	/* wait for thread to end */
 	thrd_join(data.tid, NULL);
@@ -131,6 +134,7 @@ static int test_remain_thread(void)
 	TEST_EQUALS(0, data.err);
 
  out:
+
 	return err;
 }
 
