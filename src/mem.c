@@ -49,7 +49,6 @@ int test_mem(void)
 
 	mem_deref(obj);
 
-	/* TODO: check this */
 	old = obj;
 	obj = mem_realloc(old, sizeof(*obj) + 16);
 	if (!obj) {
