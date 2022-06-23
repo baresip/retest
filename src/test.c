@@ -995,11 +995,15 @@ int test_integration(const char *name, bool verbose)
 	size_t i;
 	int err = 0;
 	const struct test *test;
-	(void) verbose;
+	(void)verbose;
+
+	test_mode = TEST_INTEGRATION;
+
+	timeout_override = 10000;
 
 	(void)re_fprintf(stderr, "integration tests\n");
 
-	for (i=0; i<ARRAY_SIZE(tests_integration); i++) {
+	for (i = 0; i < ARRAY_SIZE(tests_integration); i++) {
 
 		test = &tests_integration[i];
 		if (str_isset(name) && test->name)
