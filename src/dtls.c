@@ -217,13 +217,6 @@ static int test_dtls_srtp_base(enum tls_method method, bool dtls_srtp)
 
 	if (dtls_srtp) {
 		err = tls_set_srtp(test.tls, srtp_suites);
-
-		/* SRTP not supported */
-		if (err == ENOSYS) {
-			err = 0;
-			goto out;
-		}
-
 		TEST_ERR(err);
 	}
 
@@ -295,35 +288,13 @@ static int test_dtls_srtp_base(enum tls_method method, bool dtls_srtp)
 }
 
 
-static bool have_dtls_support(enum tls_method method)
-{
-	struct tls *tls = NULL;
-	int err;
-
-	err = tls_alloc(&tls, method, NULL, NULL);
-
-	mem_deref(tls);
-
-	return err != ENOSYS;
-}
-
-
 int test_dtls(void)
 {
 	int err = 0;
 
-	/* NOTE: DTLS v1.0 should be available on all
-	 *       supported platforms.
-	 */
-	if (!have_dtls_support(TLS_METHOD_DTLSV1)) {
-		(void)re_printf("skip DTLS 1.0 tests\n");
-		return ESKIPPED;
-	}
-	else {
-		err = test_dtls_srtp_base(TLS_METHOD_DTLSV1, false);
-		if (err)
-			return err;
-	}
+	err = test_dtls_srtp_base(TLS_METHOD_DTLSV1, false);
+	if (err)
+		return err;
 
 	return 0;
 }
@@ -332,11 +303,6 @@ int test_dtls(void)
 int test_dtls_srtp(void)
 {
 	int err = 0;
-
-	if (!have_dtls_support(TLS_METHOD_DTLSV1)) {
-		(void)re_printf("skip DTLS tests\n");
-		return ESKIPPED;
-	}
 
 	err = test_dtls_srtp_base(TLS_METHOD_DTLSV1, true);
 	if (err)
