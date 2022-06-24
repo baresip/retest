@@ -57,6 +57,7 @@ static const struct test tests[] = {
 #endif
 	TEST(test_dtmf),
 	TEST(test_fir),
+	TEST(test_fmt_gmtime),
 	TEST(test_fmt_human_time),
 	TEST(test_fmt_param),
 	TEST(test_fmt_pl),

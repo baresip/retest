@@ -836,6 +836,29 @@ int test_fmt_param(void)
 }
 
 
+int test_fmt_gmtime(void)
+{
+	const char ref1[] = "Thu, 01 Jan 1970 00:00:00 GMT";
+	const char ref2[] = "Fri, 24 Jun 2022 07:22:34 GMT";
+	char buf[256];
+	uint64_t sec;
+	int n;
+	int err = 0;
+
+	sec = 0;
+	(void)re_snprintf(buf, sizeof(buf), "%H", fmt_gmtime, &sec);
+	TEST_STRCMP(ref1, strlen(ref1), buf, strlen(buf));
+
+	sec = 19167 * 3600 * 24 + 7*3600 + 22*60 + 34;
+	n = re_snprintf(buf, sizeof(buf), "%H", fmt_gmtime, &sec);
+	TEST_EQUALS(29, n);
+	TEST_STRCMP(ref2, strlen(ref2), buf, strlen(buf));
+
+ out:
+	return err;
+}
+
+
 int test_fmt_human_time(void)
 {
 	const char ref1[] = "1 day 2 hours 3 mins 4 secs";
