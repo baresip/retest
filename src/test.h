@@ -177,6 +177,7 @@ int test_dsp(void);
 int test_dtmf(void);
 int test_fir(void);
 int test_fmt_gmtime(void);
+int test_fmt_timestamp(void);
 int test_fmt_human_time(void);
 int test_fmt_param(void);
 int test_fmt_pl(void);
