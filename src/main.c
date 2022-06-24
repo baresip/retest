@@ -253,10 +253,12 @@ int main(int argc, char *argv[])
 	}
 
  out:
+	/* Check for open timers */
+	tmr_debug();
+
 	libre_close();
 
 	/* Check for memory leaks */
-	tmr_debug();
 	mem_debug();
 
 	if (0 == mem_get_stat(&mstat)) {
