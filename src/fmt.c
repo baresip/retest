@@ -880,6 +880,30 @@ int test_fmt_human_time(void)
 }
 
 
+int test_fmt_timestamp(void)
+{
+	char buf[256];
+	struct pl pl;
+	int n;
+	int err = 0;
+
+	n = re_snprintf(buf, sizeof(buf), "%H", fmt_timestamp, NULL);
+	TEST_ASSERT(n >= 0);
+
+	pl_set_str(&pl, buf);
+	TEST_EQUALS(pl.l, n);
+	TEST_EQUALS(pl.l, 12);
+
+	err = re_regex(pl.p, pl.l,
+		       "[0-2]1[0-9]1:[0-5]1[0-9]1:[0-5]1[0-9]1\\.[0-9]3",
+		       NULL, NULL, NULL, NULL, NULL, NULL, NULL);
+	TEST_ERR(err);
+
+ out:
+	return err;
+}
+
+
 int test_fmt_str_error(void)
 {
 	char buf[256];

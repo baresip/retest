@@ -59,6 +59,7 @@ static const struct test tests[] = {
 	TEST(test_fir),
 	TEST(test_fmt_gmtime),
 	TEST(test_fmt_human_time),
+	TEST(test_fmt_timestamp),
 	TEST(test_fmt_param),
 	TEST(test_fmt_pl),
 	TEST(test_fmt_pl_u32),
