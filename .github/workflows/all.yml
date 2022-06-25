@@ -45,4 +45,4 @@ jobs:
     - name: retest
       run: |
         cmake -DCMAKE_C_FLAGS="-Werror" . && make
-        ./retest -a
+        ./retest -a -v
