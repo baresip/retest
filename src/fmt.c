@@ -891,7 +891,7 @@ int test_fmt_timestamp(void)
 	TEST_ASSERT(n >= 0);
 
 	pl_set_str(&pl, buf);
-	TEST_EQUALS(pl.l, n);
+	TEST_EQUALS(pl.l, (size_t)n);
 	TEST_EQUALS(pl.l, 12);
 
 	err = re_regex(pl.p, pl.l,
