@@ -35,6 +35,12 @@ option(USE_OPENSSL "Enable OpenSSL" ${OPENSSL_FOUND})
 
 set(CMAKE_C_STANDARD 11)
 
+if(MSVC)
+  add_compile_options("/W3")
+else()
+  add_compile_options(-Wall -Wextra)
+endif()
+
 include_directories(
   src
   ../re/include

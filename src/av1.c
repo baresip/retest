@@ -232,7 +232,7 @@ static int convert_rtp_to_bs(struct mbuf *mb_bs, struct mbuf *mb_rtp,
 	if (w) {
 		size_t size;
 
-		for (unsigned i=0; i<(w-1); i++) {
+		for (unsigned i=0; i<(w - 1u); i++) {
 
 			err = av1_leb128_decode(mb_rtp, &size);
 			if (err)
