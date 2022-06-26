@@ -45,12 +45,9 @@ include_directories(
   src
   ../re/include
   ../rem/include
-  /usr/local/include
   ${RE_INCLUDE_DIRS}
   ${REM_INCLUDE_DIRS}
 )
-
-link_directories(/usr/local/lib)
 
 add_definitions(
   -DHAVE_GETOPT
