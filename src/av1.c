@@ -399,7 +399,6 @@ static const char pkt_beach[] =
 	;
 
 
-
 static int test_av1_packetize()
 {
 	uint8_t buf[320];
