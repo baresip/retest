@@ -366,8 +366,42 @@ static const uint8_t pkt_aom5[] = {
 };
 
 
+/*
+ * https://dl8.webmfiles.org/BeachDrone-AV1.webm
+ *
+ * frame   3:  size=320     pts=134  (0.134000 sec)
+ * obu:  type=2,OBU_TEMPORAL_DELIMITER   x=0 s=1 size=0
+ * obu:  type=3,OBU_FRAME_HEADER         x=0 s=1 size=23
+ * obu:  type=4,OBU_TILE_GROUP           x=0 s=1 size=290
+ *
+ */
+static const char pkt_beach[] =
+	"12001a17301a2049648406a21a47fbdf"
+	"cbb4180c4002041157404022a202001c"
+	"64b538c87ccb8807fc1658bcd98ada85"
+	"6a35745f32824a2ee8d5e11d80476188"
+	"917a6662c19f0ca9eace86b8ac3ae880"
+	"0561949ecbbc26f800d904d1714219a1"
+	"0d1d0410370c6e0b8dead1bf1e8a291b"
+	"fd0a1254a6e038998e091c7d5233b138"
+	"68acf6225840618dcbfd948ed99943dd"
+	"93df6037f6fda997cd2f8467b601d94e"
+	"09169d57f8fa9c8d6abfcab091366231"
+	"48c89c7d5a8b86544140a827f48a2b0b"
+	"15d6836f4ceab733dd2f2ebbb20cb69a"
+	"684dafb9403610e0560bad66b728c8fd"
+	"38c315a1f63ac3d2fca0da95fdbfb9f8"
+	"e61b4f18b90a455dad2fc91a32401007"
+	"2942753e34c95c6d3693a555e660e6ca"
+	"628a22fed94f3618d912b84a272e00da"
+	"44b8cf62a7abfd5d0396e8848d8bd56d"
+	"195bb21814c15700e825a4d9fe2a64f8"
+	;
+
+
 static int test_av1_packetize()
 {
+	uint8_t buf[320];
 	int err;
 
 	err = test_av1_packetize_base(2, 1, 1, 1200, pkt_aom, sizeof(pkt_aom));
@@ -378,6 +412,14 @@ static int test_av1_packetize()
 	if (err)
 		return err;
 
+	err = str_hex(buf, sizeof(buf), pkt_beach);
+	TEST_ERR(err);
+
+	err = test_av1_packetize_base(3, 2, 2, 100, buf, sizeof(buf));
+	if (err)
+		return err;
+
+ out:
 	return err;
 }
 
