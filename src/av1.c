@@ -189,7 +189,7 @@ static int copy_obu(struct mbuf *mb_bs, const uint8_t *buf, size_t size)
 	case AV1_OBU_METADATA:
 	case AV1_OBU_FRAME:
 	case AV1_OBU_REDUNDANT_FRAME_HEADER:
-	case AV1_OBU_TILE_LIST:
+	case AV1_OBU_TILE_GROUP:
 
 		err = av1_obu_encode(mb_bs, hdr.type, has_size,
 				     hdr.size, mbuf_buf(&wrap));
@@ -198,7 +198,7 @@ static int copy_obu(struct mbuf *mb_bs, const uint8_t *buf, size_t size)
 		break;
 
 	case AV1_OBU_TEMPORAL_DELIMITER:
-	case AV1_OBU_TILE_GROUP:
+	case AV1_OBU_TILE_LIST:
 	case AV1_OBU_PADDING:
 		/* MUST be ignored by receivers. */
 		DEBUG_WARNING("av1: decode: copy: unexpected obu type %u (%s)"
