@@ -22,6 +22,8 @@ struct test {
 	bool estab_b;
 	bool answr_a;
 	bool answr_b;
+	bool progr_a;
+	bool progr_b;
 	bool offer_a;
 	bool offer_b;
 	enum rel100_mode rel100_a;
@@ -121,6 +123,15 @@ static int answer_handler_b(const struct sip_msg *msg, void *arg)
 }
 
 
+static void progr_handler_a(const struct sip_msg *msg, void *arg)
+{
+	struct test *test = arg;
+	(void)msg;
+
+	test->progr_a = true;
+}
+
+
 static void estab_handler_a(const struct sip_msg *msg, void *arg)
 {
 	struct test *test = arg;
@@ -161,6 +172,8 @@ static void close_handler(int err, const struct sip_msg *msg, void *arg)
 static void conn_handler_100rel(const struct sip_msg *msg, void *arg)
 {
 	struct test *test = arg;
+	char *desc = test->rel100_b == REL100_REQUIRED ?
+		     "Require: 100rel\r\n" : "";
 	(void)arg;
 
 	test->sup_received_b = sip_msg_hdr_has_value(msg, SIP_HDR_SUPPORTED,
@@ -172,7 +185,7 @@ static void conn_handler_100rel(const struct sip_msg *msg, void *arg)
 			     test->rel100_b, "b", "application/sdp",
 			     NULL, NULL, NULL, false, offer_handler_b,
 			     answer_handler_b, estab_handler_b, NULL, NULL,
-			     close_handler, test, NULL);
+			     close_handler, test, desc);
 }
 
 
@@ -436,8 +449,8 @@ int test_sipsess_100rel_caller_require(void)
 			      "sip:a@127.0.0.1", "a", NULL, 0,
 			      "application/sdp", NULL, NULL, false,
 			      callid, desc_handler,
-			      offer_handler_a, answer_handler_a, NULL,
-			      estab_handler_a, NULL, NULL,
+			      offer_handler_a, answer_handler_a,
+			      progr_handler_a, estab_handler_a, NULL, NULL,
 			      close_handler, &test,
 			      "Require: 100rel\r\n");
 	mem_deref(callid);
@@ -461,6 +474,7 @@ int test_sipsess_100rel_caller_require(void)
 	TEST_ASSERT(test.desc);
 	TEST_ASSERT(test.answr_a);
 	TEST_ASSERT(!test.offer_b);
+	TEST_ASSERT(test.progr_a);
 	TEST_ASSERT(test.req_received_b);
 	TEST_ASSERT(!test.sup_received_b);
 
@@ -518,8 +532,8 @@ int test_sipsess_100rel_supported(void)
 			      "sip:a@127.0.0.1", "a", NULL, 0,
 			      "application/sdp", NULL, NULL, false,
 			      callid, desc_handler,
-			      offer_handler_a, answer_handler_a, NULL,
-			      estab_handler_a, NULL, NULL,
+			      offer_handler_a, answer_handler_a,
+			      progr_handler_a, estab_handler_a, NULL, NULL,
 			      close_handler, &test,
 			      "Supported: 100rel\r\n");
 	mem_deref(callid);
@@ -543,6 +557,7 @@ int test_sipsess_100rel_supported(void)
 	TEST_ASSERT(test.desc);
 	TEST_ASSERT(test.answr_a);
 	TEST_ASSERT(!test.offer_b);
+	TEST_ASSERT(test.progr_a);
 	TEST_ASSERT(test.sup_received_b);
 	TEST_ASSERT(!test.req_received_b);
 
