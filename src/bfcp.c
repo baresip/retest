@@ -276,6 +276,9 @@ static void receive_handler(const struct bfcp_msg *msg, void *arg)
 static void response_handler(int err, const struct bfcp_msg *msg, void *arg)
 {
 	struct test_bfcp_peer *p = (struct test_bfcp_peer *)arg;
+	(void)err;
+	(void)msg;
+
 	p->flags |= resp_handler_called;
 
 	DEBUG_INFO("Response handler called, client: %d\n", (int)p->client);
@@ -287,6 +290,8 @@ static void response_handler(int err, const struct bfcp_msg *msg, void *arg)
 static void close_handler(int err, void *arg)
 {
 	struct test_bfcp_peer *p = (struct test_bfcp_peer *)arg;
+	(void)err;
+
 	p->flags |= close_handler_called;
 
 	DEBUG_INFO("Close handler called, client: %d\n", (int)p->client);
@@ -310,6 +315,8 @@ static void established_handler(void *arg)
 static void connection_handler(const struct sa *peer, void *arg)
 {
 	struct test_bfcp_peer *p = (struct test_bfcp_peer *)arg;
+	(void)peer;
+
 	p->flags |= conn_handler_called;
 
 	DEBUG_INFO("New connection handler called, client: %d\n",
