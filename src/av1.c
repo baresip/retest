@@ -219,61 +219,66 @@ static int copy_obu(struct mbuf *mb_bs, const uint8_t *buf, size_t size)
 }
 
 
-static int convert_rtp_to_bs(struct mbuf *mb_bs, struct mbuf *mb_rtp,
-			     uint8_t w)
+/* Convert RTP OBUs to AV1 bitstream */
+static int convert_rtp_to_bs(struct mbuf *mb_bs, const uint8_t *buf,
+			     size_t size, uint8_t w)
 {
+	struct mbuf mb_rtp = {
+		.buf = (uint8_t *)buf,
+		.size = size,
+		.pos = 0,
+		.end = size
+	};
 	int err;
 
 	/* prepend Temporal Delimiter */
 	err = av1_obu_encode(mb_bs, AV1_OBU_TEMPORAL_DELIMITER, true, 0, NULL);
 	if (err)
-		goto out;
+		return err;
 
 	if (w) {
-		size_t size;
+		for (unsigned i=0; i<w; i++) {
 
-		for (unsigned i=0; i<(w - 1u); i++) {
+			size_t size;
+			bool last = (i+1 == w);
 
-			err = av1_leb128_decode(mb_rtp, &size);
+			if (last) {
+				/* last OBU element MUST NOT be preceded
+				 * by a length field */
+				size = mbuf_get_left(&mb_rtp);
+			}
+			else {
+				err = av1_leb128_decode(&mb_rtp, &size);
+				if (err)
+					return err;
+			}
+
+			err = copy_obu(mb_bs, mbuf_buf(&mb_rtp), size);
 			if (err)
-				goto out;
+				return err;
 
-			err = copy_obu(mb_bs, mbuf_buf(mb_rtp), size);
-			if (err)
-				goto out;
-
-			mbuf_advance(mb_rtp, size);
+			mbuf_advance(&mb_rtp, size);
 		}
-
-		/* last OBU element MUST NOT be preceded by a length field */
-		size = mbuf_get_left(mb_rtp);
-
-		err = copy_obu(mb_bs, mbuf_buf(mb_rtp), size);
-		if (err)
-			goto out;
-
-		mbuf_advance(mb_rtp, size);
 	}
 	else {
-		while (mbuf_get_left(mb_rtp) >= 2) {
+		while (mbuf_get_left(&mb_rtp) >= 2) {
 
 			size_t size;
 
 			/* each OBU element MUST be preceded by length field */
-			err = av1_leb128_decode(mb_rtp, &size);
+			err = av1_leb128_decode(&mb_rtp, &size);
 			if (err)
-				goto out;
+				return err;
 
-			err = copy_obu(mb_bs, mbuf_buf(mb_rtp), size);
+			err = copy_obu(mb_bs, mbuf_buf(&mb_rtp), size);
 			if (err)
-				goto out;
+				return err;
 
-			mbuf_advance(mb_rtp, size);
+			mbuf_advance(&mb_rtp, size);
 		}
 	}
 
- out:
-	return err;
+	return 0;
 }
 
 
@@ -313,7 +318,8 @@ static int test_av1_packetize_base(unsigned count_bs, unsigned count_rtp,
 	ASSERT_EQ(1, test.new_count);
 	ASSERT_EQ(exp_w, test.w_saved);
 
-	err = convert_rtp_to_bs(mb_bs, test.mb, test.w_saved);
+	err = convert_rtp_to_bs(mb_bs, test.mb->buf, test.mb->end,
+				test.w_saved);
 	TEST_ERR(err);
 
 	/* compare bitstream with test-vector */
