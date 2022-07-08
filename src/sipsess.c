@@ -186,6 +186,8 @@ static void conn_handler_100rel(const struct sip_msg *msg, void *arg)
 			     NULL, NULL, NULL, false, offer_handler_b,
 			     answer_handler_b, estab_handler_b, NULL, NULL,
 			     close_handler, test, desc);
+
+	re_cancel();
 }
 
 
@@ -456,9 +458,11 @@ int test_sipsess_100rel_caller_require(void)
 	mem_deref(callid);
 	TEST_ERR(err);
 
-	err = re_main_timeout(400);
+	err = re_main_timeout(200);
+	TEST_ERR(err);
 
 	err = sipsess_answer(test.b, 200, "Answering", NULL, NULL);
+	TEST_ERR(err);
 
 	err = re_main_timeout(200);
 	TEST_ERR(err);
@@ -540,8 +544,10 @@ int test_sipsess_100rel_supported(void)
 	TEST_ERR(err);
 
 	err = re_main_timeout(200);
+	TEST_ERR(err);
 
 	err = sipsess_answer(test.b, 200, "Answering", NULL, NULL);
+	TEST_ERR(err);
 
 	err = re_main_timeout(200);
 	TEST_ERR(err);
