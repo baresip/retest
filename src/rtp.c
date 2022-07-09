@@ -520,7 +520,8 @@ static int test_rtp_listen_priv(bool clear)
 	mbuf_write_u8(test.mb, 0);
 	test.mb->pos = pos;
 	sa_set_str(&sa, "127.0.0.1", sa_port(rtp_local(test.rtp)));
-	err = rtp_send(test.rtp, &sa, false, true, 0, 160, test.mb);
+	err = rtp_send(test.rtp, &sa, false, true, 0, 160,
+		       tmr_jiffies_rt_usec(), test.mb);
 	TEST_ERR(err);
 
 	pos = test.mb->end + RTP_HEADER_SIZE;
@@ -528,7 +529,8 @@ static int test_rtp_listen_priv(bool clear)
 	mbuf_write_str(test.mb, "bcde");
 	mbuf_write_u8(test.mb, 0);
 	test.mb->pos = pos;
-	err = rtp_send(test.rtp, &sa, false, false, 0, 320, test.mb);
+	err = rtp_send(test.rtp, &sa, false, false, 0, 320,
+		       tmr_jiffies_rt_usec(), test.mb);
 	TEST_ERR(err);
 
 	if (clear) {
