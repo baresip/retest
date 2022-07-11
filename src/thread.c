@@ -30,19 +30,19 @@ int test_thread(void)
 	int id;
 
 	err = thrd_create_name(&thr, "test1", NULL, NULL);
-	TEST_EQUALS(EINVAL, err);
+	TEST_EQUALS(thrd_error, err);
 
 	id = 23;
 	err = thrd_create_name(&thr, "test2", thread, (void *)&id);
-	TEST_ERR(err);
+	TEST_ERR(err != thrd_success);
 	thrd_join(thr, &err);
 	TEST_EQUALS(thrd_error, err);
 
 	id = 42;
 	err = thrd_create_name(&thr, "test3", thread, (void *)&id);
-	TEST_ERR(err);
+	TEST_ERR(err != thrd_success);
 	thrd_join(thr, &err);
-	TEST_ERR(err);
+	TEST_ERR(err != thrd_success);
 
 out:
 	return err;
