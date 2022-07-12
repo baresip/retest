@@ -98,7 +98,7 @@ static int test_remain_thread(void)
 
 	memset(&data, 0, sizeof(data));
 
-	err = mtx_alloc(&data.mutex);
+	err = mutex_alloc(&data.mutex);
 	TEST_ERR(err);
 
 	err = thrd_create(&data.tid, thread_handler, &data);
