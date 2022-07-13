@@ -238,8 +238,6 @@ static int convert_rtp_to_bs(struct mbuf *mb_bs, const uint8_t *buf,
 
 	if (w) {
 		for (unsigned i=0; i<w; i++) {
-
-			size_t size;
 			bool last = (i+1 == w);
 
 			if (last) {
@@ -262,9 +260,6 @@ static int convert_rtp_to_bs(struct mbuf *mb_bs, const uint8_t *buf,
 	}
 	else {
 		while (mbuf_get_left(&mb_rtp) >= 2) {
-
-			size_t size;
-
 			/* each OBU element MUST be preceded by length field */
 			err = av1_leb128_decode(&mb_rtp, &size);
 			if (err)
@@ -405,7 +400,7 @@ static const char pkt_beach[] =
 	;
 
 
-static int test_av1_packetize()
+static int test_av1_packetize(void)
 {
 	uint8_t buf[320];
 	int err;
