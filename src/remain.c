@@ -98,12 +98,12 @@ static int test_remain_thread(void)
 
 	memset(&data, 0, sizeof(data));
 
-	err = mtx_alloc(&data.mutex);
+	err = mutex_alloc(&data.mutex);
 	TEST_ERR(err);
 
 	err = thrd_create(&data.tid, thread_handler, &data);
-	if (err)
-		return err;
+	if (err != thrd_success)
+		return EAGAIN;
 
 	/* wait for timer to be called */
 	for (i=0; i<500; i++) {
