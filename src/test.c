@@ -161,6 +161,8 @@ static const struct test tests[] = {
 	TEST(test_sipsess_100rel_supported),
 	TEST(test_sipsess_100rel_420),
 	TEST(test_sipsess_100rel_421),
+	TEST(test_sipsess_update_uac),
+	TEST(test_sipsess_update_uas),
 	TEST(test_srtp),
 	TEST(test_srtcp),
 	TEST(test_srtp_gcm),
