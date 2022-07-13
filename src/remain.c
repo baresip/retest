@@ -103,7 +103,7 @@ static int test_remain_thread(void)
 
 	err = thrd_create(&data.tid, thread_handler, &data);
 	if (err != thrd_success)
-		return err;
+		return EAGAIN;
 
 	/* wait for timer to be called */
 	for (i=0; i<500; i++) {
