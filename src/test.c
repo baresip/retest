@@ -14,7 +14,9 @@
 #endif
 #include <string.h>
 #include <stdlib.h>
+#ifdef HAVE_SYS_TIME_H
 #include <sys/time.h>
+#endif
 #include <math.h>
 #include <re.h>
 #include "test.h"
