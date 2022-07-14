@@ -15,6 +15,61 @@
 #include <re_dbg.h>
 
 
+static int test_leb128(void)
+{
+	struct mbuf *mb = NULL;
+	int err = 0;
+
+	static const size_t valuev[] = {
+
+		0,
+
+		/* from random.org */
+		449787982,
+		435590144,
+		64565769,
+		698509268,
+		524090268,
+
+		0x000000ff,     /* max  8-bit */
+		0x0000ffff,     /* max 16-bit */
+		0xffffffff      /* max 32-bit */
+	};
+
+	for (size_t i=0; i<ARRAY_SIZE(valuev); i++) {
+
+		size_t val = valuev[i];
+		size_t val_dec;
+
+		mb = mbuf_alloc(64);
+		if (!mb)
+			return ENOMEM;
+
+		err = av1_leb128_encode(mb, val);
+		if (err)
+			goto out;
+
+		re_printf("leb128 value: %zu [ %w ]\n", val, mb->buf, mb->end);
+
+		mb->pos = 0;
+
+		err = av1_leb128_decode(mb, &val_dec);
+		ASSERT_EQ(0, err);
+
+		printf("decoded: %zu / %zx\n", val_dec, val_dec);
+
+		ASSERT_EQ(val, val_dec);
+
+		mb = mem_deref(mb);
+	}
+
+ out:
+	mem_deref(mb);
+
+	return err;
+}
+
+
 static int test_av1_aggr(void)
 {
 	static const struct test {
@@ -428,6 +483,10 @@ static int test_av1_packetize(void)
 int test_av1(void)
 {
 	int err;
+
+	err = test_leb128();
+	if (err)
+		return err;
 
 	err = test_av1_aggr();
 	if (err)
