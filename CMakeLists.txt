@@ -63,6 +63,11 @@ if(CMAKE_C_COMPILER_ID MATCHES "Clang")
   add_compile_options(-Wshorten-64-to-32)
 endif()
 
+check_include_file(unistd.h HAVE_UNISTD_H)
+if(HAVE_UNISTD_H)
+  add_definitions(-DHAVE_UNISTD_H)
+endif()
+
 check_function_exists(thrd_create HAVE_THREADS)
 if(HAVE_THREADS)
   add_definitions(-DHAVE_THREADS)
@@ -91,7 +96,6 @@ add_definitions(
   -DHAVE_ATOMIC
   -DHAVE_INET6
   -DHAVE_SELECT
-  -DHAVE_UNISTD_H
   )
 
 if(UNIX)
