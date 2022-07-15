@@ -49,7 +49,7 @@ static int test_leb128(void)
 		if (err)
 			goto out;
 
-		re_printf("leb128 value: %zu [ %w ]\n", val, mb->buf, mb->end);
+		re_printf("leb128 value: [ %w ]\n", mb->buf, mb->end);
 
 		mb->pos = 0;
 
