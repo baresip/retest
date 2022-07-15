@@ -11,7 +11,7 @@
 
 cmake_minimum_required(VERSION 3.7)
 
-project(retest)
+project(retest C)
 
 list(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_LIST_DIR}/cmake)
 
