@@ -309,7 +309,10 @@ static int convert_rtp_to_bs(struct mbuf *mb_bs, const uint8_t *buf,
 				if (err)
 					return err;
 
-				size = val;
+				if (val > mbuf_get_left(&mb_rtp))
+					return EBADMSG;
+
+				size = (size_t)val;
 			}
 
 			err = copy_obu(mb_bs, mbuf_buf(&mb_rtp), size);
@@ -329,7 +332,10 @@ static int convert_rtp_to_bs(struct mbuf *mb_bs, const uint8_t *buf,
 			if (err)
 				return err;
 
-			size = val;
+			if (val > mbuf_get_left(&mb_rtp))
+				return EBADMSG;
+
+			size = (size_t)val;
 
 			err = copy_obu(mb_bs, mbuf_buf(&mb_rtp), size);
 			if (err)
