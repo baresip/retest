@@ -20,7 +20,7 @@ static int test_leb128(void)
 	struct mbuf *mb = NULL;
 	int err = 0;
 
-	static const size_t valuev[] = {
+	static const uint64_t valuev[] = {
 
 		0,
 
@@ -38,8 +38,8 @@ static int test_leb128(void)
 
 	for (size_t i=0; i<ARRAY_SIZE(valuev); i++) {
 
-		size_t val = valuev[i];
-		size_t val_dec;
+		uint64_t val = valuev[i];
+		uint64_t val_dec;
 
 		mb = mbuf_alloc(64);
 		if (!mb)
@@ -56,7 +56,7 @@ static int test_leb128(void)
 		err = av1_leb128_decode(mb, &val_dec);
 		ASSERT_EQ(0, err);
 
-		printf("decoded: %zu / %zx\n", val_dec, val_dec);
+		printf("decoded: %llu / %llx\n", val_dec, val_dec);
 
 		ASSERT_EQ(val, val_dec);
 
@@ -276,14 +276,15 @@ static int copy_obu(struct mbuf *mb_bs, const uint8_t *buf, size_t size)
 
 /* Convert RTP OBUs to AV1 bitstream */
 static int convert_rtp_to_bs(struct mbuf *mb_bs, const uint8_t *buf,
-			     size_t size, uint8_t w)
+			     size_t buf_size, uint8_t w)
 {
 	struct mbuf mb_rtp = {
 		.buf = (uint8_t *)buf,
-		.size = size,
+		.size = buf_size,
 		.pos = 0,
-		.end = size
+		.end = buf_size
 	};
+	size_t size;
 	int err;
 
 	/* prepend Temporal Delimiter */
@@ -301,9 +302,13 @@ static int convert_rtp_to_bs(struct mbuf *mb_bs, const uint8_t *buf,
 				size = mbuf_get_left(&mb_rtp);
 			}
 			else {
-				err = av1_leb128_decode(&mb_rtp, &size);
+				uint64_t val;
+
+				err = av1_leb128_decode(&mb_rtp, &val);
 				if (err)
 					return err;
+
+				size = val;
 			}
 
 			err = copy_obu(mb_bs, mbuf_buf(&mb_rtp), size);
@@ -315,10 +320,15 @@ static int convert_rtp_to_bs(struct mbuf *mb_bs, const uint8_t *buf,
 	}
 	else {
 		while (mbuf_get_left(&mb_rtp) >= 2) {
+
+			uint64_t val;
+
 			/* each OBU element MUST be preceded by length field */
-			err = av1_leb128_decode(&mb_rtp, &size);
+			err = av1_leb128_decode(&mb_rtp, &val);
 			if (err)
 				return err;
+
+			size = val;
 
 			err = copy_obu(mb_bs, mbuf_buf(&mb_rtp), size);
 			if (err)
