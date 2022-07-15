@@ -56,7 +56,7 @@ static int test_leb128(void)
 		err = av1_leb128_decode(mb, &val_dec);
 		ASSERT_EQ(0, err);
 
-		printf("decoded: %llu / %llx\n", val_dec, val_dec);
+		printf("decoded: %" PRIu64 " / %" PRIx64 "\n", val_dec, val_dec);
 
 		ASSERT_EQ(val, val_dec);
 
