@@ -126,10 +126,10 @@ static int test_aubuf_auframe(void)
 	af_in.sampc = 80;
 	af_in.timestamp = dt;
 
-	/* write one frame (drops first during startup) */
+	/* write second frame */
 	err |= aubuf_write_auframe(ab, &af_in);
 	TEST_ERR(err);
-	TEST_EQUALS(80 * sizeof(float), aubuf_cur_size(ab));
+	TEST_EQUALS(160 * sizeof(float), aubuf_cur_size(ab));
 
 	/* read half frame */
 	af_out.fmt = AUFMT_FLOAT;
@@ -137,6 +137,7 @@ static int test_aubuf_auframe(void)
 	af_out.sampc = 40;
 
 	aubuf_read_auframe(ab, &af_out);
+	/* the first read drops old data: 80 - 40 = 40 */
 	TEST_EQUALS(40 * sizeof(float), aubuf_cur_size(ab));
 	TEST_EQUALS(dt, af_out.timestamp);
 
