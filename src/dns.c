@@ -363,7 +363,7 @@ out:
 int test_dns_integration(void)
 {
 	struct dns_server *srv = NULL;
-	struct test_dns data;
+	struct test_dns data = {0};
 	struct dns_query *q;
 	int err;
 
