@@ -36,6 +36,8 @@ find_package(OpenSSL)
 #
 
 option(USE_OPENSSL "Enable OpenSSL" ${OPENSSL_FOUND})
+option(USE_SANITIZER "Sanitizers like: address, thread, undefined, memory")
+include(sanitizer)
 
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 set(CMAKE_C_STANDARD 11)
