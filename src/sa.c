@@ -365,8 +365,6 @@ int test_sa_pton_linklocal(void)
 	/* Use IPv4 since not all test systems have a default IPv6 route */
 	net_default_source_addr_get(AF_INET, &sa_default_ip);
 
-	DEBUG_NOTICE("default_ip: %j\n", &sa_default_ip);
-
 #ifdef WIN32
 	re_snprintf(buf, sizeof(buf), "%s%d",
 		    test_ipv6ll_scope, sa_scopeid(&sa_default_ip));
@@ -374,14 +372,10 @@ int test_sa_pton_linklocal(void)
 	net_if_getname(ifname, sizeof(ifname), AF_INET, &sa_default_ip);
 	re_snprintf(buf, sizeof(buf), "%s%s",
 		    test_ipv6ll_scope, ifname);
-
-	DEBUG_NOTICE("default ip: %s\n", ifname);
 #endif
 
 	err = sa_pton(buf, &sa);
 	TEST_ERR(err);
-
-	DEBUG_NOTICE("output: %j\n", &sa);
 
 	ASSERT_EQ(AF_INET6, sa_af(&sa));
 	ASSERT_TRUE(sa_is_linklocal(&sa));
