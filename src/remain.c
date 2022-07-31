@@ -132,7 +132,6 @@ static int test_remain_thread(void)
 	TEST_EQUALS(0, data.err);
 
  out:
-
 	mem_deref(data.mutex);
 	return err;
 }
