@@ -76,9 +76,8 @@ static int thread_handler(void *arg)
 	err = re_main(NULL);
 
 out:
-	if (err) {
+	if (err)
 		data->err = err;
-	}
 	tmr_cancel(&tmr);
 
 	/* cleanup */
@@ -99,15 +98,14 @@ static int test_remain_thread(void)
 	memset(&data, 0, sizeof(data));
 
 	err = mutex_alloc(&data.mutex);
-	TEST_ERR(err);
+	if (err)
+		return err;
 
-	err = thrd_create(&data.tid, thread_handler, &data);
-	if (err != thrd_success)
-		return EAGAIN;
+	err = thread_create_name(&data.tid, "remain", thread_handler, &data);
+	TEST_ERR(err);
 
 	/* wait for timer to be called */
 	for (i=0; i<500; i++) {
-
 		mtx_lock(data.mutex);
 
 		if (data.tmr_called || data.err) {
@@ -120,7 +118,7 @@ static int test_remain_thread(void)
 		sys_msleep(1);
 	}
 
-	mem_deref(data.mutex);
+	data.mutex = mem_deref(data.mutex);
 
 	/* wait for thread to end */
 	thrd_join(data.tid, NULL);
@@ -134,7 +132,7 @@ static int test_remain_thread(void)
 	TEST_EQUALS(0, data.err);
 
  out:
-
+	mem_deref(data.mutex);
 	return err;
 }
 
@@ -144,8 +142,6 @@ int test_remain(void)
 	int err = 0;
 
 	err = test_remain_thread();
-	if (err)
-		return err;
 
 	return err;
 }
