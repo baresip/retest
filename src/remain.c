@@ -99,11 +99,11 @@ static int test_remain_thread(void)
 	memset(&data, 0, sizeof(data));
 
 	err = mutex_alloc(&data.mutex);
-	TEST_ERR(err);
+	if (err)
+		return err;
 
-	err = thrd_create(&data.tid, thread_handler, &data);
-	if (err != thrd_success)
-		return EAGAIN;
+	err = thread_create_name(&data.tid, "remain", thread_handler, &data);
+	TEST_ERR(err);
 
 	/* wait for timer to be called */
 	for (i=0; i<500; i++) {
@@ -120,7 +120,6 @@ static int test_remain_thread(void)
 		sys_msleep(1);
 	}
 
-	mem_deref(data.mutex);
 
 	/* wait for thread to end */
 	thrd_join(data.tid, NULL);
@@ -135,6 +134,7 @@ static int test_remain_thread(void)
 
  out:
 
+	mem_deref(data.mutex);
 	return err;
 }
 
