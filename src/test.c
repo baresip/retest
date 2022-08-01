@@ -792,6 +792,8 @@ int test_multithread(void)
 		return err;
 	(void)re_fprintf(stderr, "\x1b[32mOK\x1b[;m\n");
 
+	timeout_override = 0;
+
 	return err;
 }
 
