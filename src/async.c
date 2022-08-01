@@ -46,7 +46,7 @@ static int blocking_getaddr(void *arg)
 
 	/* Blocking */
 	err = getaddrinfo(test->domain, NULL, &hints, &res);
-	if (err) 
+	if (err)
 		return EADDRNOTAVAIL;
 
 	sa_set_sa(&test->sa, res->ai_addr);
@@ -95,7 +95,7 @@ int test_async(void)
 	for (size_t i = 0; i < ARRAY_SIZE(testv); i++) {
 		err = re_async(async, blocking_getaddr, completed, &testv[i]);
 		TEST_ERR(err);
-		test_add++;
+		++test_add;
 	}
 
 	err = re_main_timeout(100);
