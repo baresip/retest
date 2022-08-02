@@ -83,17 +83,15 @@ out:
 int test_async(void)
 {
 	int err;
-	struct re_async *async = NULL;
 
 	test_add = 0;
 	test_complete = 0;
 
-	async = re_thread_async();
-	if (!async)
-		return ENOMEM;
+	err = re_thread_async_init(4);
+	TEST_ERR(err);
 
 	for (size_t i = 0; i < ARRAY_SIZE(testv); i++) {
-		err = re_async(async, blocking_getaddr, completed, &testv[i]);
+		err = re_thread_async(blocking_getaddr, completed, &testv[i]);
 		TEST_ERR(err);
 		++test_add;
 	}
