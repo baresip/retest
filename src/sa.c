@@ -351,7 +351,8 @@ int test_sa_pton(void)
 
 int test_sa_pton_linklocal(void)
 {
-	char test_ipv6ll_scope[128] = "fe80::3a28:d8d9:ddc3:25dd%";
+	const char test_ipv6ll_scope[] = "fe80::3a28:d8d9:ddc3:25dd%";
+	char buf[256];
 	struct sa sa_default_ip, sa;
 	int err;
 #ifndef WIN32
@@ -364,23 +365,17 @@ int test_sa_pton_linklocal(void)
 	/* Use IPv4 since not all test systems have a default IPv6 route */
 	net_default_source_addr_get(AF_INET, &sa_default_ip);
 
-	DEBUG_NOTICE("default_ip: %j\n", &sa_default_ip);
-
 #ifdef WIN32
-	re_snprintf(test_ipv6ll_scope, sizeof(test_ipv6ll_scope), "%s%d",
+	re_snprintf(buf, sizeof(buf), "%s%d",
 		    test_ipv6ll_scope, sa_scopeid(&sa_default_ip));
 #else
 	net_if_getname(ifname, sizeof(ifname), AF_INET, &sa_default_ip);
-	re_snprintf(test_ipv6ll_scope, sizeof(test_ipv6ll_scope), "%s%s",
+	re_snprintf(buf, sizeof(buf), "%s%s",
 		    test_ipv6ll_scope, ifname);
-
-	DEBUG_NOTICE("default ip: %s\n", ifname);
 #endif
 
-	err = sa_pton(test_ipv6ll_scope, &sa);
+	err = sa_pton(buf, &sa);
 	TEST_ERR(err);
-
-	DEBUG_NOTICE("output: %j\n", &sa);
 
 	ASSERT_EQ(AF_INET6, sa_af(&sa));
 	ASSERT_TRUE(sa_is_linklocal(&sa));

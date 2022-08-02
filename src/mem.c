@@ -14,6 +14,15 @@
 
 #define PATTERN 0xfcfcfcfc
 
+enum {
+#if defined(__x86_64__)
+	/* Use 16-byte alignment on x86-x32 as well */
+	mem_alignment = 16u,
+#else
+	mem_alignment = sizeof(void*) >= 8u ? 16u : 8u,
+#endif
+};
+
 struct obj {
 	uint32_t pattern;
 };
@@ -39,27 +48,38 @@ int test_mem(void)
 
 	obj->pattern = PATTERN;
 
-	if (mem_nrefs(obj) != 1)
-		goto error;
+	TEST_EQUALS(1, mem_nrefs(obj));
+	TEST_ASSERT(is_aligned(obj, mem_alignment));
 
 	obj = mem_ref(obj);
-
-	if (mem_nrefs(obj) != 2)
-		goto error;
+	TEST_EQUALS(2, mem_nrefs(obj));
 
 	mem_deref(obj);
 
+	TEST_EQUALS(1, mem_nrefs(obj));
+
 	old = obj;
 	obj = mem_realloc(old, sizeof(*obj) + 16);
+
 	if (!obj) {
 		mem_deref(old);
 		err = ENOMEM;
-		goto error;
+		TEST_ERR(err);
 	}
+
+	TEST_ASSERT(is_aligned(obj, mem_alignment));
+
+	old = mem_ref(obj);
+	TEST_EQUALS(2, mem_nrefs(obj));
+
+	obj = mem_realloc(obj, sizeof(*obj) + 64);
+	TEST_EQUALS(1, mem_nrefs(old));
+	mem_deref(old);
+	TEST_EQUALS(1, mem_nrefs(obj));
 
 	err = 0;
 
- error:
+ out:
 	mem_deref(obj);
 	return err;
 }

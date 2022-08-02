@@ -19,7 +19,7 @@ static int thread(void *id)
 	if (n != 42)
 		return thrd_error;
 
-	return thrd_success;
+	return EPROTO;
 }
 
 
@@ -29,20 +29,22 @@ int test_thread(void)
 	int err;
 	int id;
 
-	err = thrd_create_name(&thr, "test1", NULL, NULL);
+	err = thread_create_name(&thr, "test1", NULL, NULL);
 	TEST_EQUALS(EINVAL, err);
 
 	id = 23;
-	err = thrd_create_name(&thr, "test2", thread, (void *)&id);
+	err = thread_create_name(&thr, "test2", thread, (void *)&id);
 	TEST_ERR(err);
 	thrd_join(thr, &err);
 	TEST_EQUALS(thrd_error, err);
 
 	id = 42;
-	err = thrd_create_name(&thr, "test3", thread, (void *)&id);
+	err = thread_create_name(&thr, "test3", thread, (void *)&id);
 	TEST_ERR(err);
 	thrd_join(thr, &err);
-	TEST_ERR(err);
+	TEST_EQUALS(EPROTO, err);
+
+	err = 0;
 
 out:
 	return err;

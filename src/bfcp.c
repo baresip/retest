@@ -3,6 +3,8 @@
  *
  * Copyright (C) 2010 Creytiv.com
  */
+#include <stddef.h>
+#include <stdbool.h>
 #include <string.h>
 #include <re.h>
 #include "test.h"
@@ -229,6 +231,225 @@ int test_bfcp_bin(void)
 
 	err |= parse_msg(msg, sizeof(msg) - 1);
 	err |= parse_msg(bfcp_msg, sizeof(bfcp_msg) - 1);
+
+	return err;
+}
+
+
+enum handler_flags {
+	conn_handler_called = 1u,
+	estab_handler_called = 1u << 1u,
+	recv_handler_called = 1u << 2u,
+	resp_handler_called = 1u << 3u,
+	close_handler_called = 1u << 4u
+};
+
+
+struct test_bfcp_peer {
+	struct bfcp_conn *bfcp;
+	enum bfcp_transp transp;
+	unsigned int flags;
+	struct sa addr, peer;
+	int handler_err;
+	bool client;
+};
+
+
+static void test_bfcp_peer_destructor(void *arg)
+{
+	struct test_bfcp_peer *p = (struct test_bfcp_peer *)arg;
+	mem_deref(p->bfcp);
+}
+
+
+static void receive_handler(const struct bfcp_msg *msg, void *arg)
+{
+	struct test_bfcp_peer *p = (struct test_bfcp_peer *)arg;
+	p->flags |= recv_handler_called;
+
+	DEBUG_INFO("Receive handler called, client: %d\n", (int)p->client);
+
+	p->handler_err = bfcp_reply(p->bfcp, msg, BFCP_HELLO_ACK, 0u);
+}
+
+
+static void response_handler(int err, const struct bfcp_msg *msg, void *arg)
+{
+	struct test_bfcp_peer *p = (struct test_bfcp_peer *)arg;
+	(void)err;
+	(void)msg;
+
+	p->flags |= resp_handler_called;
+
+	DEBUG_INFO("Response handler called, client: %d\n", (int)p->client);
+
+	re_cancel();
+}
+
+
+static void close_handler(int err, void *arg)
+{
+	struct test_bfcp_peer *p = (struct test_bfcp_peer *)arg;
+	(void)err;
+
+	p->flags |= close_handler_called;
+
+	DEBUG_INFO("Close handler called, client: %d\n", (int)p->client);
+}
+
+
+static void established_handler(void *arg)
+{
+	struct test_bfcp_peer *p = (struct test_bfcp_peer *)arg;
+	p->flags |= estab_handler_called;
+
+	DEBUG_INFO("Established handler called, client: %d\n", (int)p->client);
+
+	if (p->transp == BFCP_TCP && p->client) {
+		p->handler_err = bfcp_request(p->bfcp, &p->peer, BFCP_VER2,
+			BFCP_HELLO, 0u, 0u, &response_handler, p, 0u);
+	}
+}
+
+
+static void connection_handler(const struct sa *peer, void *arg)
+{
+	struct test_bfcp_peer *p = (struct test_bfcp_peer *)arg;
+	(void)peer;
+
+	p->flags |= conn_handler_called;
+
+	DEBUG_INFO("New connection handler called, client: %d\n",
+		   (int)p->client);
+
+	if (p->transp == BFCP_TCP && !p->client) {
+		if (!bfcp_sock(p->bfcp)) {
+			p->handler_err = bfcp_accept(p->bfcp);
+		}
+		else {
+			bfcp_reject(p->bfcp);
+			p->handler_err = EALREADY;
+		}
+	}
+	else {
+		p->handler_err = ENOSYS;
+	}
+}
+
+
+int test_bfcp_udp(void)
+{
+	struct test_bfcp_peer *cli = NULL, *srv = NULL;
+	int err = 0;
+
+	if (test_mode == TEST_MEMORY) {
+		/* OOM testing fails because some mem_alloc fails on
+		 * the receiving side, and no packet gets received.
+		 * For UDP, this is not registered as a connection timeout. */
+		err = ESKIPPED;
+		goto out;
+	}
+
+	cli = (struct test_bfcp_peer *)mem_zalloc(sizeof(*cli),
+		&test_bfcp_peer_destructor);
+	if (!cli) {
+		err = ENOMEM;
+		goto out;
+	}
+	cli->transp = BFCP_UDP;
+	cli->client = true;
+
+	srv = (struct test_bfcp_peer *)mem_zalloc(sizeof(*srv),
+		&test_bfcp_peer_destructor);
+	if (!srv) {
+		err = ENOMEM;
+		goto out;
+	}
+	srv->transp = BFCP_UDP;
+
+	err = sa_set_str(&cli->addr, "127.0.0.1", 0);
+	TEST_ERR(err);
+	srv->addr = cli->addr;
+
+	err = bfcp_listen(&srv->bfcp, BFCP_UDP, &srv->addr, NULL, NULL,
+		NULL, &receive_handler, NULL, srv);
+	TEST_ERR(err);
+	cli->peer = srv->addr;
+
+	err = bfcp_connect(&cli->bfcp, BFCP_UDP, &cli->addr, &cli->peer,
+		NULL, &receive_handler, NULL, cli);
+	TEST_ERR(err);
+	srv->peer = cli->addr;
+
+	err = bfcp_request(cli->bfcp, &cli->peer, BFCP_VER1, BFCP_HELLO, 0u,
+		0u, &response_handler, cli, 0u);
+	TEST_ERR(err);
+
+	err = re_main_timeout(100);
+	TEST_ERR(err);
+
+	TEST_EQUALS(resp_handler_called, cli->flags);
+	TEST_EQUALS(recv_handler_called, srv->flags);
+
+	err = srv->handler_err;
+
+out:
+	mem_deref(cli);
+	mem_deref(srv);
+
+	return err;
+}
+
+
+int test_bfcp_tcp(void)
+{
+	struct test_bfcp_peer *cli = NULL, *srv = NULL;
+	int err = 0;
+
+	cli = (struct test_bfcp_peer *)mem_zalloc(sizeof(*cli),
+		&test_bfcp_peer_destructor);
+	if (!cli) {
+		err = ENOMEM;
+		goto out;
+	}
+	cli->transp = BFCP_TCP;
+	cli->client = true;
+
+	srv = (struct test_bfcp_peer *)mem_zalloc(sizeof(*srv),
+		&test_bfcp_peer_destructor);
+	if (!srv) {
+		err = ENOMEM;
+		goto out;
+	}
+	srv->transp = BFCP_TCP;
+
+	err = sa_set_str(&cli->addr, "127.0.0.1", 0);
+	TEST_ERR(err);
+	srv->addr = cli->addr;
+
+	err = bfcp_listen(&srv->bfcp, BFCP_TCP, &srv->addr, NULL,
+		&connection_handler, &established_handler, &receive_handler,
+		&close_handler, srv);
+	TEST_ERR(err);
+	cli->peer = srv->addr;
+
+	err = bfcp_connect(&cli->bfcp, BFCP_TCP, &cli->addr, &cli->peer,
+		&established_handler, &receive_handler, &close_handler, cli);
+	TEST_ERR(err);
+	srv->peer = cli->addr;
+
+	err = re_main_timeout(100);
+	TEST_ERR(err);
+
+	TEST_EQUALS((estab_handler_called | resp_handler_called), cli->flags);
+	TEST_EQUALS((conn_handler_called | estab_handler_called |
+		recv_handler_called), srv->flags);
+
+	err = srv->handler_err;
+
+out:
+	mem_deref(cli);
+	mem_deref(srv);
 
 	return err;
 }

@@ -15,6 +15,62 @@
 #include <re_dbg.h>
 
 
+static int test_leb128(void)
+{
+	struct mbuf *mb = NULL;
+	int err = 0;
+
+	static const uint64_t valuev[] = {
+
+		0,
+
+		/* from random.org */
+		449787982,
+		435590144,
+		64565769,
+		698509268,
+		524090268,
+
+		0x000000ff,     /* max  8-bit */
+		0x0000ffff,     /* max 16-bit */
+		0xffffffff      /* max 32-bit */
+	};
+
+	for (size_t i=0; i<ARRAY_SIZE(valuev); i++) {
+
+		uint64_t val = valuev[i];
+		uint64_t val_dec;
+
+		mb = mbuf_alloc(64);
+		if (!mb)
+			return ENOMEM;
+
+		err = av1_leb128_encode(mb, val);
+		if (err)
+			goto out;
+
+		re_printf("leb128 value: [ %w ]\n", mb->buf, mb->end);
+
+		mb->pos = 0;
+
+		err = av1_leb128_decode(mb, &val_dec);
+		ASSERT_EQ(0, err);
+
+		printf("decoded: %" PRIu64 " / %" PRIx64 "\n",
+		       val_dec, val_dec);
+
+		ASSERT_EQ(val, val_dec);
+
+		mb = mem_deref(mb);
+	}
+
+ out:
+	mem_deref(mb);
+
+	return err;
+}
+
+
 static int test_av1_aggr(void)
 {
 	static const struct test {
@@ -219,61 +275,77 @@ static int copy_obu(struct mbuf *mb_bs, const uint8_t *buf, size_t size)
 }
 
 
-static int convert_rtp_to_bs(struct mbuf *mb_bs, struct mbuf *mb_rtp,
-			     uint8_t w)
+/* Convert RTP OBUs to AV1 bitstream */
+static int convert_rtp_to_bs(struct mbuf *mb_bs, const uint8_t *buf,
+			     size_t buf_size, uint8_t w)
 {
+	struct mbuf mb_rtp = {
+		.buf = (uint8_t *)buf,
+		.size = buf_size,
+		.pos = 0,
+		.end = buf_size
+	};
+	size_t size;
 	int err;
 
 	/* prepend Temporal Delimiter */
 	err = av1_obu_encode(mb_bs, AV1_OBU_TEMPORAL_DELIMITER, true, 0, NULL);
 	if (err)
-		goto out;
+		return err;
 
 	if (w) {
-		size_t size;
+		for (unsigned i=0; i<w; i++) {
+			bool last = (i+1 == w);
 
-		for (unsigned i=0; i<(w - 1u); i++) {
+			if (last) {
+				/* last OBU element MUST NOT be preceded
+				 * by a length field */
+				size = mbuf_get_left(&mb_rtp);
+			}
+			else {
+				uint64_t val;
 
-			err = av1_leb128_decode(mb_rtp, &size);
+				err = av1_leb128_decode(&mb_rtp, &val);
+				if (err)
+					return err;
+
+				if (val > mbuf_get_left(&mb_rtp))
+					return EBADMSG;
+
+				size = (size_t)val;
+			}
+
+			err = copy_obu(mb_bs, mbuf_buf(&mb_rtp), size);
 			if (err)
-				goto out;
+				return err;
 
-			err = copy_obu(mb_bs, mbuf_buf(mb_rtp), size);
-			if (err)
-				goto out;
-
-			mbuf_advance(mb_rtp, size);
+			mbuf_advance(&mb_rtp, size);
 		}
-
-		/* last OBU element MUST NOT be preceded by a length field */
-		size = mbuf_get_left(mb_rtp);
-
-		err = copy_obu(mb_bs, mbuf_buf(mb_rtp), size);
-		if (err)
-			goto out;
-
-		mbuf_advance(mb_rtp, size);
 	}
 	else {
-		while (mbuf_get_left(mb_rtp) >= 2) {
+		while (mbuf_get_left(&mb_rtp) >= 2) {
 
-			size_t size;
+			uint64_t val;
 
 			/* each OBU element MUST be preceded by length field */
-			err = av1_leb128_decode(mb_rtp, &size);
+			err = av1_leb128_decode(&mb_rtp, &val);
 			if (err)
-				goto out;
+				return err;
 
-			err = copy_obu(mb_bs, mbuf_buf(mb_rtp), size);
+			if (val > mbuf_get_left(&mb_rtp))
+				return EBADMSG;
+
+			size = (size_t)val;
+
+			err = copy_obu(mb_bs, mbuf_buf(&mb_rtp), size);
 			if (err)
-				goto out;
+				return err;
 
-			mbuf_advance(mb_rtp, size);
+			mbuf_advance(&mb_rtp, size);
 		}
 	}
 
- out:
-	return err;
+	return 0;
 }
 
 
@@ -313,7 +385,8 @@ static int test_av1_packetize_base(unsigned count_bs, unsigned count_rtp,
 	ASSERT_EQ(1, test.new_count);
 	ASSERT_EQ(exp_w, test.w_saved);
 
-	err = convert_rtp_to_bs(mb_bs, test.mb, test.w_saved);
+	err = convert_rtp_to_bs(mb_bs, test.mb->buf, test.mb->end,
+				test.w_saved);
 	TEST_ERR(err);
 
 	/* compare bitstream with test-vector */
@@ -399,7 +472,7 @@ static const char pkt_beach[] =
 	;
 
 
-static int test_av1_packetize()
+static int test_av1_packetize(void)
 {
 	uint8_t buf[320];
 	int err;
@@ -427,6 +500,10 @@ static int test_av1_packetize()
 int test_av1(void)
 {
 	int err;
+
+	err = test_leb128();
+	if (err)
+		return err;
 
 	err = test_av1_aggr();
 	if (err)

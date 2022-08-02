@@ -14,7 +14,9 @@
 #endif
 #include <string.h>
 #include <stdlib.h>
+#ifdef HAVE_SYS_TIME_H
 #include <sys/time.h>
+#endif
 #include <math.h>
 #include <re.h>
 #include "test.h"
@@ -45,6 +47,8 @@ static const struct test tests[] = {
 	TEST(test_base64),
 	TEST(test_bfcp),
 	TEST(test_bfcp_bin),
+	TEST(test_bfcp_udp),
+	TEST(test_bfcp_tcp),
 	TEST(test_conf),
 	TEST(test_crc32),
 	TEST(test_dns_hdr),
@@ -155,6 +159,12 @@ static const struct test tests[] = {
 	TEST(test_sipevent),
 	TEST(test_sipsess),
 	TEST(test_sipsess_blind_transfer),
+	TEST(test_sipsess_100rel_caller_require),
+	TEST(test_sipsess_100rel_supported),
+	TEST(test_sipsess_100rel_420),
+	TEST(test_sipsess_100rel_421),
+	TEST(test_sipsess_update_uac),
+	TEST(test_sipsess_update_uas),
 	TEST(test_srtp),
 	TEST(test_srtcp),
 	TEST(test_srtp_gcm),
@@ -678,6 +688,8 @@ int test_reg(const char *name, bool verbose)
 		return err;
 	(void)re_fprintf(stderr, "\x1b[32mOK\x1b[;m\n");
 
+	timeout_override = 0;
+
 	return err;
 }
 
@@ -752,7 +764,8 @@ int test_multithread(void)
 
 		err = thrd_create(&threadv[i].tid,
 				     thread_handler, (void *)&threadv[i]);
-		if (err) {
+		if (err != thrd_success) {
+			err = EAGAIN;
 			DEBUG_WARNING("thread_create failed (%m)\n", err);
 			break;
 		}
@@ -778,6 +791,8 @@ int test_multithread(void)
 	if (err)
 		return err;
 	(void)re_fprintf(stderr, "\x1b[32mOK\x1b[;m\n");
+
+	timeout_override = 0;
 
 	return err;
 }

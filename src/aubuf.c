@@ -126,10 +126,10 @@ static int test_aubuf_auframe(void)
 	af_in.sampc = 80;
 	af_in.timestamp = dt;
 
-	/* write one frame (drops first during startup) */
+	/* write second frame */
 	err |= aubuf_write_auframe(ab, &af_in);
 	TEST_ERR(err);
-	TEST_EQUALS(80 * sizeof(float), aubuf_cur_size(ab));
+	TEST_EQUALS(160 * sizeof(float), aubuf_cur_size(ab));
 
 	/* read half frame */
 	af_out.fmt = AUFMT_FLOAT;
@@ -137,6 +137,7 @@ static int test_aubuf_auframe(void)
 	af_out.sampc = 40;
 
 	aubuf_read_auframe(ab, &af_out);
+	/* the first read drops old data: 80 - 40 = 40 */
 	TEST_EQUALS(40 * sizeof(float), aubuf_cur_size(ab));
 	TEST_EQUALS(dt, af_out.timestamp);
 
@@ -165,6 +166,39 @@ static int test_aubuf_auframe(void)
 		    sizeof(sampv_in) - 80 * sizeof(float),
 		    sampv_out, sizeof(sampv_out) - 80 * sizeof(float));
 	TEST_EQUALS(0, aubuf_cur_size(ab));
+
+	/* test automatic timestamps */
+	mem_deref(ab);
+	err = aubuf_alloc(&ab, 0, 0);
+	TEST_ERR(err);
+
+	dt = 24 * AUDIO_TIMEBASE / (af_in.srate * af_in.ch);
+	auframe_init(&af_in,  AUFMT_FLOAT, sampv_in,  24, 48000, 2);
+	auframe_init(&af_out, AUFMT_FLOAT, sampv_out, 24, 48000, 2);
+
+	af_in.timestamp = 0;
+
+	err |= aubuf_write_auframe(ab, &af_in);
+	err |= aubuf_write_auframe(ab, &af_in);
+	err |= aubuf_write_auframe(ab, &af_in);
+	err |= aubuf_write_auframe(ab, &af_in);
+	TEST_ERR(err);
+
+	aubuf_read_auframe(ab, &af_out);
+	TEST_EQUALS(0, af_out.timestamp);
+
+	aubuf_read_auframe(ab, &af_out);
+	TEST_EQUALS(dt, af_out.timestamp);
+
+	af_out.sampc = 12;
+	aubuf_read_auframe(ab, &af_out);
+	TEST_EQUALS(2*dt, af_out.timestamp);
+
+	aubuf_read_auframe(ab, &af_out);
+	TEST_EQUALS(2*dt + dt/2, af_out.timestamp);
+
+	aubuf_read_auframe(ab, &af_out);
+	TEST_EQUALS(3*dt, af_out.timestamp);
 
  out:
 	mem_deref(ab);

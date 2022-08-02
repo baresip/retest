@@ -4,9 +4,11 @@ on:
   push:
     branches:
     - main
+    - stable
   pull_request:
     branches:
     - main
+    - stable
   schedule:
     - cron: '0 7 * * *'
 
@@ -36,7 +38,13 @@ jobs:
 
     - name: make re/rem
       run: |
-        for p in re rem; do cd $p && sudo PATH="$PATH" make install && cd - && sudo rm -Rf $p; done
+        for p in re rem; do
+          cmake -S $p -B $p/build
+          cmake --build $p/build -j
+        done
+        for p in re rem; do
+          mv $p ../.
+        done
 
     - name: ldconfig
       if: ${{ runner.os == 'Linux' }}
@@ -45,4 +53,4 @@ jobs:
     - name: retest
       run: |
         cmake -DCMAKE_C_FLAGS="-Werror" . && make
-        ./retest -a
+        ./retest -a -v
