@@ -13,7 +13,14 @@
 #include <re_dbg.h>
 
 
-enum {NUM_TESTS = 32};
+enum {
+	NUM_TESTS    = 32,
+	IP_127_0_0_1 = 0x7f000001,
+	IP_127_0_0_2 = 0x7f000002,
+	IP_127_0_0_3 = 0x7f000003,
+	IP_127_0_0_4 = 0x7f000004,
+	IP_127_0_0_5 = 0x7f000005,
+};
 
 
 static int mkstr(char **strp)
@@ -371,57 +378,63 @@ int test_dns_integration(void)
 	err = dns_server_alloc(&srv, false);
 	TEST_ERR(err);
 
-	err = dns_server_add_a(srv, "test1.example.net", 0x7f000001, 1);
+	err = dns_server_add_a(srv, "test1.example.net", IP_127_0_0_1, 1);
 	TEST_ERR(err);
 
 	err = dnsc_alloc(&data.dnsc, NULL, &srv->addr, 1);
 	TEST_ERR(err);
 
-	err = check_dns(&data, "test1.example.net", 0x7f000001, true);
+	/* Test system getaddrinfo */
+	dnsc_system(data.dnsc, true);
+	err = check_dns(&data, "localhost", IP_127_0_0_1, true);
+	TEST_ERR(err);
+	dnsc_system(data.dnsc, false);
+
+	err = check_dns(&data, "test1.example.net", IP_127_0_0_1, true);
 	TEST_ERR(err);
 
 	/* Test does not exist */
-	err = check_dns(&data, "test2.example.net", 0x7f000001, true);
+	err = check_dns(&data, "test2.example.net", IP_127_0_0_1, true);
 	TEST_EQUALS(ENODATA, err);
 
 	dns_server_flush(srv);
 
-	err = dns_server_add_a(srv, "test1.example.net", 0x7f000002, 1);
+	err = dns_server_add_a(srv, "test1.example.net", IP_127_0_0_2, 1);
 	TEST_ERR(err);
 
-	err = dns_server_add_a(srv, "test2.example.net", 0x7f000003, 1);
+	err = dns_server_add_a(srv, "test2.example.net", IP_127_0_0_3, 1);
 	TEST_ERR(err);
 
-	err = dns_server_add_a(srv, "test3.example.net", 0x7f000004, 1);
+	err = dns_server_add_a(srv, "test3.example.net", IP_127_0_0_4, 1);
 	TEST_ERR(err);
 
 	/* --- Test DNS Cache --- */
-	err = check_dns(&data, "test1.example.net", 0x7f000001, true);
+	err = check_dns(&data, "test1.example.net", IP_127_0_0_1, true);
 	TEST_ERR(err);
 
-	err = check_dns(&data, "test2.example.net", 0x7f000003, true);
+	err = check_dns(&data, "test2.example.net", IP_127_0_0_3, true);
 	TEST_ERR(err);
 
-	err = check_dns(&data, "test2.example.net", 0x7f000003, true);
+	err = check_dns(&data, "test2.example.net", IP_127_0_0_3, true);
 	TEST_ERR(err);
 
 	/* Check another resource record afterwards */
-	err = check_dns(&data, "test3.example.net", 0x7f000004, true);
+	err = check_dns(&data, "test3.example.net", IP_127_0_0_4, true);
 	TEST_ERR(err);
 
 	sys_msleep(100);    /* wait until TTL timer expires */
 	re_main_timeout(1); /* execute tmr callbacks */
 
 	/* --- Check expired TTL --- */
-	err = check_dns(&data, "test1.example.net", 0x7f000002, true);
+	err = check_dns(&data, "test1.example.net", IP_127_0_0_2, true);
 	TEST_ERR(err);
 
 	/* --- Test explicit DNS cache flush --- */
 	dns_server_flush(srv);
-	err = dns_server_add_a(srv, "test1.example.net", 0x7f000005, 1);
+	err = dns_server_add_a(srv, "test1.example.net", IP_127_0_0_5, 1);
 	TEST_ERR(err);
 	dnsc_cache_flush(data.dnsc);
-	err = check_dns(&data, "test1.example.net", 0x7f000005, true);
+	err = check_dns(&data, "test1.example.net", IP_127_0_0_5, true);
 	TEST_ERR(err);
 
 	/* --- Test early query cancellation --- */
@@ -430,7 +443,7 @@ int test_dns_integration(void)
 	TEST_ERR(err);
 	mem_deref(q);
 
-	err = check_dns(&data, "test1.example.net", 0x7f000005, true);
+	err = check_dns(&data, "test1.example.net", IP_127_0_0_5, true);
 	TEST_ERR(err);
 
 	/* --- Leave query open for cleanup test --- */
