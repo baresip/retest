@@ -385,10 +385,10 @@ int test_dns_integration(void)
 	TEST_ERR(err);
 
 	/* Test system getaddrinfo */
-	dnsc_system(data.dnsc, true);
+	dnsc_getaddrinfo(data.dnsc, true);
 	err = check_dns(&data, "localhost", IP_127_0_0_1, true);
 	TEST_ERR(err);
-	dnsc_system(data.dnsc, false);
+	dnsc_getaddrinfo(data.dnsc, false);
 
 	err = check_dns(&data, "test1.example.net", IP_127_0_0_1, true);
 	TEST_ERR(err);
