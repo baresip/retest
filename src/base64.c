@@ -135,11 +135,6 @@ int test_base64(void)
 	TEST_ERR(err);
 
 	struct pl inv;
-	pl_set_str(&inv, "Zg");
-	olen = 0;
-	err  = base64_decode(inv.p, inv.l, b64_buf, &olen);
-	TEST_EQUALS(EOVERFLOW, err);
-
 	pl_set_str(&inv, "Zm8=");
 	olen = 1;
 	err  = base64_decode(inv.p, inv.l, b64_buf, &olen);
