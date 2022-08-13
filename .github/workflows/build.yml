@@ -81,4 +81,4 @@ jobs:
       run: |
         cmake -B build -DCMAKE_C_FLAGS="/WX"
         cmake --build build
-        ./retest -r
+        build\Debug\retest.exe -r
