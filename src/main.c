@@ -69,7 +69,7 @@ int main(int argc, char *argv[])
 	bool do_oom = false;
 	bool do_int = false;
 	bool do_perf = false;
-	bool do_all = true;    /* run all tests is default */
+	bool do_all = false;    /* run all tests is default */
 	bool do_list = false;
 	bool do_thread = false;
 	enum dbg_flags flags;
