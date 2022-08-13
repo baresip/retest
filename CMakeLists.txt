@@ -249,6 +249,7 @@ set_property(TARGET ${PROJECT_NAME} PROPERTY ENABLE_EXPORTS 1)
 if(WIN32)
   target_link_libraries(${PROJECT_NAME}
       PRIVATE ${REM_LIBRARIES} ${RE_LIBRARIES} ${OPENSSL_LIBRARIES}
+      qwave
       iphlpapi
       wsock32
       ws2_32
