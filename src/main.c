@@ -171,9 +171,11 @@ int main(int argc, char *argv[])
 	(void)argc;
 	(void)argv;
 	do_reg = true;
-	do_oom = true;
-	do_int = true;
-	do_perf = true;
+	do_oom = false;
+	do_int = false;
+	do_perf = false;
+
+	verbose = true;
 #endif
 
 	/* Initialise debugging */
