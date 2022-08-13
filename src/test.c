@@ -993,7 +993,7 @@ int test_write_file(struct mbuf *mb, const char *filename)
 		if (err)
 			break;
 
-		ssize_t n = write(fd, (void *)buf, count);
+		ssize_t n = write(fd, (void *)buf, (unsigned int)count);
 		if (n < 0) {
 			err = errno;
 			break;
