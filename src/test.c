@@ -30,6 +30,7 @@
 #ifdef WIN32
 #define open _open
 #define read _read
+#define write _write
 #define close _close
 #endif
 
@@ -982,17 +983,17 @@ int test_write_file(struct mbuf *mb, const char *filename)
 
 	for (;;) {
 		uint8_t buf[1024];
-		ssize_t n;
+		ssize_t count;
 
-		n = min(sizeof(buf), mbuf_get_left(mb));
-		if (n == 0)
+		count = min(sizeof(buf), mbuf_get_left(mb));
+		if (count == 0)
 			break;
 
-		err = mbuf_read_mem(mb, buf, n);
+		err = mbuf_read_mem(mb, buf, count);
 		if (err)
 			break;
 
-		n = write(fd, (void *)buf, n);
+		ssize_t n = write(fd, (void *)buf, count);
 		if (n < 0) {
 			err = errno;
 			break;
