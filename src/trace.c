@@ -60,7 +60,11 @@ int test_trace(void)
 	/* Test TRACE after close - should do nothing */
 	RE_TRACE_BEGIN("test", "test after close");
 
+#ifdef WIN32
+	(void)_unlink("test_trace.json");
+#else
 	(void)unlink("test_trace.json");
+#endif
 
 out:
 	return err;

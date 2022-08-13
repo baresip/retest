@@ -296,8 +296,13 @@ static void restore_output(int err)
 	(void)fclose(f);
 
 out:
+#ifdef WIN32
+	(void)_unlink("stdout.out");
+	(void)_unlink("stderr.out");
+#else
 	(void)unlink("stdout.out");
 	(void)unlink("stderr.out");
+#endif
 }
 
 

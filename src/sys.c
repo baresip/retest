@@ -213,7 +213,12 @@ int test_sys_fs_fopen(void)
 	err = fclose(file);
 	TEST_ERR(err);
 
+#ifdef WIN32
+	(void)_unlink("retest_fs_fopen");
+#else
 	(void)unlink("retest_fs_fopen");
+#endif
+
 out:
 	return err;
 }
