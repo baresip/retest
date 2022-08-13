@@ -94,7 +94,7 @@ static void relay_udp_recv(const struct sa *src, struct mbuf *mb, void *arg)
 
 	chan = find_channel_peer(turn, src);
 	if (chan) {
-		uint16_t len = mbuf_get_left(mb);
+		uint16_t len = (uint16_t)mbuf_get_left(mb);
 		size_t start;
 
 		if (mb->pos < 4) {
