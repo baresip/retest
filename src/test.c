@@ -27,6 +27,13 @@
 #include <re_dbg.h>
 
 
+#ifdef WIN32
+#define open _open
+#define read _read
+#define close _close
+#endif
+
+
 typedef int (test_exec_h)(void);
 
 struct test {
@@ -540,7 +547,7 @@ static int testcase_perf(const struct test *test, double *usec_avgp)
 
 	usec_avg = 1.0 * (usec_stop - usec_start) / (double)i;
 
-	n = usec_avg ? (REPEATS_USEC / usec_avg) : 0;
+	n = usec_avg ? (size_t)(REPEATS_USEC / usec_avg) : 0;
 	n = min(REPEATS_MAX, max(n, REPEATS_MIN));
 
 	/* now for the real measurement */
@@ -652,7 +659,7 @@ int test_perf(const char *name, bool verbose)
 				return err;
 			}
 
-			tim->nsec_avg = 1000.0 * usec_avg;
+			tim->nsec_avg = (uint64_t)(1000.0 * usec_avg);
 		}
 
 		/* sort the timing table by average time */
