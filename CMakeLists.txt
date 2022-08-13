@@ -245,7 +245,19 @@ endif()
 add_executable(${PROJECT_NAME} ${SRCS})
 set_property(TARGET ${PROJECT_NAME} PROPERTY ENABLE_EXPORTS 1)
 
-target_link_libraries(${PROJECT_NAME}
-    PRIVATE ${REM_LIBRARIES} ${RE_LIBRARIES} ${OPENSSL_LIBRARIES}
-    -lz -lpthread -lm)
+
+if(WIN32)
+  target_link_libraries(${PROJECT_NAME}
+      PRIVATE ${REM_LIBRARIES} ${RE_LIBRARIES} ${OPENSSL_LIBRARIES}
+      iphlpapi
+      wsock32
+      ws2_32
+  )
+else()
+  target_link_libraries(${PROJECT_NAME}
+      PRIVATE ${REM_LIBRARIES} ${RE_LIBRARIES} ${OPENSSL_LIBRARIES}
+      -lz -lpthread -lm)
+endif()
+
+
 target_include_directories(${PROJECT_NAME} PRIVATE ${OPENSSL_INCLUDE_DIR})
