@@ -983,7 +983,7 @@ int test_write_file(struct mbuf *mb, const char *filename)
 
 	for (;;) {
 		uint8_t buf[1024];
-		ssize_t count;
+		size_t count;
 
 		count = min(sizeof(buf), mbuf_get_left(mb));
 		if (count == 0)
