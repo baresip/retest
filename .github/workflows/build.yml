@@ -76,9 +76,9 @@ jobs:
         OPENSSL_ROOT_DIR=/usr/local/opt/openssl cmake -DCMAKE_C_FLAGS="-Werror" . && make
         ./retest -r
 
-     - name: retest
-       if: ${{ runner.os == 'Windows' }}
-       run: |
-         cmake -B build -DCMAKE_C_FLAGS="/WX"
-         cmake --build build
+    - name: retest
+      if: ${{ runner.os == 'Windows' }}
+      run: |
+        cmake -B build -DCMAKE_C_FLAGS="/WX"
+        cmake --build build
         ./retest -r
