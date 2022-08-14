@@ -242,23 +242,16 @@ endif()
 # Main target object
 #
 
+set(LINKLIBS ${REM_LIBRARIES} ${RE_LIBRARIES} ${OPENSSL_LIBRARIES})
+if(WIN32)
+  list(APPEND LINKLIBS qwave iphlpapi wsock32 ws2_32)
+else()
+  list(APPEND LINKLIBS -lz -lpthread -lm)
+endif()
+
 add_executable(${PROJECT_NAME} ${SRCS})
 set_property(TARGET ${PROJECT_NAME} PROPERTY ENABLE_EXPORTS 1)
 
-
-if(WIN32)
-  target_link_libraries(${PROJECT_NAME}
-      PRIVATE ${REM_LIBRARIES} ${RE_LIBRARIES} ${OPENSSL_LIBRARIES}
-      qwave
-      iphlpapi
-      wsock32
-      ws2_32
-  )
-else()
-  target_link_libraries(${PROJECT_NAME}
-      PRIVATE ${REM_LIBRARIES} ${RE_LIBRARIES} ${OPENSSL_LIBRARIES}
-      -lz -lpthread -lm)
-endif()
-
+target_link_libraries(${PROJECT_NAME} PRIVATE ${LINKLIBS})
 
 target_include_directories(${PROJECT_NAME} PRIVATE ${OPENSSL_INCLUDE_DIR})
