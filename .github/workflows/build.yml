@@ -16,11 +16,13 @@ jobs:
 
     strategy:
       matrix:
-        compiler: [gcc]
+        compiler: [gcc, clang]
         os: [ubuntu-latest, macos-latest, windows-latest]
         exclude:
            - os: macos-latest
              compiler: gcc
+           - os: windows-latest
+             compiler: clang
     env:
       CC: ${{ matrix.compiler }}
 
@@ -35,7 +37,7 @@ jobs:
     - name: install packages
       if: ${{ runner.os == 'Windows' }}
       run: |
-        choco install --no-progress openssl wget
+        choco install --no-progress openssl
 
     - uses: sreimers/pr-dependency-action@v0.5
       with:
