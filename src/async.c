@@ -18,19 +18,18 @@
 #define DEBUG_LEVEL 5
 #include <re_dbg.h>
 
-static int test_add;
-static int test_complete;
+struct test_cnt {
+	int tests;
+	int done;
+};
 
-static struct test {
+struct test {
 	char domain[128];
 	struct sa sa;
 	int err;
 	int err_expected;
-} testv[] = {
-	{"localhost", {.len = 0}, -1, 0},
-	{"test.notfound", {.len = 0}, -1, EADDRNOTAVAIL}
+	struct test_cnt *cnt;
 };
-
 
 static int blocking_getaddr(void *arg)
 {
@@ -75,7 +74,7 @@ static void completed(int err, void *arg)
 
 out:
 	test->err = err;
-	if (++test_complete >= test_add)
+	if (++test->cnt->done >= test->cnt->tests)
 		re_cancel();
 }
 
@@ -84,19 +83,24 @@ int test_async(void)
 {
 	int err;
 
-	test_add = 0;
-	test_complete = 0;
+	struct test_cnt cnt = {0, 0};
 
-	err = re_thread_async_init(4);
+	struct test testv[] = {
+		{"localhost", {.len = 0}, -1, 0, &cnt},
+		{"test.notfound", {.len = 0}, -1, EADDRNOTAVAIL, &cnt}
+	};
+
+	cnt.tests = ARRAY_SIZE(testv);
+
+	err = re_thread_async_init(2);
 	TEST_ERR(err);
 
 	for (size_t i = 0; i < ARRAY_SIZE(testv); i++) {
 		err = re_thread_async(blocking_getaddr, completed, &testv[i]);
 		TEST_ERR(err);
-		++test_add;
 	}
 
-	err = re_main_timeout(100);
+	err = re_main_timeout(200);
 	TEST_ERR(err);
 
 	for (size_t i = 0; i < ARRAY_SIZE(testv); i++) {
