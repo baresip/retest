@@ -18,12 +18,17 @@
 #define DEBUG_LEVEL 5
 #include <re_dbg.h>
 
+struct test_cnt {
+	int tests;
+	int done;
+};
+
 struct test {
 	char domain[128];
-	size_t n;
 	struct sa sa;
 	int err;
 	int err_expected;
+	struct test_cnt *cnt;
 };
 
 static int blocking_getaddr(void *arg)
@@ -69,7 +74,7 @@ static void completed(int err, void *arg)
 
 out:
 	test->err = err;
-	if (test->n >= 2)
+	if (++test->cnt->done >= test->cnt->tests)
 		re_cancel();
 }
 
@@ -78,16 +83,19 @@ int test_async(void)
 {
 	int err;
 
+	struct test_cnt cnt = {0, 0};
+
 	struct test testv[] = {
-		{"localhost", 0, {.len = 0}, -1, 0},
-		{"test.notfound", 0, {.len = 0}, -1, EADDRNOTAVAIL}
+		{"localhost", {.len = 0}, -1, 0, &cnt},
+		{"test.notfound", {.len = 0}, -1, EADDRNOTAVAIL, &cnt}
 	};
+
+	cnt.tests = ARRAY_SIZE(testv);
 
 	err = re_thread_async_init(2);
 	TEST_ERR(err);
 
 	for (size_t i = 0; i < ARRAY_SIZE(testv); i++) {
-		testv[i].n = i + 1;
 		err = re_thread_async(blocking_getaddr, completed, &testv[i]);
 		TEST_ERR(err);
 	}
