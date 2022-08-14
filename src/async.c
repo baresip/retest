@@ -84,6 +84,9 @@ int test_async(void)
 {
 	int err;
 
+	if (test_mode == TEST_THREAD)
+		return 0;
+
 	test_add = 0;
 	test_complete = 0;
 
