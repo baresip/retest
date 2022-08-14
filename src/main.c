@@ -253,6 +253,8 @@ int main(int argc, char *argv[])
 	}
 
  out:
+	re_thread_async_close();
+
 	/* Check for open timers */
 	tmr_debug();
 
