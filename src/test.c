@@ -776,9 +776,10 @@ int test_multithread(void)
 		threadv[i].test = &tests[ti];
 		threadv[i].err = -1;           /* error not set */
 
-		err = thrd_create(&threadv[i].tid,
-				     thread_handler, (void *)&threadv[i]);
-		if (err != thrd_success) {
+		err = thrd_success != thrd_create(&threadv[i].tid,
+						  thread_handler,
+						  (void *)&threadv[i]);
+		if (err) {
 			err = EAGAIN;
 			DEBUG_WARNING("thread_create failed (%m)\n", err);
 			break;
