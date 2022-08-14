@@ -27,6 +27,14 @@
 #include <re_dbg.h>
 
 
+#ifdef WIN32
+#define open _open
+#define read _read
+#define write _write
+#define close _close
+#endif
+
+
 typedef int (test_exec_h)(void);
 
 struct test {
@@ -296,8 +304,13 @@ static void restore_output(int err)
 	(void)fclose(f);
 
 out:
+#ifdef WIN32
+	(void)_unlink("stdout.out");
+	(void)_unlink("stderr.out");
+#else
 	(void)unlink("stdout.out");
 	(void)unlink("stderr.out");
+#endif
 }
 
 
@@ -970,17 +983,17 @@ int test_write_file(struct mbuf *mb, const char *filename)
 
 	for (;;) {
 		uint8_t buf[1024];
-		ssize_t n;
+		size_t count;
 
-		n = min(sizeof(buf), mbuf_get_left(mb));
-		if (n == 0)
+		count = min(sizeof(buf), mbuf_get_left(mb));
+		if (count == 0)
 			break;
 
-		err = mbuf_read_mem(mb, buf, n);
+		err = mbuf_read_mem(mb, buf, count);
 		if (err)
 			break;
 
-		n = write(fd, (void *)buf, n);
+		ssize_t n = write(fd, (void *)buf, (unsigned int)count);
 		if (n < 0) {
 			err = errno;
 			break;
