@@ -174,6 +174,8 @@ int main(int argc, char *argv[])
 	do_oom = true;
 	do_int = true;
 	do_perf = true;
+	do_all = false;
+	verbose = true;
 #endif
 
 	/* Initialise debugging */
