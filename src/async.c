@@ -96,7 +96,7 @@ int test_async(void)
 		++test_add;
 	}
 
-	err = re_main_timeout(100);
+	err = re_main_timeout(500);
 	TEST_ERR(err);
 
 	for (size_t i = 0; i < ARRAY_SIZE(testv); i++) {
