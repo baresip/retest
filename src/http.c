@@ -464,9 +464,10 @@ static int test_http_loop_base(bool secure, const char *met)
 		/* verify results after HTTP traffic */
 		TEST_EQUALS(i, t.n_request);
 		TEST_EQUALS(i, t.n_response);
-		TEST_NOT_EQUALS(t.mb_body, NULL);
-		TEST_STRCMP("abcdefghijklmnopqrstuvwxyz", 26,
-			t.mb_body->buf, t.mb_body->end);
+
+		if (t.mb_body)
+			TEST_STRCMP("abcdefghijklmnopqrstuvwxyz", 26,
+				t.mb_body->buf, t.mb_body->end);
 
 		t.mb_body = mem_deref(t.mb_body);
 		req =  mem_deref(req);
