@@ -167,7 +167,9 @@ static void http_req_handler(struct http_conn *conn,
 	TEST_STRCMP("GET", 3, msg->met.p, msg->met.l);
 	TEST_STRCMP("/index.html", 11, msg->path.p, msg->path.l);
 	TEST_STRCMP("", 0, msg->prm.p, msg->prm.l);
-	TEST_EQUALS(0, msg->clen);
+	TEST_EQUALS(t->clen, msg->clen);
+	TEST_STRCMP("abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyz", 52,
+		mbuf_buf(msg->mb), mbuf_get_left(msg->mb));
 
 	/* Create a chunked response body */
 	err = mbuf_write_str(mb_body,
@@ -347,6 +349,25 @@ static int http_data_handler(const uint8_t *buf, size_t size,
 static size_t http_req_body_handler(struct mbuf *mb, void *arg)
 {
 	struct test *t = arg;
+
+	if (t->i_req_body >= t->clen)
+		return 0;
+
+	if (mbuf_write_mem(mb,
+			(const uint8_t*) "abcdefghijklmnopqrstuvwxyz",
+			strlen("abcdefghijklmnopqrstuvwxyz"))) {
+		mbuf_reset(mb);
+		return 0;
+	}
+
+	t->i_req_body += strlen("abcdefghijklmnopqrstuvwxyz");
+	return strlen("abcdefghijklmnopqrstuvwxyz");
+}
+
+
+static size_t http_req_long_body_handler(struct mbuf *mb, void *arg)
+{
+	struct test *t = arg;
 	size_t l = 0;
 	size_t wlen;
 
@@ -439,19 +460,22 @@ static int test_http_loop_base(bool secure, const char *met)
 			  "http%s://127.0.0.1:%u/index.html",
 			  secure ? "s" : "", sa_port(&srv));
 
-	if (put)
-		t.clen = REQ_BODY_SIZE;
-
 	for (i = 1; i <= REQ_HTTP_REQUESTS; i++) {
 		t.i_req_body = 0;
+
+		t.clen = put ? REQ_BODY_SIZE :
+			2 * strlen("abcdefghijklmnopqrstuvwxyz");
+
 		err = http_request(&req, cli, met, url,
-				http_resp_handler, http_data_handler,
-				put ? http_req_body_handler : NULL,
-				&t,
-				put ? "Content-Length: %llu\r\n%s\r\n" : NULL,
-				t.clen,
-				t.clen > REQ_BODY_CHUNK_SIZE ?
-					"Expect: 100-continue\r\n" : "");
+			http_resp_handler, http_data_handler,
+			put ? 	http_req_long_body_handler :
+				http_req_body_handler,
+			&t,
+			"Content-Length: %llu\r\n%s\r\n%s",
+			t.clen,
+			t.clen > REQ_BODY_CHUNK_SIZE ?
+				"Expect: 100-continue\r\n" : "",
+			"abcdefghijklmnopqrstuvwxyz");
 		if (err)
 			goto out;
 
