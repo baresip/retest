@@ -211,6 +211,8 @@ int test_hmac_sha256(void);
 int test_http(void);
 int test_http_loop(void);
 int test_http_large_body(void);
+int test_http_conn(void);
+int test_http_conn_large_body(void);
 #ifdef USE_TLS
 int test_https_loop(void);
 int test_http_client_set_tls(void);
