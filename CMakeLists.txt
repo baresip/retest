@@ -175,4 +175,6 @@ set_property(TARGET ${PROJECT_NAME} PROPERTY ENABLE_EXPORTS 1)
 target_link_libraries(${PROJECT_NAME} PRIVATE ${LINKLIBS})
 target_compile_definitions(${PROJECT_NAME} PRIVATE ${RE_DEFINITIONS})
 
-target_include_directories(${PROJECT_NAME} PRIVATE ${OPENSSL_INCLUDE_DIR})
+if(USE_OPENSSL)
+  target_include_directories(${PROJECT_NAME} PRIVATE ${OPENSSL_INCLUDE_DIR})
+endif()
