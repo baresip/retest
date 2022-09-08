@@ -154,6 +154,9 @@ if(USE_OPENSSL)
     src/combo/dtls_turn.c
     src/mock/cert.c
   )
+  set(CRYPTO_LIBS OpenSSL::SSL OpenSSL::Crypto)
+elseif(USE_MBEDTLS)
+  set(CRYPTO_LIBS MbedTLS MbedCrypto MbedX509)
 endif()
 
 
@@ -162,7 +165,7 @@ endif()
 # Main target object
 #
 
-set(LINKLIBS ${REM_LIBRARIES} ${RE_LIBRARIES} ${OPENSSL_LIBRARIES})
+set(LINKLIBS ${REM_LIBRARIES} ${RE_LIBRARIES} ${CRYPTO_LIBS})
 if(WIN32)
   list(APPEND LINKLIBS qwave iphlpapi wsock32 ws2_32)
 else()
@@ -174,7 +177,3 @@ set_property(TARGET ${PROJECT_NAME} PROPERTY ENABLE_EXPORTS 1)
 
 target_link_libraries(${PROJECT_NAME} PRIVATE ${LINKLIBS})
 target_compile_definitions(${PROJECT_NAME} PRIVATE ${RE_DEFINITIONS})
-
-if(USE_OPENSSL)
-  target_include_directories(${PROJECT_NAME} PRIVATE ${OPENSSL_INCLUDE_DIR})
-endif()
