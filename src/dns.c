@@ -387,8 +387,10 @@ int test_dns_integration(void)
 	/* Test system getaddrinfo */
 	dnsc_getaddrinfo(data.dnsc, true);
 	err = check_dns(&data, "localhost", IP_127_0_0_1, true);
+	TEST_EQUALS(dnsc_getaddrinfo_enabled(data.dnsc), true);
 	TEST_ERR(err);
 	dnsc_getaddrinfo(data.dnsc, false);
+	TEST_EQUALS(dnsc_getaddrinfo_enabled(data.dnsc), false);
 
 	err = check_dns(&data, "test1.example.net", IP_127_0_0_1, true);
 	TEST_ERR(err);
