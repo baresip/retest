@@ -157,13 +157,12 @@ static int reg_test(enum sip_transp tp, bool deprecated, uint16_t srcport)
 	if (err)
 		goto out;
 
-	err = re_main_timeout(800);
-	if (err)
-		goto out;
+	err = re_main_timeout(1000);
+	TEST_ERR(err);
 
 	if (test.err) {
 		err = test.err;
-		goto out;
+		TEST_ERR(err);
 	}
 
 	TEST_ASSERT(srv->n_register_req > 0);
@@ -197,7 +196,6 @@ int test_sipreg_tcp(void)
 
 	err  = reg_test(SIP_TRANSP_TCP, true, 0);
 	err |= reg_test(SIP_TRANSP_TCP, false, 0);
-	err |= reg_test(SIP_TRANSP_TCP, false, 56060);
 	return err;
 }
 
@@ -209,7 +207,6 @@ int test_sipreg_tls(void)
 
 	err  = reg_test(SIP_TRANSP_TLS, true, 0);
 	err |= reg_test(SIP_TRANSP_TLS, false, 0);
-	err |= reg_test(SIP_TRANSP_TLS, false, 56060);
 	return err;
 }
 #endif
