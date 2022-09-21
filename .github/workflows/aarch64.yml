@@ -4,7 +4,7 @@ jobs:
   aarch64_job:
     # The host should always be Linux
     runs-on: ubuntu-latest
-    name: Build on Debian 10 and aarch64
+    name: Build on Debian 11 and aarch64
     steps:
       - uses: actions/checkout@v2.1.0
 
@@ -25,7 +25,7 @@ jobs:
         id: runcmd
         with:
           arch: aarch64
-          distro: buster
+          distro: bullseye
 
           install: |
             apt-get update -q -y
@@ -34,7 +34,7 @@ jobs:
           run: |
             for p in re rem; do
               cmake -S $p -B $p/build
-              cmake --build $p/build -j
+              cmake --build $p/build -j4
             done
             for p in re rem; do
               mv $p ../.
