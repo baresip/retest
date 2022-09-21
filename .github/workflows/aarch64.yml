@@ -1,0 +1,53 @@
+on: [push, pull_request]
+
+jobs:
+  aarch64_job:
+    # The host should always be Linux
+    runs-on: ubuntu-latest
+    name: Build on Debian 10 and aarch64
+    steps:
+      - uses: actions/checkout@v2.1.0
+      - uses: uraimo/run-on-arch-action@v2
+        name: Run commands
+        id: runcmd
+        with:
+          arch: aarch64
+          distro: buster
+
+          uses: sreimers/pr-dependency-action@v0.5
+          with:
+            name: re
+            repo: https://github.com/baresip/re
+            secret: ${{ secrets.GITHUB_TOKEN }}
+
+          uses: sreimers/pr-dependency-action@v0.5
+          with:
+            name: rem
+            repo: https://github.com/baresip/rem
+            secret: ${{ secrets.GITHUB_TOKEN }}
+
+          install: |
+            apt-get update -q -y
+            apt-get install -q -y cmake libssl-dev
+
+          name: make re/rem
+          shell: bash
+          run: |
+            for p in re rem; do
+              cmake -S $p -B $p/build
+              cmake --build $p/build -j
+            done
+            for p in re rem; do
+              mv $p ../.
+            done
+            ldconfig
+
+          run: |
+            cmake -B build -DCMAKE_C_FLAGS="-Werror"
+            cmake --build build -j4
+            ./retest -r
+
+      - name: Get the output
+        # Echo the `uname` output parameter from the `runcmd` step
+        run: |
+          echo "The uname output was ${{ steps.runcmd.outputs.uname }}"
