@@ -42,7 +42,7 @@ jobs:
             ldconfig
             cmake -B build -DCMAKE_C_FLAGS="-Werror"
             cmake --build build -j4
-            ./retest -v -r
+            ./build/retest -v -r
 
       - name: Get the output
         # Echo the `uname` output parameter from the `runcmd` step
