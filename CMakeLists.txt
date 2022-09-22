@@ -166,7 +166,7 @@ set(LINKLIBS ${REM_LIBRARIES} ${RE_LIBRARIES} ${OPENSSL_LIBRARIES})
 if(WIN32)
   list(APPEND LINKLIBS qwave iphlpapi wsock32 ws2_32)
 else()
-  list(APPEND LINKLIBS -lz -lpthread -lm)
+  list(APPEND LINKLIBS -lpthread -lm)
 endif()
 
 add_executable(${PROJECT_NAME} ${SRCS})
