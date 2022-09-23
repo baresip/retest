@@ -34,14 +34,14 @@ jobs:
           run: |
             for p in re rem; do
               cmake -S $p -B $p/build
-              cmake --build $p/build -j4
+              cmake --build $p/build -j
             done
             for p in re rem; do
               mv $p ../.
             done
             ldconfig
             cmake -B build -DCMAKE_C_FLAGS="-Werror"
-            cmake --build build -j4
+            cmake --build build -j
             ./build/retest -v -r
 
       - name: Get the output
