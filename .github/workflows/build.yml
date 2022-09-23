@@ -81,6 +81,6 @@ jobs:
     - name: retest
       if: ${{ runner.os == 'Windows' }}
       run: |
-        cmake -B build -DCMAKE_C_FLAGS="/WX"
+        cmake -B build -DCMAKE_C_FLAGS="/WX" -GNinja
         cmake --build build
         build\Debug\retest.exe -v -r
