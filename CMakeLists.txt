@@ -169,6 +169,10 @@ else()
   list(APPEND LINKLIBS -lpthread -lm)
 endif()
 
+if(ZLIB_FOUND)
+  list(APPEND LINKLIBS ZLIB::ZLIB)
+endif()
+
 add_executable(${PROJECT_NAME} ${SRCS})
 set_property(TARGET ${PROJECT_NAME} PROPERTY ENABLE_EXPORTS 1)
 
