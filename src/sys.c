@@ -17,31 +17,6 @@
 #include <re_dbg.h>
 
 
-int test_sys_div(void)
-{
-	static const struct {
-		uint64_t a, b, res;
-	} testv[] = {
-		{15, 5, 3},
-		{0x100000000ULL, 0x10000UL, 0x10000},
-		{846744073709551616ULL, 8474407795116ULL, 99917},
-		{1446744073709551615ULL, 2, 723372036854775807ULL}
-	};
-	uint32_t i;
-	int err = 0;
-
-	for (i=0; i<ARRAY_SIZE(testv); i++) {
-		const uint64_t res = testv[i].a / testv[i].b;
-		if (res != testv[i].res) {
-			DEBUG_WARNING("div test %u failed (%llu)\n", i, res);
-			err = EDOM;
-		}
-	}
-
-	return err;
-}
-
-
 int test_sys_endian(void)
 {
 	uint16_t s_le, s_ho;
