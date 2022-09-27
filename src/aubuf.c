@@ -162,7 +162,8 @@ static int test_aubuf_auframe(void)
 
 	err = aubuf_write_auframe(ab, &af_in);
 	TEST_ERR(err);
-	TEST_EQUALS((FRAMES + (FRAMES / 2)) * sizeof(float), aubuf_cur_size(ab));
+	TEST_EQUALS((FRAMES + (FRAMES / 2)) * sizeof(float),
+		    aubuf_cur_size(ab));
 
 	/* write half frame */
 	af_in.sampv	= &sampv_in[3 * FRAMES];
@@ -184,7 +185,7 @@ static int test_aubuf_auframe(void)
 	af_out.sampv = &sampv_out[2 * FRAMES];
 	af_out.sampc = FRAMES + (FRAMES / 2);
 	aubuf_read_auframe(ab, &af_out);
-	
+
 	TEST_EQUALS(2, af_out.ch);
 	TEST_EQUALS(48000, af_out.srate);
 	TEST_EQUALS(3 * dt, af_out.timestamp);
