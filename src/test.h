@@ -327,6 +327,7 @@ int test_uri_headers(void);
 int test_uri_user(void);
 int test_uri_params_headers(void);
 int test_uri_escape(void);
+int test_uristr_prepend_sip(void);
 int test_vid(void);
 int test_vidconv(void);
 int test_vidconv_scaling(void);

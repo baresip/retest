@@ -437,3 +437,77 @@ int test_uri_escape(void)
 
 	return err;
 }
+
+
+int test_uristr_prepend_sip(void)
+{
+	static const struct test {
+		const char *in;
+		const char *out;
+	} testv[] = {
+
+		{ "192.168.1.2",
+		  "sip:192.168.1.2" },
+
+		{ "192.168.1.2:5677",
+		  "sip:192.168.1.2:5677", },
+
+		{ "user",
+		  "sip:user" },
+
+		{ "user@domain.com",
+		  "sip:user@domain.com" },
+
+		{ "user@domain.com:5677",
+		  "sip:user@domain.com:5677" },
+
+		{ "sip:user",
+		  "sip:user" },
+
+		{ "sip:user@domain.com",
+		  "sip:user@domain.com" },
+
+#if HAVE_INET6
+		{"[2113:1470:1f1b:24b::2]",
+		 "sip:[2113:1470:1f1b:24b::2]"},
+
+		{"[fe80::b62e:99ff:feee:268f]",
+		 "sip:[fe80::b62e:99ff:feee:268f]"},
+
+		{"x@[2113:1470:1f1b:24b::2]",
+		 "sip:x@[2113:1470:1f1b:24b::2]"},
+
+		{"[2113:1470:1f1b:24b::2]:5677",
+		 "sip:[2113:1470:1f1b:24b::2]:5677"},
+
+		{"x@[2113:1470:1f1b:24b::2]:5677",
+		 "sip:x@[2113:1470:1f1b:24b::2]:5677"},
+#endif
+	};
+	struct mbuf *mb;
+	int err = 0;
+
+	/* silence warnings */
+	dbg_init(DBG_ERR, 0);
+
+	mb = mbuf_alloc(40);
+	if (!mb)
+		return ENOMEM;
+
+	for (size_t i=0; i<ARRAY_SIZE(testv); i++) {
+		const struct test *test = &testv[i];
+
+		err = mbuf_printf(mb, "%H", uristr_prepend_sip, test->in);
+		TEST_ERR(err);
+
+		TEST_STRCMP(test->out, str_len(test->out), mb->buf, mb->end);
+
+		mbuf_rewind(mb);
+	}
+
+ out:
+	mem_deref(mb);
+	dbg_init(DBG_WARNING, 0);
+
+	return err;
+}
