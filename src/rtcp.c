@@ -32,7 +32,8 @@ struct fixture {
 };
 
 
-static int send_rtp_packet(const struct sa *dst, uint16_t seq, uint32_t ssrc)
+static int send_rtp_packet(struct udp_sock *us, const struct sa *dst,
+			   uint16_t seq, uint32_t ssrc)
 {
 	struct rtp_header hdr;
 	struct mbuf *mb = mbuf_alloc(256);
@@ -53,7 +54,7 @@ static int send_rtp_packet(const struct sa *dst, uint16_t seq, uint32_t ssrc)
 	mbuf_fill(mb, 160, 0x00);
 	mb->pos = 0;
 
-	err = udp_send_anon(dst, mb);
+	err = udp_send(us, dst, mb);
 	if (err)
 		goto out;
 
@@ -132,7 +133,8 @@ static int test_loss(const uint16_t *seqv, size_t seqc,
 	for (i=0; i<seqc; i++) {
 		uint16_t seq = seqv[i];
 
-		err = send_rtp_packet(&f->rtp_addr, seq, ssrc);
+		err = send_rtp_packet(rtp_sock(f->rtp), &f->rtp_addr,
+				      seq, ssrc);
 		if (err)
 			goto out;
 	}
