@@ -143,7 +143,11 @@ static int test_loss(const uint16_t *seqv, size_t seqc,
 	TEST_ERR(err);
 
 	err = rtcp_stats(f->rtp, ssrc, &stats);
-	TEST_ERR(err);
+	if (err) {
+		if (err == ENOENT)
+			err = ENOMEM;
+		goto out;
+	}
 
 	/* in OOM-test, detect if member/sender was not allocated */
 	if (stats.rx.sent == 0 &&
