@@ -303,14 +303,15 @@ static int fixture_init(struct fixture *f)
 	err = trice_alloc(&f->icem, &conf,
 		  f->controlling ? ICE_ROLE_CONTROLLING : ICE_ROLE_CONTROLLED,
 			  f->lufrag, f->lpwd);
-	if (err)
-		goto out;
+	TEST_ERR(err);
+
 	TEST_ASSERT(f->icem != NULL);
 
-	err |= trice_set_remote_ufrag(f->icem, f->rufrag);
-	err |= trice_set_remote_pwd(f->icem, f->rpwd);
-	if (err)
-		goto out;
+	err = trice_set_remote_ufrag(f->icem, f->rufrag);
+	TEST_ERR(err);
+
+	err = trice_set_remote_pwd(f->icem, f->rpwd);
+	TEST_ERR(err);
 
 	err = sa_set_str(&f->laddr, "127.0.0.1", 0);
 	TEST_ERR(err);
@@ -1142,10 +1143,18 @@ int test_trice_loop(void)
 {
 	int err = 0;
 
-	err |= checklist_udp_loop(0, 0);
-	err |= checklist_udp_loop(0, 1);
-	err |= checklist_udp_loop(1, 0);
-	err |= checklist_udp_loop(1, 1);
+	err = checklist_udp_loop(0, 0);
+	TEST_ERR(err);
 
+	err = checklist_udp_loop(0, 1);
+	TEST_ERR(err);
+
+	err = checklist_udp_loop(1, 0);
+	TEST_ERR(err);
+
+	err = checklist_udp_loop(1, 1);
+	TEST_ERR(err);
+
+out:
 	return err;
 }

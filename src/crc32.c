@@ -28,8 +28,8 @@ int test_crc32(void)
 	for (i=0; i<ARRAY_SIZE(testv); i++) {
 		uint32_t crc;
 
-		crc = (uint32_t)crc32(0L, (uint8_t *)testv[i].str,
-				      (unsigned int)str_len(testv[i].str));
+		crc = re_crc32(0L, (uint8_t *)testv[i].str,
+			       (unsigned int)str_len(testv[i].str));
 
 		if (testv[i].crc != crc) {
 			DEBUG_WARNING("testcase %u: CRC-32 failed"

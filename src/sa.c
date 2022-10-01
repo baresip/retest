@@ -205,7 +205,7 @@ int test_sa_class(void)
 #endif
 	};
 	uint32_t i;
-	int err;
+	int err = 0;
 
 	for (i=0; i<ARRAY_SIZE(testv); i++) {
 		struct sa sa;

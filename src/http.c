@@ -12,6 +12,12 @@
 #define DEBUG_LEVEL 5
 #include <re_dbg.h>
 
+enum large_body_test {
+	REQ_BODY_CHUNK_SIZE = 26 * 42,
+	REQ_BODY_SIZE = REQ_BODY_CHUNK_SIZE * 480 - 26,
+	REQ_HTTP_REQUESTS = 2
+};
+
 
 static int test_http_response_no_reasonphrase(void)
 {
@@ -122,6 +128,7 @@ struct test {
 	size_t clen;
 	uint32_t n_request;
 	uint32_t n_response;
+	size_t i_req_body;
 	bool secure;
 	int err;
 };
@@ -160,7 +167,88 @@ static void http_req_handler(struct http_conn *conn,
 	TEST_STRCMP("GET", 3, msg->met.p, msg->met.l);
 	TEST_STRCMP("/index.html", 11, msg->path.p, msg->path.l);
 	TEST_STRCMP("", 0, msg->prm.p, msg->prm.l);
-	TEST_EQUALS(0, msg->clen);
+	TEST_EQUALS(t->clen, msg->clen);
+	TEST_STRCMP("abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyz", 52,
+		mbuf_buf(msg->mb), mbuf_get_left(msg->mb));
+
+	/* Create a chunked response body */
+	err = mbuf_write_str(mb_body,
+			     "2\r\n"
+			     "ab\r\n"
+
+			     "4\r\n"
+			     "cdef\r\n"
+
+			     "8\r\n"
+			     "ghijklmn\r\n"
+
+			     "c\r\n"
+			     "opqrstuvwxyz\r\n"
+
+			     "0\r\n"
+			     "\r\n"
+			     );
+	if (err)
+		goto out;
+
+	t->clen = mb_body->end;
+
+	err = http_reply(conn, 200, "OK",
+			 "Transfer-Encoding: chunked\r\n"
+			 "Content-Type: text/plain\r\n"
+			 "Content-Length: %zu\r\n"
+			 "\r\n"
+			 "%b",
+			 mb_body->end,
+			 mb_body->buf, mb_body->end
+			 );
+
+ out:
+	mem_deref(mb_body);
+	if (err)
+		abort_test(t, err);
+}
+
+
+static void http_put_req_handler(struct http_conn *conn,
+			     const struct http_msg *msg, void *arg)
+{
+	struct test *t = arg;
+	struct mbuf *mb_body = mbuf_alloc(1024);
+	int err = 0;
+	size_t l = 0;
+	size_t cmp_len;
+
+	if (!mb_body) {
+		err = ENOMEM;
+		goto out;
+	}
+
+	++t->n_request;
+
+	if (t->secure) {
+		TEST_ASSERT(http_conn_tls(conn) != NULL);
+	}
+	else {
+		TEST_ASSERT(http_conn_tls(conn) == NULL);
+	}
+
+	/* verify HTTP request */
+	TEST_STRCMP("1.1", 3, msg->ver.p, msg->ver.l);
+	TEST_STRCMP("PUT", 3, msg->met.p, msg->met.l);
+	TEST_STRCMP("/index.html", 11, msg->path.p, msg->path.l);
+	TEST_STRCMP("", 0, msg->prm.p, msg->prm.l);
+	TEST_EQUALS(t->clen, msg->clen);
+
+	l = mbuf_get_left(msg->mb);
+
+	while (l > 0) {
+		cmp_len = min(l, 26);
+		TEST_STRCMP("abcdefghijklmnopqrstuvwxyz", cmp_len,
+			mbuf_buf(msg->mb), cmp_len);
+		mbuf_advance(msg->mb, cmp_len);
+		l -= cmp_len;
+	}
 
 	/* Create a chunked response body */
 	err = mbuf_write_str(mb_body,
@@ -249,28 +337,80 @@ static int http_data_handler(const uint8_t *buf, size_t size,
 	struct test *t = arg;
 	(void)msg;
 
-	if (!t->mb_body) {
-
+	if (!t->mb_body)
 		t->mb_body = mbuf_alloc(256);
-		if (!t->mb_body)
-			return ENOMEM;
-	}
+	if (!t->mb_body)
+		return 0;
 
 	return mbuf_write_mem(t->mb_body, buf, size);
 }
 
 
-static int test_http_loop_base(bool secure)
+static size_t http_req_body_handler(struct mbuf *mb, void *arg)
+{
+	struct test *t = arg;
+
+	if (t->i_req_body >= t->clen)
+		return 0;
+
+	if (mbuf_write_mem(mb,
+			(const uint8_t*) "abcdefghijklmnopqrstuvwxyz",
+			strlen("abcdefghijklmnopqrstuvwxyz"))) {
+		mbuf_reset(mb);
+		return 0;
+	}
+
+	t->i_req_body += strlen("abcdefghijklmnopqrstuvwxyz");
+	return strlen("abcdefghijklmnopqrstuvwxyz");
+}
+
+
+static size_t http_req_long_body_handler(struct mbuf *mb, void *arg)
+{
+	struct test *t = arg;
+	size_t l = 0;
+	size_t wlen;
+
+	/* Create a chunked response body */
+	while ( l < REQ_BODY_CHUNK_SIZE && t->i_req_body < t->clen) {
+		wlen = min(min(26, REQ_BODY_CHUNK_SIZE - l),
+			t->clen - t->i_req_body);
+		if (wlen <= 0)
+			return l;
+
+		if (mbuf_write_mem(mb,
+			(const uint8_t*) "abcdefghijklmnopqrstuvwxyz",
+			wlen)) {
+			mbuf_reset(mb);
+			return 0;
+		}
+		l += wlen;
+		t->i_req_body += (uint32_t)wlen;
+	}
+
+	return l;
+}
+
+
+static int test_http_loop_base(bool secure, const char *met, bool http_conn)
 {
 	struct http_sock *sock = NULL;
 	struct http_cli *cli = NULL;
 	struct http_req *req = NULL;
+	struct http_reqconn *conn = NULL;
 	struct dnsc *dnsc = NULL;
 	struct sa srv, dns;
 	struct test t;
 	char url[256];
 	char path[256];
 	int err = 0;
+	unsigned int i;
+	bool put = false;
+	struct mbuf *mb_body = NULL;
+	struct pl pl;
+
+	if (!strcmp(met, "PUT"))
+		put = true;
 
 	memset(&t, 0, sizeof(t));
 
@@ -287,10 +427,11 @@ static int test_http_loop_base(bool secure)
 			    test_datapath());
 
 		err = https_listen(&sock, &srv, path,
-				   http_req_handler, &t);
+			put ? http_put_req_handler : http_req_handler, &t);
 	}
 	else {
-		err = http_listen(&sock, &srv, http_req_handler, &t);
+		err = http_listen(&sock, &srv,
+			put ? http_put_req_handler : http_req_handler, &t);
 	}
 	if (err)
 		goto out;
@@ -307,6 +448,9 @@ static int test_http_loop_base(bool secure)
 	if (err)
 		goto out;
 
+	if (put)
+		http_client_set_bufsize_max(cli, REQ_BODY_CHUNK_SIZE + 128);
+
 #ifdef USE_TLS
 	if (secure) {
 		err = http_client_add_ca(cli, path);
@@ -318,31 +462,94 @@ static int test_http_loop_base(bool secure)
 	(void)re_snprintf(url, sizeof(url),
 			  "http%s://127.0.0.1:%u/index.html",
 			  secure ? "s" : "", sa_port(&srv));
-	err = http_request(&req, cli, "GET", url,
-			   http_resp_handler, http_data_handler, &t,
-			   NULL);
-	if (err)
-		goto out;
 
-	err = re_main_timeout(secure ? 1800 : 900);
-	if (err)
-		goto out;
+	for (i = 1; i <= REQ_HTTP_REQUESTS; i++) {
+		t.i_req_body = 0;
 
-	if (t.err) {
-		err = t.err;
-		goto out;
+		t.clen = put ? REQ_BODY_SIZE :
+			2 * strlen("abcdefghijklmnopqrstuvwxyz");
+
+
+		if (http_conn) {
+			err = http_reqconn_alloc(&conn, cli,
+				http_resp_handler, http_data_handler, &t);
+			if (err)
+				goto out;
+
+			if (put) {
+				err = http_reqconn_set_req_bodyh(conn,
+					put ? 	http_req_long_body_handler :
+						http_req_body_handler,
+					t.clen);
+				if (err)
+					goto out;
+
+				pl_set_str(&pl, "PUT");
+				err = http_reqconn_set_method(conn, &pl);
+				if (err)
+					goto out;
+			}
+			else {
+				mb_body = mbuf_alloc(t.clen);
+				if (!mb_body)
+					goto out;
+
+				if (mbuf_write_str(mb_body,
+					"abcdefghijklmnopqrstuvwxyz"\
+					"abcdefghijklmnopqrstuvwxyz"))
+					goto out;
+
+				err = http_reqconn_set_body(conn, mb_body);
+				mb_body = mem_deref(mb_body);
+				if (err)
+					goto out;
+			}
+
+			pl_set_str(&pl, url);
+			err = http_reqconn_send(conn, &pl);
+		}
+		else {
+			err = http_request(&req, cli, met, url,
+				http_resp_handler, http_data_handler,
+				put ? 	http_req_long_body_handler :
+					http_req_body_handler,
+				&t,
+				"Content-Length: %llu\r\n%s\r\n%s",
+				t.clen,
+				t.clen > REQ_BODY_CHUNK_SIZE ?
+					"Expect: 100-continue\r\n" : "",
+				"abcdefghijklmnopqrstuvwxyz");
+		}
+
+		if (err)
+			goto out;
+
+		err = re_main_timeout(secure ? 1800 : 900);
+		if (err)
+			goto out;
+
+		if (t.err) {
+			err = t.err;
+			goto out;
+		}
+
+		/* verify results after HTTP traffic */
+		TEST_EQUALS(i, t.n_request);
+		TEST_EQUALS(i, t.n_response);
+
+		if (t.mb_body)
+			TEST_STRCMP("abcdefghijklmnopqrstuvwxyz", 26,
+				t.mb_body->buf, t.mb_body->end);
+
+		t.mb_body = mem_deref(t.mb_body);
+		req =  mem_deref(req);
+		conn = mem_deref(conn);
 	}
-
-	/* verify results after HTTP traffic */
-	TEST_EQUALS(1, t.n_request);
-	TEST_EQUALS(1, t.n_response);
-
-	TEST_STRCMP("abcdefghijklmnopqrstuvwxyz", 26,
-		    t.mb_body->buf, t.mb_body->end);
 
  out:
 	mem_deref(t.mb_body);
 	mem_deref(req);
+	mem_deref(conn);
 	mem_deref(cli);
 	mem_deref(dnsc);
 	mem_deref(sock);
@@ -418,13 +625,39 @@ out:
 
 int test_http_loop(void)
 {
-	return test_http_loop_base(false);
+	return test_http_loop_base(false, "GET", false);
 }
 
 
 #ifdef USE_TLS
 int test_https_loop(void)
 {
-	return test_http_loop_base(true);
+	return test_http_loop_base(true, "GET", false);
 }
 #endif
+
+
+int test_http_large_body(void)
+{
+	return test_http_loop_base(false, "PUT", false);
+}
+
+
+#ifdef USE_TLS
+int test_https_large_body(void)
+{
+	return test_http_loop_base(true, "PUT", false);
+}
+#endif
+
+
+int test_http_conn(void)
+{
+	return test_http_loop_base(false, "GET", true);
+}
+
+
+int test_http_conn_large_body(void)
+{
+	return test_http_loop_base(false, "PUT", true);
+}

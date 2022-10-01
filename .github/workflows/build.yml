@@ -17,10 +17,12 @@ jobs:
     strategy:
       matrix:
         compiler: [gcc, clang]
-        os: [ubuntu-latest, macos-latest]
+        os: [ubuntu-latest, macos-latest, windows-latest]
         exclude:
            - os: macos-latest
              compiler: gcc
+           - os: windows-latest
+             compiler: clang
     env:
       CC: ${{ matrix.compiler }}
 
@@ -31,6 +33,11 @@ jobs:
       if: ${{ runner.os == 'macOS' }}
       run: |
         echo "OPENSSL_ROOT_DIR=/usr/local/opt/openssl" >> $GITHUB_ENV
+
+    - name: install packages
+      if: ${{ runner.os == 'Windows' }}
+      run: |
+        choco install --no-progress openssl
 
     - uses: sreimers/pr-dependency-action@v0.5
       with:
@@ -45,6 +52,7 @@ jobs:
         secret: ${{ secrets.GITHUB_TOKEN }}
 
     - name: make re/rem
+      shell: bash
       run: |
         for p in re rem; do
           cmake -S $p -B $p/build
@@ -69,3 +77,10 @@ jobs:
       run: |
         OPENSSL_ROOT_DIR=/usr/local/opt/openssl cmake -DCMAKE_C_FLAGS="-Werror" . && make
         ./retest -r
+
+    - name: retest
+      if: ${{ runner.os == 'Windows' }}
+      run: |
+        cmake -B build -DCMAKE_C_FLAGS="/WX"
+        cmake --build build
+        build\Debug\retest.exe -v -r
