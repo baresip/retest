@@ -28,7 +28,7 @@ jobs:
 
           install: |
             apk update
-            apk add git cmake libssl-dev
+            apk add git cmake openssl-dev
 
           run: |
             for p in re rem; do
