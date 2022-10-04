@@ -484,6 +484,8 @@ static int test_http_loop_base(bool secure, const char *met, bool http_conn)
 			if (err)
 				goto out;
 
+			DEBUG_NOTICE("%s: line=%d\n", __func__, __LINE__);
+
 			if (put) {
 				err = http_reqconn_set_req_bodyh(conn,
 					put ? 	http_req_long_body_handler :
@@ -517,6 +519,8 @@ static int test_http_loop_base(bool secure, const char *met, bool http_conn)
 			err = http_reqconn_send(conn, &pl);
 		}
 		else {
+			DEBUG_NOTICE("%s: line=%d\n", __func__, __LINE__);
+
 			err = http_request(&req, cli, met, url,
 				http_resp_handler, http_data_handler,
 				put ? 	http_req_long_body_handler :
@@ -532,6 +536,8 @@ static int test_http_loop_base(bool secure, const char *met, bool http_conn)
 		if (err)
 			goto out;
 
+		DEBUG_NOTICE("%s: line=%d\n", __func__, __LINE__);
+
 		err = re_main_timeout(secure ? 1800 : 900);
 		if (err)
 			goto out;
@@ -540,6 +546,8 @@ static int test_http_loop_base(bool secure, const char *met, bool http_conn)
 			err = t.err;
 			goto out;
 		}
+
+		DEBUG_NOTICE("%s: line=%d\n", __func__, __LINE__);
 
 		/* verify results after HTTP traffic */
 		TEST_EQUALS(i, t.n_request);
@@ -553,6 +561,8 @@ static int test_http_loop_base(bool secure, const char *met, bool http_conn)
 		req =  mem_deref(req);
 		conn = mem_deref(conn);
 	}
+
+	DEBUG_NOTICE("%s: line=%d\n", __func__, __LINE__);
 
  out:
 	mem_deref(t.mb_body);
