@@ -1,0 +1,43 @@
+on: [push, pull_request]
+
+jobs:
+  run_on_arch_job:
+    runs-on: ubuntu-latest
+    name: Run on arch
+    steps:
+      - uses: actions/checkout@v2.1.0
+
+      - uses: sreimers/pr-dependency-action@v0.5
+        with:
+          name: re
+          repo: https://github.com/baresip/re
+          secret: ${{ secrets.GITHUB_TOKEN }}
+
+      - uses: sreimers/pr-dependency-action@v0.5
+        with:
+          name: rem
+          repo: https://github.com/baresip/rem
+          secret: ${{ secrets.GITHUB_TOKEN }}
+
+      - uses: uraimo/run-on-arch-action@v2
+        name: Run commands
+        id: runcmd
+        with:
+          arch: armv6
+          distro: alpine_latest
+
+          install: |
+            apk update
+            apk add git cmake libssl-dev
+
+          run: |
+            for p in re rem; do
+              cmake -S $p -B $p/build -DCMAKE_C_FLAGS="-Werror"
+              cmake --build $p/build -j
+            done
+            for p in re rem; do
+              mv $p ../.
+            done
+            cmake -B build -DCMAKE_C_FLAGS="-Werror"
+            cmake --build build -j
+            ./build/retest -v -r
