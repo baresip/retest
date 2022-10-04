@@ -244,6 +244,7 @@ static const struct test tests_integration[] = {
 	TEST(test_tmr_jiffies),
 	TEST(test_tmr_jiffies_usec),
 	TEST(test_dns_integration),
+	TEST(test_dns_http_integration),
 };
 
 
@@ -333,9 +334,7 @@ static const struct test *find_test(const char *name)
 
 static const struct test *find_test_int(const char *name)
 {
-	size_t i;
-
-	for (i=0; i<ARRAY_SIZE(tests_integration); i++) {
+	for (size_t i=0; i<ARRAY_SIZE(tests_integration); i++) {
 
 		if (0 == str_casecmp(name, tests_integration[i].name))
 			return &tests_integration[i];

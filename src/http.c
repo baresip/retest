@@ -18,6 +18,9 @@ enum large_body_test {
 	REQ_HTTP_REQUESTS = 2
 };
 
+enum {
+	IP_127_0_0_1 = 0x7f000001,
+};
 
 static int test_http_response_no_reasonphrase(void)
 {
@@ -392,13 +395,15 @@ static size_t http_req_long_body_handler(struct mbuf *mb, void *arg)
 }
 
 
-static int test_http_loop_base(bool secure, const char *met, bool http_conn)
+static int test_http_loop_base(bool secure, const char *met, bool http_conn,
+	bool dns_srv_query)
 {
 	struct http_sock *sock = NULL;
 	struct http_cli *cli = NULL;
 	struct http_req *req = NULL;
 	struct http_reqconn *conn = NULL;
 	struct dnsc *dnsc = NULL;
+	struct dns_server *dns_srv = NULL;
 	struct sa srv, dns;
 	struct test t;
 	char url[256];
@@ -416,10 +421,18 @@ static int test_http_loop_base(bool secure, const char *met, bool http_conn)
 
 	t.secure = secure;
 
+	if (dns_srv_query) {
+		/* Setup Mocking DNS Server */
+		err = dns_server_alloc(&dns_srv, false);
+		TEST_ERR(err);
+
+		err = dns_server_add_a(dns_srv, "test1.example.net",
+			IP_127_0_0_1, 1);
+		TEST_ERR(err);
+	}
+
 	err |= sa_set_str(&srv, "127.0.0.1", 0);
 	err |= sa_set_str(&dns, "127.0.0.1", 53);    /* note: unused */
-	if (err)
-		goto out;
 
 	if (secure) {
 
@@ -440,7 +453,7 @@ static int test_http_loop_base(bool secure, const char *met, bool http_conn)
 	if (err)
 		goto out;
 
-	err = dnsc_alloc(&dnsc, NULL, &dns, 1);
+	err = dnsc_alloc(&dnsc, NULL, dns_srv ? &dns_srv->addr : &dns, 1);
 	if (err)
 		goto out;
 
@@ -460,8 +473,10 @@ static int test_http_loop_base(bool secure, const char *met, bool http_conn)
 #endif
 
 	(void)re_snprintf(url, sizeof(url),
-			  "http%s://127.0.0.1:%u/index.html",
-			  secure ? "s" : "", sa_port(&srv));
+			  "http%s://%s:%u/index.html",
+			  secure ? "s" : "",
+			  dns_srv_query ? "test1.example.net" : "127.0.0.1",
+			  sa_port(&srv));
 
 	for (i = 1; i <= REQ_HTTP_REQUESTS; i++) {
 		t.i_req_body = 0;
@@ -553,6 +568,7 @@ static int test_http_loop_base(bool secure, const char *met, bool http_conn)
 	mem_deref(cli);
 	mem_deref(dnsc);
 	mem_deref(sock);
+	mem_deref(dns_srv);
 
 	return err;
 }
@@ -625,39 +641,45 @@ out:
 
 int test_http_loop(void)
 {
-	return test_http_loop_base(false, "GET", false);
+	return test_http_loop_base(false, "GET", false, false);
 }
 
 
 #ifdef USE_TLS
 int test_https_loop(void)
 {
-	return test_http_loop_base(true, "GET", false);
+	return test_http_loop_base(true, "GET", false, false);
 }
 #endif
 
 
 int test_http_large_body(void)
 {
-	return test_http_loop_base(false, "PUT", false);
+	return test_http_loop_base(false, "PUT", false, false);
 }
 
 
 #ifdef USE_TLS
 int test_https_large_body(void)
 {
-	return test_http_loop_base(true, "PUT", false);
+	return test_http_loop_base(true, "PUT", false, false);
 }
 #endif
 
 
 int test_http_conn(void)
 {
-	return test_http_loop_base(false, "GET", true);
+	return test_http_loop_base(false, "GET", true, false);
 }
 
 
 int test_http_conn_large_body(void)
 {
-	return test_http_loop_base(false, "PUT", true);
+	return test_http_loop_base(false, "PUT", true, false);
+}
+
+
+int test_dns_http_integration(void)
+{
+	return test_http_loop_base(false, "GET", true, true);
 }
