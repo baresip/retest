@@ -294,6 +294,8 @@ static void http_resp_handler(int err, const struct http_msg *msg, void *arg)
 	struct test *t = arg;
 	bool chunked;
 
+	DEBUG_NOTICE("%s: err=%m\n", __func__, err);
+
 	if (err) {
 		/* translate error code */
 		err = ENOMEM;
@@ -436,6 +438,8 @@ static int test_http_loop_base(bool secure, const char *met, bool http_conn)
 	if (err)
 		goto out;
 
+	DEBUG_NOTICE("%s: line=%d\n", __func__, __LINE__);
+
 	err = tcp_sock_local_get(http_sock_tcp(sock), &srv);
 	if (err)
 		goto out;
@@ -463,12 +467,16 @@ static int test_http_loop_base(bool secure, const char *met, bool http_conn)
 			  "http%s://127.0.0.1:%u/index.html",
 			  secure ? "s" : "", sa_port(&srv));
 
+	DEBUG_NOTICE("%s: line=%d\n", __func__, __LINE__);
+
 	for (i = 1; i <= REQ_HTTP_REQUESTS; i++) {
 		t.i_req_body = 0;
 
 		t.clen = put ? REQ_BODY_SIZE :
 			2 * strlen("abcdefghijklmnopqrstuvwxyz");
 
+
+		DEBUG_NOTICE("%s: line=%d\n", __func__, __LINE__);
 
 		if (http_conn) {
 			err = http_reqconn_alloc(&conn, cli,

@@ -40,4 +40,4 @@ jobs:
             done
             cmake -B build -DCMAKE_C_FLAGS="-Werror"
             cmake --build build -j
-            ./build/retest -v -r
+            gdb -ex=r --args ./build/retest -v -r
