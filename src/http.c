@@ -386,10 +386,8 @@ static size_t http_req_body_handler(struct mbuf *mb, void *arg)
 
 	t->i_req_body += strlen("abcdefghijklmnopqrstuvwxyz");
 
-	return strlen("abcdefghijklmnopqrstuvwxyz");
-
  out:
-	return 0;
+	return err==0 ? strlen("abcdefghijklmnopqrstuvwxyz") : 0;
 }
 
 
@@ -398,7 +396,7 @@ static size_t http_req_long_body_handler(struct mbuf *mb, void *arg)
 	struct test *t = arg;
 	size_t l = 0;
 	size_t wlen;
-	int err;
+	int err = 0;
 
 	ASSERT_EQ(MAGIC, t->magic);
 
@@ -419,10 +417,8 @@ static size_t http_req_long_body_handler(struct mbuf *mb, void *arg)
 		t->i_req_body += (uint32_t)wlen;
 	}
 
-	return l;
-
  out:
-	return 0;
+	return err==0 ? l : 0;
 }
 
 
