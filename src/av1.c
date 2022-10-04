@@ -49,8 +49,6 @@ static int test_leb128(void)
 		if (err)
 			goto out;
 
-		re_printf("leb128 value: [ %w ]\n", mb->buf, mb->end);
-
 		mb->pos = 0;
 
 		err = av1_leb128_decode(mb, &val_dec);
