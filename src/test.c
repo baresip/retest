@@ -331,6 +331,20 @@ static const struct test *find_test(const char *name)
 }
 
 
+static const struct test *find_test_int(const char *name)
+{
+	size_t i;
+
+	for (i=0; i<ARRAY_SIZE(tests_integration); i++) {
+
+		if (0 == str_casecmp(name, tests_integration[i].name))
+			return &tests_integration[i];
+	}
+
+	return NULL;
+}
+
+
 /**
  * Run a single testcase in OOM (Out-of-memory) mode.
  *
@@ -1033,6 +1047,29 @@ int test_integration(const char *name, bool verbose)
 	(void) verbose;
 
 	(void)re_fprintf(stderr, "integration tests\n");
+
+	if (name) {
+		test = find_test_int(name);
+		if (!test) {
+			(void)re_fprintf(stderr, "no such test: %s\n", name);
+			return ENOENT;
+		}
+
+		if (!test->name)
+			return EINVAL;
+
+		(void)re_fprintf(stderr, "  %-24s: ", test->name);
+
+		if (test->exec)
+			err = test->exec();
+
+		if (err)
+			DEBUG_WARNING("  %-24s: NOK: %m\n", test->name, err);
+		else
+			(void)re_fprintf(stderr, "\x1b[32mOK\x1b[;m\n");
+
+		return err;
+	}
 
 	for (i=0; i<ARRAY_SIZE(tests_integration); i++) {
 
