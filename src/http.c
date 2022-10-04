@@ -548,30 +548,16 @@ static int test_http_loop_base(bool secure, const char *met, bool http_conn)
 			err = http_reqconn_send(conn, &pl);
 		}
 		else {
-			DEBUG_NOTICE("%s: line=%d\n", __func__, __LINE__);
-
-			err = http_request(&req,
-					   cli,
-					   met,
-					   url,
-					   http_resp_handler,
-					   http_data_handler,
-					   put ? http_req_long_body_handler
-					       : http_req_body_handler,
-					   &t,
-
-					   "Content-Length: %zu\r\n"
-					   "%s\r\n"
-					   "%s"
-					   ,
-					   t.clen,
-					   t.clen > REQ_BODY_CHUNK_SIZE ?
-					     "Expect: 100-continue\r\n" : "",
-					   "abcdefghijklmnopqrstuvwxyz");
-			if (err)
-				goto out;
-
-			DEBUG_NOTICE("%s: line=%d\n", __func__, __LINE__);
+			err = http_request(&req, cli, met, url,
+				http_resp_handler, http_data_handler,
+				put ? 	http_req_long_body_handler :
+					http_req_body_handler,
+				&t,
+				"Content-Length: %zu\r\n%s\r\n%s",
+				t.clen,
+				t.clen > REQ_BODY_CHUNK_SIZE ?
+					"Expect: 100-continue\r\n" : "",
+				"abcdefghijklmnopqrstuvwxyz");
 		}
 
 		if (err)
