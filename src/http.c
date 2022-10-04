@@ -514,7 +514,7 @@ static int test_http_loop_base(bool secure, const char *met, bool http_conn)
 				put ? 	http_req_long_body_handler :
 					http_req_body_handler,
 				&t,
-				"Content-Length: %llu\r\n%s\r\n%s",
+				"Content-Length: %zu\r\n%s\r\n%s",
 				t.clen,
 				t.clen > REQ_BODY_CHUNK_SIZE ?
 					"Expect: 100-continue\r\n" : "",
