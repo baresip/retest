@@ -28,7 +28,7 @@ jobs:
 
           install: |
             apk update
-            apk add git cmake openssl-dev gcc
+            apk add git cmake openssl-dev gcc clang make
 
           run: |
             for p in re rem; do
