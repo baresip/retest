@@ -12,6 +12,10 @@
 #define DEBUG_LEVEL 5
 #include <re_dbg.h>
 
+
+#define MAGIC 0x0a0b0c0d
+
+
 enum large_body_test {
 	REQ_BODY_CHUNK_SIZE = 26 * 42,
 	REQ_BODY_SIZE = REQ_BODY_CHUNK_SIZE * 480 - 26,
@@ -131,6 +135,7 @@ struct test {
 	size_t i_req_body;
 	bool secure;
 	int err;
+	uint32_t magic;
 };
 
 
@@ -147,6 +152,8 @@ static void http_req_handler(struct http_conn *conn,
 	struct test *t = arg;
 	struct mbuf *mb_body = mbuf_alloc(1024);
 	int err = 0;
+
+	ASSERT_EQ(MAGIC, t->magic);
 
 	if (!mb_body) {
 		err = ENOMEM;
@@ -218,6 +225,8 @@ static void http_put_req_handler(struct http_conn *conn,
 	int err = 0;
 	size_t l = 0;
 	size_t cmp_len;
+
+	ASSERT_EQ(MAGIC, t->magic);
 
 	if (!mb_body) {
 		err = ENOMEM;
@@ -294,6 +303,8 @@ static void http_resp_handler(int err, const struct http_msg *msg, void *arg)
 	struct test *t = arg;
 	bool chunked;
 
+	ASSERT_EQ(MAGIC, t->magic);
+
 	DEBUG_NOTICE("%s: err=%m\n", __func__, err);
 
 	if (err) {
@@ -337,20 +348,31 @@ static int http_data_handler(const uint8_t *buf, size_t size,
 			     const struct http_msg *msg, void *arg)
 {
 	struct test *t = arg;
+	int err;
 	(void)msg;
+
+	ASSERT_EQ(MAGIC, t->magic);
 
 	if (!t->mb_body)
 		t->mb_body = mbuf_alloc(256);
 	if (!t->mb_body)
 		return 0;
 
-	return mbuf_write_mem(t->mb_body, buf, size);
+	err = mbuf_write_mem(t->mb_body, buf, size);
+	if (err)
+		return err;
+
+ out:
+	return err;
 }
 
 
 static size_t http_req_body_handler(struct mbuf *mb, void *arg)
 {
 	struct test *t = arg;
+	int err = 0;
+
+	ASSERT_EQ(MAGIC, t->magic);
 
 	if (t->i_req_body >= t->clen)
 		return 0;
@@ -363,7 +385,11 @@ static size_t http_req_body_handler(struct mbuf *mb, void *arg)
 	}
 
 	t->i_req_body += strlen("abcdefghijklmnopqrstuvwxyz");
+
 	return strlen("abcdefghijklmnopqrstuvwxyz");
+
+ out:
+	return 0;
 }
 
 
@@ -372,6 +398,9 @@ static size_t http_req_long_body_handler(struct mbuf *mb, void *arg)
 	struct test *t = arg;
 	size_t l = 0;
 	size_t wlen;
+	int err;
+
+	ASSERT_EQ(MAGIC, t->magic);
 
 	/* Create a chunked response body */
 	while ( l < REQ_BODY_CHUNK_SIZE && t->i_req_body < t->clen) {
@@ -391,6 +420,9 @@ static size_t http_req_long_body_handler(struct mbuf *mb, void *arg)
 	}
 
 	return l;
+
+ out:
+	return 0;
 }
 
 
@@ -416,6 +448,7 @@ static int test_http_loop_base(bool secure, const char *met, bool http_conn)
 
 	memset(&t, 0, sizeof(t));
 
+	t.magic = MAGIC;
 	t.secure = secure;
 
 	err |= sa_set_str(&srv, "127.0.0.1", 0);
@@ -521,16 +554,28 @@ static int test_http_loop_base(bool secure, const char *met, bool http_conn)
 		else {
 			DEBUG_NOTICE("%s: line=%d\n", __func__, __LINE__);
 
-			err = http_request(&req, cli, met, url,
-				http_resp_handler, http_data_handler,
-				put ? 	http_req_long_body_handler :
-					http_req_body_handler,
-				&t,
-				"Content-Length: %llu\r\n%s\r\n%s",
-				t.clen,
-				t.clen > REQ_BODY_CHUNK_SIZE ?
-					"Expect: 100-continue\r\n" : "",
-				"abcdefghijklmnopqrstuvwxyz");
+			err = http_request(&req,
+					   cli,
+					   met,
+					   url,
+					   http_resp_handler,
+					   http_data_handler,
+					   put ? http_req_long_body_handler
+					       : http_req_body_handler,
+					   &t,
+
+					   "Content-Length: %zu\r\n"
+					   "%s\r\n"
+					   "%s"
+					   ,
+					   t.clen,
+					   t.clen > REQ_BODY_CHUNK_SIZE ?
+					     "Expect: 100-continue\r\n" : "",
+					   "abcdefghijklmnopqrstuvwxyz");
+			if (err)
+				goto out;
+
+			DEBUG_NOTICE("%s: line=%d\n", __func__, __LINE__);
 		}
 
 		if (err)
