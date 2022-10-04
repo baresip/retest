@@ -23,7 +23,7 @@ jobs:
         name: Run commands
         id: runcmd
         with:
-          arch: armv6
+          arch: s390x
           distro: alpine_latest
 
           install: |
