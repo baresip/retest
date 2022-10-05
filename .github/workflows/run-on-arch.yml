@@ -23,7 +23,7 @@ jobs:
         name: Run commands
         id: runcmd
         with:
-          arch: s390x
+          arch: ppc64le
           distro: alpine_latest
 
           install: |
