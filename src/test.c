@@ -362,7 +362,7 @@ static int testcase_oom(const struct test *test, int levels, bool verbose)
 	int err = 0;
 
 	if (verbose)
-		(void)re_fprintf(stderr, "  %-24s: ", test->name);
+		(void)re_fprintf(stderr, "  %-26s: ", test->name);
 
 	/* All memory levels */
 	for (i=0; i<levels; i++) {
