@@ -23,7 +23,7 @@ jobs:
         name: Run commands
         id: runcmd
         with:
-          arch: ppc64le
+          arch: aarch64
           distro: alpine_latest
 
           install: |
@@ -40,4 +40,4 @@ jobs:
             done
             cmake -B build -DCMAKE_C_FLAGS="-Werror"
             cmake --build build -j
-            ./build/retest -v -r
+            ./build/retest -v -a
