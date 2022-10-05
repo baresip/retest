@@ -14,6 +14,7 @@ int test_net_dst_source_addr_get(void)
 {
 	struct sa dst;
 	struct sa ip;
+	char ifname[64];
 	int err;
 
 	sa_init(&dst, AF_INET);
@@ -27,15 +28,28 @@ int test_net_dst_source_addr_get(void)
 
 	TEST_ASSERT(sa_is_loopback(&ip));
 
-	sa_init(&dst, AF_INET6);
-	sa_init(&ip, AF_UNSPEC);
-	sa_set_str(&dst, "::1", 53);
+	sa_set_str(&dst, "::1", 0);
 
-	err = net_dst_source_addr_get(&dst, &ip);
-	if (err)
-		return err;
+	/* NOTE: IPv6 is optional, some hosts are IPv4 only */
+	if (0 == net_if_getname(ifname, sizeof(ifname),
+				AF_INET6, &dst)) {
 
-	TEST_ASSERT(sa_is_loopback(&ip));
+		DEBUG_NOTICE("IPv6 supported on interface %s\n", ifname);
+
+		sa_init(&dst, AF_INET6);
+		sa_init(&ip, AF_UNSPEC);
+
+		sa_set_str(&dst, "::1", 53);
+
+		err = net_dst_source_addr_get(&dst, &ip);
+		if (err)
+			return err;
+
+		TEST_ASSERT(sa_is_loopback(&ip));
+	}
+	else {
+		DEBUG_NOTICE("IPv6 not supported\n");
+	}
 
 out:
 	return err;
