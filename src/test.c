@@ -276,13 +276,7 @@ static void restore_output(int err)
 	fflush(stderr);
 
 	/* Restore stdout/stderr */
-#ifdef WIN32
-	freopen("CON", "w", stdout);
-	freopen("CON", "w", stderr);
-#else
-	freopen("/dev/tty", "w", stdout);
-	freopen("/dev/tty", "w", stderr);
-#endif
+	fs_stdio_restore();
 
 	if (!err)
 		goto out;
@@ -368,7 +362,7 @@ static int testcase_oom(const struct test *test, int levels, bool verbose)
 	int err = 0;
 
 	if (verbose)
-		(void)re_fprintf(stderr, "  %-24s: ", test->name);
+		(void)re_fprintf(stderr, "  %-26s: ", test->name);
 
 	/* All memory levels */
 	for (i=0; i<levels; i++) {
@@ -694,7 +688,7 @@ int test_perf(const char *name, bool verbose)
 			if (!tim->test)
 				continue;
 
-			re_fprintf(stderr, "%-32s: %10.2f usec\n",
+			re_fprintf(stderr, "%-34s: %10.2f usec\n",
 				   tim->test->name, usec_avg);
 		}
 		re_fprintf(stderr, "\n");
@@ -1076,7 +1070,7 @@ int test_integration(const char *name, bool verbose)
 		if (str_isset(name) && test->name)
 			continue;
 
-		(void)re_fprintf(stderr, "  %-24s: ", test->name);
+		(void)re_fprintf(stderr, "  %-28s: ", test->name);
 
 		if (test->exec)
 			err = test->exec();

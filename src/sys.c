@@ -174,6 +174,9 @@ int test_sys_fs_fopen(void)
 	FILE *file;
 	int err;
 
+	/* TODO: add a unique filename to avoid clash when running
+	 *       multiple instances of test
+	 */
 	err = fs_fopen(&file, "retest_fs_fopen", "w+");
 	TEST_ERR(err);
 	TEST_EQUALS(true, fs_isfile("retest_fs_fopen"));
