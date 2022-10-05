@@ -201,16 +201,8 @@ int main(int argc, char *argv[])
 
 	dbg_handler_set(dbg_handler, 0);
 
-	DEBUG_NOTICE("libre version %s (%s/%s) [%H]\n",
-		     sys_libre_version_get(),
-		     sys_arch_get(), sys_os_get(),
-		     sys_build_get, NULL);
-
-	bool val0 = false;
-	bool val1 = true;
-
-	DEBUG_NOTICE("val0: %d\n", val0);
-	DEBUG_NOTICE("val1: %d\n", val1);
+	DEBUG_NOTICE("libre version %s (%s/%s)\n", sys_libre_version_get(),
+		     sys_arch_get(), sys_os_get());
 
 	dbg_handler_set(NULL, 0);
 

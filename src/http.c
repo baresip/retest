@@ -12,10 +12,6 @@
 #define DEBUG_LEVEL 5
 #include <re_dbg.h>
 
-
-#define MAGIC 0x0a0b0c0d
-
-
 enum large_body_test {
 	REQ_BODY_CHUNK_SIZE = 26 * 42,
 	REQ_BODY_SIZE = REQ_BODY_CHUNK_SIZE * 480 - 26,
@@ -138,7 +134,6 @@ struct test {
 	size_t i_req_body;
 	bool secure;
 	int err;
-	uint32_t magic;
 };
 
 
@@ -155,8 +150,6 @@ static void http_req_handler(struct http_conn *conn,
 	struct test *t = arg;
 	struct mbuf *mb_body = mbuf_alloc(1024);
 	int err = 0;
-
-	ASSERT_EQ(MAGIC, t->magic);
 
 	if (!mb_body) {
 		err = ENOMEM;
@@ -228,8 +221,6 @@ static void http_put_req_handler(struct http_conn *conn,
 	int err = 0;
 	size_t l = 0;
 	size_t cmp_len;
-
-	ASSERT_EQ(MAGIC, t->magic);
 
 	if (!mb_body) {
 		err = ENOMEM;
@@ -306,10 +297,6 @@ static void http_resp_handler(int err, const struct http_msg *msg, void *arg)
 	struct test *t = arg;
 	bool chunked;
 
-	ASSERT_EQ(MAGIC, t->magic);
-
-	DEBUG_NOTICE("%s: err=%m\n", __func__, err);
-
 	if (err) {
 		/* translate error code */
 		err = ENOMEM;
@@ -351,31 +338,20 @@ static int http_data_handler(const uint8_t *buf, size_t size,
 			     const struct http_msg *msg, void *arg)
 {
 	struct test *t = arg;
-	int err;
 	(void)msg;
-
-	ASSERT_EQ(MAGIC, t->magic);
 
 	if (!t->mb_body)
 		t->mb_body = mbuf_alloc(256);
 	if (!t->mb_body)
 		return 0;
 
-	err = mbuf_write_mem(t->mb_body, buf, size);
-	if (err)
-		return err;
-
- out:
-	return err;
+	return mbuf_write_mem(t->mb_body, buf, size);
 }
 
 
 static size_t http_req_body_handler(struct mbuf *mb, void *arg)
 {
 	struct test *t = arg;
-	int err = 0;
-
-	ASSERT_EQ(MAGIC, t->magic);
 
 	if (t->i_req_body >= t->clen)
 		return 0;
@@ -388,9 +364,7 @@ static size_t http_req_body_handler(struct mbuf *mb, void *arg)
 	}
 
 	t->i_req_body += strlen("abcdefghijklmnopqrstuvwxyz");
-
- out:
-	return err==0 ? strlen("abcdefghijklmnopqrstuvwxyz") : 0;
+	return strlen("abcdefghijklmnopqrstuvwxyz");
 }
 
 
@@ -399,9 +373,6 @@ static size_t http_req_long_body_handler(struct mbuf *mb, void *arg)
 	struct test *t = arg;
 	size_t l = 0;
 	size_t wlen;
-	int err = 0;
-
-	ASSERT_EQ(MAGIC, t->magic);
 
 	/* Create a chunked response body */
 	while ( l < REQ_BODY_CHUNK_SIZE && t->i_req_body < t->clen) {
@@ -420,8 +391,7 @@ static size_t http_req_long_body_handler(struct mbuf *mb, void *arg)
 		t->i_req_body += (uint32_t)wlen;
 	}
 
- out:
-	return err==0 ? l : 0;
+	return l;
 }
 
 
@@ -449,7 +419,6 @@ static int test_http_loop_base(bool secure, const char *met, bool http_conn,
 
 	memset(&t, 0, sizeof(t));
 
-	t.magic = MAGIC;
 	t.secure = secure;
 
 	if (dns_srv_query) {
@@ -480,8 +449,6 @@ static int test_http_loop_base(bool secure, const char *met, bool http_conn,
 	if (err)
 		goto out;
 
-	DEBUG_NOTICE("%s: line=%d\n", __func__, __LINE__);
-
 	err = tcp_sock_local_get(http_sock_tcp(sock), &srv);
 	if (err)
 		goto out;
@@ -511,8 +478,6 @@ static int test_http_loop_base(bool secure, const char *met, bool http_conn,
 			  dns_srv_query ? "test1.example.net" : "127.0.0.1",
 			  sa_port(&srv));
 
-	DEBUG_NOTICE("%s: line=%d\n", __func__, __LINE__);
-
 	for (i = 1; i <= REQ_HTTP_REQUESTS; i++) {
 		t.i_req_body = 0;
 
@@ -520,15 +485,11 @@ static int test_http_loop_base(bool secure, const char *met, bool http_conn,
 			2 * strlen("abcdefghijklmnopqrstuvwxyz");
 
 
-		DEBUG_NOTICE("%s: line=%d\n", __func__, __LINE__);
-
 		if (http_conn) {
 			err = http_reqconn_alloc(&conn, cli,
 				http_resp_handler, http_data_handler, &t);
 			if (err)
 				goto out;
-
-			DEBUG_NOTICE("%s: line=%d\n", __func__, __LINE__);
 
 			if (put) {
 				err = http_reqconn_set_req_bodyh(conn,
@@ -578,8 +539,6 @@ static int test_http_loop_base(bool secure, const char *met, bool http_conn,
 		if (err)
 			goto out;
 
-		DEBUG_NOTICE("%s: line=%d\n", __func__, __LINE__);
-
 		err = re_main_timeout(secure ? 1800 : 900);
 		if (err)
 			goto out;
@@ -588,8 +547,6 @@ static int test_http_loop_base(bool secure, const char *met, bool http_conn,
 			err = t.err;
 			goto out;
 		}
-
-		DEBUG_NOTICE("%s: line=%d\n", __func__, __LINE__);
 
 		/* verify results after HTTP traffic */
 		TEST_EQUALS(i, t.n_request);
@@ -603,8 +560,6 @@ static int test_http_loop_base(bool secure, const char *met, bool http_conn,
 		req =  mem_deref(req);
 		conn = mem_deref(conn);
 	}
-
-	DEBUG_NOTICE("%s: line=%d\n", __func__, __LINE__);
 
  out:
 	mem_deref(t.mb_body);
