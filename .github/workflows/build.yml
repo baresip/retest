@@ -75,7 +75,7 @@ jobs:
       if: ${{ runner.os == 'Linux' }}
       run: |
         cmake -DCMAKE_C_FLAGS="-Werror" . && make
-        valgrind --leak-check=full --show-reachable=yes --error-exitcode=42 ./retest -v -a
+        valgrind --leak-check=full --show-reachable=yes --error-exitcode=42 ./retest -v -roi
 
     - name: retest
       if: ${{ runner.os == 'macOS' }}
