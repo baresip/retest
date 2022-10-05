@@ -244,6 +244,7 @@ static const struct test tests_integration[] = {
 	TEST(test_tmr_jiffies),
 	TEST(test_tmr_jiffies_usec),
 	TEST(test_dns_integration),
+	TEST(test_dns_http_integration),
 };
 
 
@@ -325,6 +326,18 @@ static const struct test *find_test(const char *name)
 
 		if (0 == str_casecmp(name, tests[i].name))
 			return &tests[i];
+	}
+
+	return NULL;
+}
+
+
+static const struct test *find_test_int(const char *name)
+{
+	for (size_t i=0; i<ARRAY_SIZE(tests_integration); i++) {
+
+		if (0 == str_casecmp(name, tests_integration[i].name))
+			return &tests_integration[i];
 	}
 
 	return NULL;
@@ -1033,6 +1046,29 @@ int test_integration(const char *name, bool verbose)
 	(void) verbose;
 
 	(void)re_fprintf(stderr, "integration tests\n");
+
+	if (name) {
+		test = find_test_int(name);
+		if (!test) {
+			(void)re_fprintf(stderr, "no such test: %s\n", name);
+			return ENOENT;
+		}
+
+		if (!test->name)
+			return EINVAL;
+
+		(void)re_fprintf(stderr, "  %-24s: ", test->name);
+
+		if (test->exec)
+			err = test->exec();
+
+		if (err)
+			DEBUG_WARNING("  %-24s: NOK: %m\n", test->name, err);
+		else
+			(void)re_fprintf(stderr, "\x1b[32mOK\x1b[;m\n");
+
+		return err;
+	}
 
 	for (i=0; i<ARRAY_SIZE(tests_integration); i++) {
 
