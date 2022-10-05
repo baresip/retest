@@ -151,7 +151,9 @@ int test_odict(void)
 		/* verify that entry exist after adding */
 		entry = odict_lookup(dict, test->key);
 		TEST_ASSERT(entry != NULL);
-		compare(test, entry);
+
+		err = compare(test, entry);
+		TEST_ERR(err);
 	}
 
 	/* verify size of dictionary, after adding all entries */
