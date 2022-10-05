@@ -84,4 +84,4 @@ jobs:
       run: |
         export PKG_CONFIG_PATH="/usr/local/lib/pkgconfig/:$PKG_CONFIG_PATH"
         cmake -DCMAKE_C_FLAGS="-Werror" . && make
-        valgrind --leak-check=full --show-reachable=yes --error-exitcode=42 --track-origins=yes ./retest -v -roi
+        valgrind --leak-check=full --show-reachable=yes --error-exitcode=42 --track-origins=yes --leak-resolution=high --num-callers=100 ./retest -v -roi
