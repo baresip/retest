@@ -688,7 +688,7 @@ int test_perf(const char *name, bool verbose)
 			if (!tim->test)
 				continue;
 
-			re_fprintf(stderr, "%-32s: %10.2f usec\n",
+			re_fprintf(stderr, "%-34s: %10.2f usec\n",
 				   tim->test->name, usec_avg);
 		}
 		re_fprintf(stderr, "\n");
@@ -1070,7 +1070,7 @@ int test_integration(const char *name, bool verbose)
 		if (str_isset(name) && test->name)
 			continue;
 
-		(void)re_fprintf(stderr, "  %-24s: ", test->name);
+		(void)re_fprintf(stderr, "  %-28s: ", test->name);
 
 		if (test->exec)
 			err = test->exec();
