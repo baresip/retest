@@ -276,13 +276,7 @@ static void restore_output(int err)
 	fflush(stderr);
 
 	/* Restore stdout/stderr */
-#ifdef WIN32
-	freopen("CON", "w", stdout);
-	freopen("CON", "w", stderr);
-#else
-	freopen("/dev/tty", "w", stdout);
-	freopen("/dev/tty", "w", stderr);
-#endif
+	fs_stdio_restore();
 
 	if (!err)
 		goto out;
