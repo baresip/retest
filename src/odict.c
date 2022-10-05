@@ -43,7 +43,7 @@ static int compare(const struct dtest *test, const struct odict_entry *entry)
 		break;
 
 	case ODICT_BOOL:
-		TEST_EQUALS(test->u.i, odict_entry_boolean(entry));
+		TEST_EQUALS(test->u.b, odict_entry_boolean(entry));
 		break;
 
 	case ODICT_DOUBLE:
