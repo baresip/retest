@@ -29,6 +29,11 @@ jobs:
     steps:
     - uses: actions/checkout@v2
 
+    - name: install packages linux
+      if: ${{ runner.os == 'Linux' }}
+      run: |
+        sudo apt-get update -q -y && sudo apt-get install -q -y libssl-dev valgrind
+
     - name: openssl path macos
       if: ${{ runner.os == 'macOS' }}
       run: |
@@ -70,7 +75,7 @@ jobs:
       if: ${{ runner.os == 'Linux' }}
       run: |
         cmake -DCMAKE_C_FLAGS="-Werror" . && make
-        ./retest -r
+        valgrind --leak-check=full --show-reachable=yes --error-exitcode=42 ./retest -v -a
 
     - name: retest
       if: ${{ runner.os == 'macOS' }}

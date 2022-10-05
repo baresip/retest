@@ -53,7 +53,7 @@ jobs:
     - uses: actions/checkout@v2
     - name: install devel tools
       run: |
-        yum -y install git gcc clang cmake openssl-devel pkgconfig zlib-devel net-tools
+        yum -y install git gcc clang cmake openssl-devel pkgconfig zlib-devel net-tools valgrind
 
     - name: Download re/rem
       uses: actions/download-artifact@v3
@@ -84,4 +84,4 @@ jobs:
       run: |
         export PKG_CONFIG_PATH="/usr/local/lib/pkgconfig/:$PKG_CONFIG_PATH"
         cmake -DCMAKE_C_FLAGS="-Werror" . && make
-        ./retest -v -r
+        valgrind --leak-check=full --show-reachable=yes --error-exitcode=42 ./retest -v -a
