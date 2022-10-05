@@ -28,7 +28,7 @@ jobs:
 
           install: |
             apk update
-            apk add git cmake openssl-dev gcc clang make musl-dev linux-headers
+            apk add git cmake openssl-dev gcc clang make musl-dev linux-headers valgrind
 
           run: |
             for p in re rem; do
@@ -40,4 +40,4 @@ jobs:
             done
             cmake -B build -DCMAKE_C_FLAGS="-Werror"
             cmake --build build -j
-            ./build/retest -v -a
+            valgrind --leak-check=full --show-reachable=yes --error-exitcode=42 ./build/retest -v -a
