@@ -10,11 +10,34 @@
 #include <re_dbg.h>
 
 
+static bool ipv6_handler(const char *ifname, const struct sa *sa, void *arg)
+{
+	bool *supp = arg;
+	(void)ifname;
+
+	if (AF_INET6 == sa_af(sa)) {
+		*supp = true;
+		return true;
+	}
+
+	return false;
+}
+
+
+static bool ipv6_supported(void)
+{
+	bool supp = false;
+
+	net_if_apply(ipv6_handler, &supp);
+
+	return supp;
+}
+
+
 int test_net_dst_source_addr_get(void)
 {
 	struct sa dst;
 	struct sa ip;
-	char ifname[64];
 	int err;
 
 	sa_init(&dst, AF_INET);
@@ -28,17 +51,12 @@ int test_net_dst_source_addr_get(void)
 
 	TEST_ASSERT(sa_is_loopback(&ip));
 
-	sa_set_str(&dst, "::1", 0);
+	if (ipv6_supported()) {
 
-	/* NOTE: IPv6 is optional, some hosts are IPv4 only */
-	if (0 == net_if_getname(ifname, sizeof(ifname),
-				AF_INET6, &dst)) {
-
-		DEBUG_NOTICE("IPv6 supported on interface %s\n", ifname);
+		DEBUG_NOTICE("ipv6 enabled\n");
 
 		sa_init(&dst, AF_INET6);
 		sa_init(&ip, AF_UNSPEC);
-
 		sa_set_str(&dst, "::1", 53);
 
 		err = net_dst_source_addr_get(&dst, &ip);
@@ -48,7 +66,7 @@ int test_net_dst_source_addr_get(void)
 		TEST_ASSERT(sa_is_loopback(&ip));
 	}
 	else {
-		DEBUG_NOTICE("IPv6 not supported\n");
+		DEBUG_NOTICE("ipv6 disabled\n");
 	}
 
 out:
