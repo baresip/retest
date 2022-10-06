@@ -40,4 +40,4 @@ jobs:
             done
             cmake -B build -DCMAKE_C_FLAGS="-Werror"
             cmake --build build -j
-            valgrind --leak-check=full --show-reachable=yes --error-exitcode=42 ./build/retest -v -a
+            valgrind --leak-check=full --show-reachable=yes --error-exitcode=42 ./build/retest -v -roi
