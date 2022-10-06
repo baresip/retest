@@ -171,30 +171,34 @@ int test_sys_fs_isfile(void)
 
 int test_sys_fs_fopen(void)
 {
+	char filename[256];
 	FILE *file;
 	int err;
 
-	/* TODO: add a unique filename to avoid clash when running
-	 *       multiple instances of test
+	/* Use a unique filename to avoid clash when running
+	 * multiple instances of test
 	 */
-	err = fs_fopen(&file, "retest_fs_fopen", "w+");
+	re_snprintf(filename, sizeof(filename),
+		    "retest_fs_fopen-%llu", rand_u64());
+
+	err = fs_fopen(&file, filename, "w+");
 	TEST_ERR(err);
-	TEST_EQUALS(true, fs_isfile("retest_fs_fopen"));
+	TEST_EQUALS(true, fs_isfile(filename));
 
 	err = fclose(file);
 	TEST_ERR(err);
 
 	/* Try reopen */
-	err = fs_fopen(&file, "retest_fs_fopen", "w+");
+	err = fs_fopen(&file, filename, "w+");
 	TEST_ERR(err);
 
 	err = fclose(file);
 	TEST_ERR(err);
 
 #ifdef WIN32
-	(void)_unlink("retest_fs_fopen");
+	(void)_unlink(filename);
 #else
-	(void)unlink("retest_fs_fopen");
+	(void)unlink(filename);
 #endif
 
 out:
