@@ -760,14 +760,16 @@ out:
 
 int test_sip_drequestf_network(void)
 {
-	int err;
 	struct sa laddr;
+	int err = 0;
 
-	err = net_if_getlinklocal(NULL, AF_INET6, &laddr);
-	TEST_ERR(err);
+	sa_init(&laddr, AF_INET6);
 
-	err = do_sip_drequestf(&laddr);
-	TEST_ERR(err);
+	if (0 == net_if_getlinklocal(NULL, AF_INET6, &laddr)) {
+
+		err = do_sip_drequestf(&laddr);
+		TEST_ERR(err);
+	}
 
 out:
 	return err;
