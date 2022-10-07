@@ -24,7 +24,7 @@ jobs:
         id: runcmd
         with:
           arch: aarch64
-          distro: ubuntu18.04
+          distro: buster
 
           install: |
             apt-get -y -q update
