@@ -441,6 +441,18 @@ int test_bfcp_tcp(void)
 	err = re_main_timeout(100);
 	TEST_ERR(err);
 
+	if (cli->handler_err) {
+		DEBUG_WARNING("client error: %m\n", cli->handler_err);
+		err = cli->handler_err;
+		goto out;
+	}
+
+	if (srv->handler_err) {
+		DEBUG_WARNING("server error: %m\n", srv->handler_err);
+		err = srv->handler_err;
+		goto out;
+	}
+
 	TEST_EQUALS((estab_handler_called | resp_handler_called), cli->flags);
 	TEST_EQUALS((conn_handler_called | estab_handler_called |
 		recv_handler_called), srv->flags);
