@@ -24,7 +24,7 @@ jobs:
         id: runcmd
         with:
           arch: aarch64
-          distro: buster
+          distro: bullseye
 
           install: |
             apt-get -y -q update
