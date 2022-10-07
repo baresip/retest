@@ -1056,3 +1056,35 @@ int test_fmt_str_bool(void)
 
 	return err;
 }
+
+
+int test_fmt_str_itoa(void)
+{
+	char buf[ITOA_BUFSZ];
+	char *s;
+	int err = 0;
+
+	s = str_itoa(0, buf, 10);
+	TEST_ASSERT(!str_casecmp(s, "0"));
+
+	s = str_itoa(42, buf, 10);
+	TEST_ASSERT(!str_casecmp(s, "42"));
+
+	s = str_itoa(UINT32_MAX, buf, 10);
+	TEST_ASSERT(!str_casecmp(s, "4294967295"));
+
+	s = str_itoa(UINT32_MAX, buf, 16);
+	TEST_ASSERT(!str_casecmp(s, "FFFFFFFF"));
+
+	s = str_itoa(23, buf, 2);
+	TEST_ASSERT(!str_casecmp(s, "10111"));
+
+	s = str_itoa(UINT32_MAX, buf, 2);
+	TEST_ASSERT(!str_casecmp(s, "11111111111111111111111111111111"));
+
+out:
+	if (err)
+		DEBUG_WARNING("err itoa string: %s\n", s);
+
+	return err;
+}

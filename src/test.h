@@ -196,6 +196,7 @@ int test_fmt_snprintf(void);
 int test_fmt_str(void);
 int test_fmt_str_bool(void);
 int test_fmt_str_error(void);
+int test_fmt_str_itoa(void);
 int test_fmt_unicode(void);
 int test_fmt_unicode_decode(void);
 int test_g711_alaw(void);
