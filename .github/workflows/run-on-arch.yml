@@ -24,11 +24,11 @@ jobs:
         id: runcmd
         with:
           arch: aarch64
-          distro: alpine_latest
+          distro: ubuntu16.04
 
           install: |
-            apk update
-            apk add git cmake openssl-dev gcc clang make musl-dev linux-headers valgrind
+            apt-get -y -q update
+            apt-get -y -q install git cmake libssl-dev gcc make valgrind
 
           run: |
             for p in re rem; do
@@ -40,4 +40,4 @@ jobs:
             done
             cmake -B build -DCMAKE_C_FLAGS="-Werror"
             cmake --build build -j
-            valgrind --leak-check=full --show-reachable=yes --error-exitcode=42 ./build/retest -v -roi
+            valgrind --leak-check=full --show-reachable=yes --error-exitcode=42 ./build/retest -v -r
