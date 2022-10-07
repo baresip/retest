@@ -53,8 +53,6 @@ int test_net_dst_source_addr_get(void)
 
 	if (ipv6_supported()) {
 
-		DEBUG_NOTICE("ipv6 enabled\n");
-
 		sa_init(&dst, AF_INET6);
 		sa_init(&ip, AF_UNSPEC);
 		sa_set_str(&dst, "::1", 53);
