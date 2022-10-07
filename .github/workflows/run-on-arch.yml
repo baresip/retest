@@ -24,7 +24,7 @@ jobs:
         id: runcmd
         with:
           arch: aarch64
-          distro: ubuntu16.04
+          distro: ubuntu18.04
 
           install: |
             apt-get -y -q update
