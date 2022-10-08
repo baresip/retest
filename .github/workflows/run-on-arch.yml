@@ -1,0 +1,91 @@
+on: [push, pull_request]
+
+jobs:
+  build_job:
+    # The host should always be linux
+    runs-on: ubuntu-18.04
+    name: Build on ${{ matrix.distro }} ${{ matrix.arch }}
+
+    # Run steps on a matrix of 3 arch/distro combinations
+    strategy:
+      matrix:
+        include:
+          - arch: armv7
+            distro: alpine_latest
+          - arch: aarch64
+            distro: bullseye
+          - arch: s390x
+            distro: fedora_latest
+
+    steps:
+      - uses: actions/checkout@v2.1.0
+
+      - uses: sreimers/pr-dependency-action@v0.5
+        with:
+          name: re
+          repo: https://github.com/baresip/re
+          secret: ${{ secrets.GITHUB_TOKEN }}
+
+      - uses: sreimers/pr-dependency-action@v0.5
+        with:
+          name: rem
+          repo: https://github.com/baresip/rem
+          secret: ${{ secrets.GITHUB_TOKEN }}
+
+      - uses: uraimo/run-on-arch-action@v2
+        name: Build artifact
+        id: build
+        with:
+          arch: ${{ matrix.arch }}
+          distro: ${{ matrix.distro }}
+
+          # Not required, but speeds up builds
+          githubToken: ${{ github.token }}
+
+          # Create an artifacts directory
+          setup: |
+            mkdir -p "${PWD}/artifacts"
+
+          # The shell to run commands with in the container
+          shell: /bin/sh
+
+          # Install some dependencies in the container. This speeds up builds if
+          # you are also using githubToken. Any dependencies installed here will
+          # be part of the container image that gets cached, so subsequent
+          # builds don't have to re-install them. The image layer is cached
+          # publicly in your project's package repository, so it is vital that
+          # no secrets are present in the container state or logs.
+          install: |
+            case "${{ matrix.distro }}" in
+              ubuntu*|jessie|stretch|buster|bullseye)
+                apt-get update -q -y
+                apt-get install -q -y cmake gcc git make libssl-dev
+                ;;
+              fedora*)
+                dnf -y update
+                dnf -y install cmake gcc git make openssl-devel
+                ;;
+              alpine*)
+                apk update
+                apk add cmake gcc git linux-headers make musl-dev openssl-dev
+                ;;
+            esac
+
+          # Produce a binary artifact and place it in the mounted volume
+          run: |
+            for p in re rem; do
+              cmake -S $p -B $p/build -DCMAKE_C_FLAGS="-Werror"
+              cmake --build $p/build -j
+            done
+            for p in re rem; do
+              mv $p ../.
+            done
+            cmake -B build -DCMAKE_C_FLAGS="-Werror"
+            cmake --build build -j
+            ./build/retest -v -r
+
+      - name: Show the artifact
+        # Items placed in /artifacts in the container will be in
+        # ${PWD}/artifacts on the host.
+        run: |
+          ls -al "${PWD}/artifacts"
