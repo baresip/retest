@@ -59,15 +59,15 @@ jobs:
             case "${{ matrix.distro }}" in
               ubuntu*|jessie|stretch|buster|bullseye)
                 apt-get update -q -y
-                apt-get install -q -y cmake gcc git libssl-dev valgrind
+                apt-get install -q -y cmake gcc git make libssl-dev valgrind
                 ;;
               fedora*)
                 dnf -y update
-                dnf -y install cmake gcc git openssl-devel valgrind
+                dnf -y install cmake gcc git make openssl-devel valgrind
                 ;;
               alpine*)
                 apk update
-                apk add cmake gcc git openssl-dev valgrind
+                apk add cmake gcc git make openssl-dev valgrind
                 ;;
             esac
 
