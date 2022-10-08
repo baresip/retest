@@ -10,3 +10,8 @@ tags
 
 # Vim swp files
 *.swp
+
+# cmake
+CMakeCache.txt
+CMakeFiles/
+cmake_install.cmake
