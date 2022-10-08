@@ -59,15 +59,15 @@ jobs:
             case "${{ matrix.distro }}" in
               ubuntu*|jessie|stretch|buster|bullseye)
                 apt-get update -q -y
-                apt-get install -q -y cmake gcc git make libssl-dev valgrind
+                apt-get install -q -y cmake gcc git make libssl-dev
                 ;;
               fedora*)
                 dnf -y update
-                dnf -y install cmake gcc git make openssl-devel valgrind
+                dnf -y install cmake gcc git make openssl-devel
                 ;;
               alpine*)
                 apk update
-                apk add cmake gcc git linux-headers make musl-dev openssl-dev valgrind
+                apk add cmake gcc git linux-headers make musl-dev openssl-dev
                 ;;
             esac
 
@@ -82,7 +82,7 @@ jobs:
             done
             cmake -B build -DCMAKE_C_FLAGS="-Werror"
             cmake --build build -j
-            valgrind --leak-check=full --show-reachable=yes --error-exitcode=42 ./build/retest -v -r
+            ./build/retest -v -r
 
       - name: Show the artifact
         # Items placed in /artifacts in the container will be in
