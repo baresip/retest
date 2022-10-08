@@ -67,7 +67,7 @@ jobs:
                 ;;
               alpine*)
                 apk update
-                apk add cmake gcc git openssl-devel valgrind
+                apk add cmake gcc git openssl-dev valgrind
                 ;;
             esac
 
