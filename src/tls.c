@@ -524,8 +524,8 @@ int test_tls_cli_conn_change_cert(void)
 	(void)re_snprintf(clientcert, sizeof(clientcert),
 		"%s/not_a_file.pem", test_datapath());
 
-	err = tls_conn_change_cert(tt.sc_cli, clientcert);
-	TEST_EQUALS(EINVAL, err);
+	int ret = tls_conn_change_cert(tt.sc_cli, clientcert);
+	ASSERT_TRUE(ret==EINVAL || ret==ENOENT);
 
 	memset(clientcert, 0, sizeof(clientcert));
 	(void)re_snprintf(clientcert, sizeof(clientcert),
