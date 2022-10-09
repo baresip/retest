@@ -1,10 +1,36 @@
 on: [push, pull_request]
 
 jobs:
+  prepare:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v2
+
+    - uses: sreimers/pr-dependency-action@v0.5
+      with:
+        name: re
+        repo: https://github.com/baresip/re
+        secret: ${{ secrets.GITHUB_TOKEN }}
+
+    - uses: sreimers/pr-dependency-action@v0.5
+      with:
+        name: rem
+        repo: https://github.com/baresip/rem
+        secret: ${{ secrets.GITHUB_TOKEN }}
+
+    - uses: actions/upload-artifact@v3
+      with:
+        name: prepare
+        path: |
+          re
+          rem
+
   build_job:
     # The host should always be linux
     runs-on: ubuntu-18.04
     name: Build on ${{ matrix.distro }} ${{ matrix.arch }}
+    needs: prepare
 
     # Run steps on a matrix of 3 arch/distro combinations
     strategy:
@@ -20,17 +46,10 @@ jobs:
     steps:
       - uses: actions/checkout@v2.1.0
 
-      - uses: sreimers/pr-dependency-action@v0.5
+      - name: Download re/rem
+        uses: actions/download-artifact@v3
         with:
-          name: re
-          repo: https://github.com/baresip/re
-          secret: ${{ secrets.GITHUB_TOKEN }}
-
-      - uses: sreimers/pr-dependency-action@v0.5
-        with:
-          name: rem
-          repo: https://github.com/baresip/rem
-          secret: ${{ secrets.GITHUB_TOKEN }}
+          name: prepare
 
       - uses: uraimo/run-on-arch-action@v2
         name: Build artifact
