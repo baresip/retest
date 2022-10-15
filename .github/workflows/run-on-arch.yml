@@ -5,7 +5,7 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v3
 
     - uses: sreimers/pr-dependency-action@v0.5
       with:
@@ -44,7 +44,7 @@ jobs:
             distro: fedora_latest
 
     steps:
-      - uses: actions/checkout@v2.1.0
+      - uses: actions/checkout@v3
 
       - name: Download re/rem
         uses: actions/download-artifact@v3

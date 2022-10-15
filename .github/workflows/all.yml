@@ -22,7 +22,7 @@ jobs:
 #       os: [ubuntu-latest, macos-latest] # @todo: macOS need fixes
 
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v3
 
     - uses: sreimers/pr-dependency-action@v0.5
       with:

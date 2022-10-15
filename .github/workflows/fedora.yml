@@ -15,7 +15,7 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v3
 
     - uses: sreimers/pr-dependency-action@v0.5
       with:
@@ -50,7 +50,7 @@ jobs:
       CC: ${{ matrix.compiler }}
 
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v3
     - name: install devel tools
       run: |
         yum -y install git gcc clang cmake openssl-devel pkgconfig zlib-devel net-tools
