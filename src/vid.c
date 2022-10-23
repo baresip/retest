@@ -215,7 +215,7 @@ static int test_vidframe_yuv_2x2_white(enum vidfmt fmt, unsigned chroma)
 }
 
 
-static int test_vid_draw()
+static int test_vid_draw(void)
 {
 	static const struct vidsz vidsz = {320, 240};
 	struct vidframe *vf = NULL, *vf2 = NULL;
