@@ -143,15 +143,16 @@ static int test_h264_stap_a_decode(void)
 		goto out;
 	}
 
-	mbuf_write_mem(mb_pkt, pkt, sizeof(pkt));
+	err = mbuf_write_mem(mb_pkt, pkt, sizeof(pkt));
+	ASSERT_EQ(0, err);
+
 	mb_pkt->pos = 0;
 
 	err = h264_stap_decode_annexb(mb_frame, mb_pkt);
 	ASSERT_EQ(0, err);
 
 	err = h264_stap_encode(mb_pkt2, mb_frame->buf, mb_frame->end);
-	if (err)
-		goto out;
+	ASSERT_EQ(0, err);
 
 	TEST_MEMCMP(pkt, sizeof(pkt), mb_pkt2->buf+1, mb_pkt2->end-1);
 
