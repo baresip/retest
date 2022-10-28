@@ -94,7 +94,7 @@ static int test_h264_stap_a_encode(void)
 		goto out;
 	}
 
-	err = h264_stap_a_encode(mb_pkt, frame, sizeof(frame));
+	err = h264_stap_encode(mb_pkt, frame, sizeof(frame));
 	if (err)
 		goto out;
 
@@ -106,7 +106,7 @@ static int test_h264_stap_a_encode(void)
 	ASSERT_EQ(MAX_NRI,          hdr.nri);              /* NOTE: max NRI */
 	ASSERT_EQ(H264_NALU_STAP_A, hdr.type);
 
-	err = h264_stapa_decode_annexb(mb_frame, mb_pkt);
+	err = h264_stap_decode_annexb(mb_frame, mb_pkt);
 	ASSERT_EQ(0, err);
 
 	TEST_MEMCMP(frame, sizeof(frame), mb_frame->buf, mb_frame->end);
@@ -146,10 +146,10 @@ static int test_h264_stap_a_decode(void)
 	mbuf_write_mem(mb_pkt, pkt, sizeof(pkt));
 	mb_pkt->pos = 0;
 
-	err = h264_stapa_decode_annexb(mb_frame, mb_pkt);
+	err = h264_stap_decode_annexb(mb_frame, mb_pkt);
 	ASSERT_EQ(0, err);
 
-	err = h264_stap_a_encode(mb_pkt2, mb_frame->buf, mb_frame->end);
+	err = h264_stap_encode(mb_pkt2, mb_frame->buf, mb_frame->end);
 	if (err)
 		goto out;
 
