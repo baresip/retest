@@ -71,6 +71,10 @@ static int test_h264_stap_a_encode(void)
 {
 	static const uint8_t frame[] = {
 
+		/* AUD */
+		0x00, 0x00, 0x01,
+		0x09, 0x10,
+
 		/* SPS */
 		0x00, 0x00, 0x01,
 		0x67, 0x42, 0xc0, 0x1f, 0x8c, 0x8d, 0x40,
@@ -81,7 +85,7 @@ static int test_h264_stap_a_encode(void)
 
 		/* IDR_SLICE */
 		0x00, 0x00, 0x01,
-		0x65, 0xb8, 0x00, 0x04, 0x00, 0x00, 0x05, 0x39
+		0x65, 0xb8, 0x00, 0x04, 0x00, 0x00, 0x05, 0x39,
 	};
 #define MAX_NRI 3
 	struct mbuf *mb_pkt   = mbuf_alloc(256);
@@ -131,7 +135,11 @@ static int test_h264_stap_a_decode(void)
 
 		/* PPS */
 		0x00, 0x04,
-		0x68, 0xce, 0x3c, 0x80
+		0x68, 0xce, 0x3c, 0x80,
+
+		/* AUD */
+		0x00, 0x02,
+		0x09, 0x10,
 	};
 	struct mbuf *mb_pkt   = mbuf_alloc(256);
 	struct mbuf *mb_frame = mbuf_alloc(256);
@@ -149,7 +157,7 @@ static int test_h264_stap_a_decode(void)
 	mb_pkt->pos = 0;
 
 	err = h264_stap_decode_annexb(mb_frame, mb_pkt);
-	ASSERT_EQ(0, err);
+	TEST_ERR(err);
 
 	err = h264_stap_encode(mb_pkt2, mb_frame->buf, mb_frame->end);
 	ASSERT_EQ(0, err);
