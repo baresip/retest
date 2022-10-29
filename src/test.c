@@ -122,6 +122,7 @@ static const struct test tests[] = {
 	TEST(test_json_bad),
 	TEST(test_json_array),
 	TEST(test_list),
+	TEST(test_list_flush),
 	TEST(test_list_ref),
 	TEST(test_list_sort),
 	TEST(test_mbuf),
