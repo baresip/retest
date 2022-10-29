@@ -193,21 +193,20 @@ int test_list_sort(void)
 }
 
 
-static struct list flushl = LIST_INIT;
-
 struct flush_data {
 	struct le le;
+	struct list *flushl;
 };
 
 
 static void data_destroy(void *arg)
 {
-	(void)arg;
+	struct flush_data *data = arg;
 	struct le *le;
 
-	LIST_FOREACH(&flushl, le)
+	LIST_FOREACH(data->flushl, le)
 	{
-		assert(list_count(&flushl));
+		assert(list_count(data->flushl));
 	}
 }
 
@@ -215,6 +214,7 @@ static void data_destroy(void *arg)
 int test_list_flush(void)
 {
 	struct flush_data *data[2];
+	struct list flushl = LIST_INIT;
 	int err = 0;
 
 	data[0] = mem_zalloc(sizeof(struct flush_data), data_destroy);
@@ -226,6 +226,9 @@ int test_list_flush(void)
 		mem_deref(data[0]);
 		return ENOMEM;
 	}
+
+	data[0]->flushl = &flushl;
+	data[1]->flushl = &flushl;
 
 	list_append(&flushl, &data[0]->le, data[0]);
 	list_append(&flushl, &data[1]->le, data[1]);
