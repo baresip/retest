@@ -4,6 +4,7 @@
  * Copyright (C) 2010 Creytiv.com
  */
 #include <string.h>
+#include <assert.h>
 #include <re.h>
 #include "test.h"
 
@@ -188,5 +189,54 @@ int test_list_sort(void)
 	err = test_sort(true);
 	TEST_ERR(err);
  out:
+	return err;
+}
+
+
+struct flush_data {
+	struct le le;
+	struct list *flushl;
+};
+
+
+static void data_destroy(void *arg)
+{
+	struct flush_data *data = arg;
+	struct le *le;
+
+	LIST_FOREACH(data->flushl, le)
+	{
+		assert(list_count(data->flushl));
+	}
+}
+
+
+int test_list_flush(void)
+{
+	struct flush_data *data[2];
+	struct list flushl = LIST_INIT;
+	int err = 0;
+
+	data[0] = mem_zalloc(sizeof(struct flush_data), data_destroy);
+	if (!data[0])
+		return ENOMEM;
+
+	data[1] = mem_zalloc(sizeof(struct flush_data), data_destroy);
+	if (!data[1]) {
+		mem_deref(data[0]);
+		return ENOMEM;
+	}
+
+	data[0]->flushl = &flushl;
+	data[1]->flushl = &flushl;
+
+	list_append(&flushl, &data[0]->le, data[0]);
+	list_append(&flushl, &data[1]->le, data[1]);
+
+	list_flush(&flushl);
+
+	TEST_EQUALS(0, list_count(&flushl));
+
+out:
 	return err;
 }

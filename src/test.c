@@ -87,6 +87,7 @@ static const struct test tests[] = {
 	TEST(test_fmt_str),
 	TEST(test_fmt_str_bool),
 	TEST(test_fmt_str_error),
+	TEST(test_fmt_str_itoa),
 	TEST(test_fmt_unicode),
 	TEST(test_fmt_unicode_decode),
 	TEST(test_g711_alaw),
@@ -121,6 +122,7 @@ static const struct test tests[] = {
 	TEST(test_json_bad),
 	TEST(test_json_array),
 	TEST(test_list),
+	TEST(test_list_flush),
 	TEST(test_list_ref),
 	TEST(test_list_sort),
 	TEST(test_mbuf),
@@ -244,6 +246,7 @@ static const struct test tests_integration[] = {
 	TEST(test_tmr_jiffies),
 	TEST(test_tmr_jiffies_usec),
 	TEST(test_dns_integration),
+	TEST(test_dns_http_integration),
 };
 
 
@@ -275,13 +278,7 @@ static void restore_output(int err)
 	fflush(stderr);
 
 	/* Restore stdout/stderr */
-#ifdef WIN32
-	freopen("CON", "w", stdout);
-	freopen("CON", "w", stderr);
-#else
-	freopen("/dev/tty", "w", stdout);
-	freopen("/dev/tty", "w", stderr);
-#endif
+	fs_stdio_restore();
 
 	if (!err)
 		goto out;
@@ -331,6 +328,18 @@ static const struct test *find_test(const char *name)
 }
 
 
+static const struct test *find_test_int(const char *name)
+{
+	for (size_t i=0; i<ARRAY_SIZE(tests_integration); i++) {
+
+		if (0 == str_casecmp(name, tests_integration[i].name))
+			return &tests_integration[i];
+	}
+
+	return NULL;
+}
+
+
 /**
  * Run a single testcase in OOM (Out-of-memory) mode.
  *
@@ -355,7 +364,7 @@ static int testcase_oom(const struct test *test, int levels, bool verbose)
 	int err = 0;
 
 	if (verbose)
-		(void)re_fprintf(stderr, "  %-24s: ", test->name);
+		(void)re_fprintf(stderr, "  %-26s: ", test->name);
 
 	/* All memory levels */
 	for (i=0; i<levels; i++) {
@@ -681,7 +690,7 @@ int test_perf(const char *name, bool verbose)
 			if (!tim->test)
 				continue;
 
-			re_fprintf(stderr, "%-32s: %10.2f usec\n",
+			re_fprintf(stderr, "%-34s: %10.2f usec\n",
 				   tim->test->name, usec_avg);
 		}
 		re_fprintf(stderr, "\n");
@@ -764,7 +773,7 @@ int test_multithread(void)
 
 	test_mode = TEST_THREAD;
 
-	timeout_override = 10000;
+	timeout_override = 15000;
 
 	memset(threadv, 0, sizeof(threadv));
 
@@ -1034,13 +1043,36 @@ int test_integration(const char *name, bool verbose)
 
 	(void)re_fprintf(stderr, "integration tests\n");
 
+	if (name) {
+		test = find_test_int(name);
+		if (!test) {
+			(void)re_fprintf(stderr, "no such test: %s\n", name);
+			return ENOENT;
+		}
+
+		if (!test->name)
+			return EINVAL;
+
+		(void)re_fprintf(stderr, "  %-24s: ", test->name);
+
+		if (test->exec)
+			err = test->exec();
+
+		if (err)
+			DEBUG_WARNING("  %-24s: NOK: %m\n", test->name, err);
+		else
+			(void)re_fprintf(stderr, "\x1b[32mOK\x1b[;m\n");
+
+		return err;
+	}
+
 	for (i=0; i<ARRAY_SIZE(tests_integration); i++) {
 
 		test = &tests_integration[i];
 		if (str_isset(name) && test->name)
 			continue;
 
-		(void)re_fprintf(stderr, "  %-24s: ", test->name);
+		(void)re_fprintf(stderr, "  %-28s: ", test->name);
 
 		if (test->exec)
 			err = test->exec();

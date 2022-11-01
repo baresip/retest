@@ -49,15 +49,10 @@ static int test_leb128(void)
 		if (err)
 			goto out;
 
-		re_printf("leb128 value: [ %w ]\n", mb->buf, mb->end);
-
 		mb->pos = 0;
 
 		err = av1_leb128_decode(mb, &val_dec);
 		ASSERT_EQ(0, err);
-
-		printf("decoded: %" PRIu64 " / %" PRIx64 "\n",
-		       val_dec, val_dec);
 
 		ASSERT_EQ(val, val_dec);
 
