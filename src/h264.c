@@ -16,6 +16,163 @@
 #include <re_dbg.h>
 
 
+#if 0
+static void dump_annexb(const uint8_t *start, size_t size)
+{
+	const uint8_t *end = start + size;
+	unsigned count = 0;
+
+	re_printf("---- H.264 Annex-B: ----\n");
+
+	const uint8_t *r = h264_find_startcode(start, end);
+
+	while (r < end) {
+
+		struct h264_nal_header hdr;
+
+		/* skip zeros */
+		while (!*(r++))
+			;
+
+		const uint8_t *r1 = h264_find_startcode(r, end);
+		size_t nal_len = r1 - r;
+
+		h264_nal_header_decode_buf(&hdr, r);
+
+		re_printf(".... nal:  len=%2zu  nri=%u  type=%s\n",
+			  nal_len,
+			  hdr.nri, h264_nal_unit_name(hdr.type));
+
+		r = r1;
+
+		++count;
+	}
+
+	re_printf("Total NAL units: %u\n", count);
+	re_printf("\n");
+}
+
+
+static void dump_rtp(const uint8_t *p, size_t size)
+{
+	struct h264_nal_header hdr;
+
+	h264_nal_header_decode_buf(&hdr, p);
+
+	re_printf("RTP NAL: size=%zu nri=%u type=%u(%s)\n",
+		  size,
+		  hdr.nri, hdr.type, h264_nal_unit_name(hdr.type));
+	re_printf("\n");
+}
+#endif
+
+
+static int test_h264_stap_a_encode(void)
+{
+	static const uint8_t frame[] = {
+
+		/* AUD */
+		0x00, 0x00, 0x01,
+		0x09, 0x10,
+
+		/* SPS */
+		0x00, 0x00, 0x01,
+		0x67, 0x42, 0xc0, 0x1f, 0x8c, 0x8d, 0x40,
+
+		/* PPS */
+		0x00, 0x00, 0x01,
+		0x68, 0xce, 0x3c, 0x80,
+
+		/* IDR_SLICE */
+		0x00, 0x00, 0x01,
+		0x65, 0xb8, 0x00, 0x04, 0x00, 0x00, 0x05, 0x39,
+	};
+#define MAX_NRI 3
+	struct mbuf *mb_pkt   = mbuf_alloc(256);
+	struct mbuf *mb_frame = mbuf_alloc(256);
+	struct h264_nal_header hdr;
+	int err;
+
+	if (!mb_pkt || !mb_frame) {
+		err = ENOMEM;
+		goto out;
+	}
+
+	err = h264_stap_encode(mb_pkt, frame, sizeof(frame));
+	if (err)
+		goto out;
+
+	mb_pkt->pos = 0;
+
+	err = h264_nal_header_decode(&hdr, mb_pkt);
+	ASSERT_EQ(0, err);
+
+	ASSERT_EQ(MAX_NRI,          hdr.nri);              /* NOTE: max NRI */
+	ASSERT_EQ(H264_NALU_STAP_A, hdr.type);
+
+	err = h264_stap_decode_annexb(mb_frame, mb_pkt);
+	ASSERT_EQ(0, err);
+
+	TEST_MEMCMP(frame, sizeof(frame), mb_frame->buf, mb_frame->end);
+
+ out:
+	mem_deref(mb_frame);
+	mem_deref(mb_pkt);
+
+	return err;
+}
+
+
+static int test_h264_stap_a_decode(void)
+{
+	static const uint8_t pkt[] = {
+
+		/* SPS */
+		0x00, 0x0e,
+		0x67, 0x42, 0xc0, 0x1f, 0x8c, 0x8d,
+		0x40, 0x50, 0x1e, 0xd0, 0x0f, 0x08,
+		0x84, 0x6a,
+
+		/* PPS */
+		0x00, 0x04,
+		0x68, 0xce, 0x3c, 0x80,
+
+		/* AUD */
+		0x00, 0x02,
+		0x09, 0x10,
+	};
+	struct mbuf *mb_pkt   = mbuf_alloc(256);
+	struct mbuf *mb_frame = mbuf_alloc(256);
+	struct mbuf *mb_pkt2  = mbuf_alloc(256);
+	int err;
+
+	if (!mb_pkt || !mb_frame || !mb_pkt2) {
+		err = ENOMEM;
+		goto out;
+	}
+
+	err = mbuf_write_mem(mb_pkt, pkt, sizeof(pkt));
+	ASSERT_EQ(0, err);
+
+	mb_pkt->pos = 0;
+
+	err = h264_stap_decode_annexb(mb_frame, mb_pkt);
+	TEST_ERR(err);
+
+	err = h264_stap_encode(mb_pkt2, mb_frame->buf, mb_frame->end);
+	ASSERT_EQ(0, err);
+
+	TEST_MEMCMP(pkt, sizeof(pkt), mb_pkt2->buf+1, mb_pkt2->end-1);
+
+ out:
+	mem_deref(mb_frame);
+	mem_deref(mb_pkt2);
+	mem_deref(mb_pkt);
+
+	return err;
+}
+
+
 int test_h264(void)
 {
 	struct h264_nal_header hdr, hdr2;
@@ -51,6 +208,14 @@ int test_h264(void)
 	TEST_EQUALS(0, hdr2.f);
 	TEST_EQUALS(1, hdr2.nri);
 	TEST_EQUALS(5, hdr2.type);
+
+	err = test_h264_stap_a_encode();
+	if (err)
+		goto out;
+
+	err = test_h264_stap_a_decode();
+	if (err)
+		goto out;
 
  out:
 	mem_deref(mb);
