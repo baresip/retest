@@ -23,6 +23,7 @@ static const enum vidfmt fmtv[VID_FMT_N] = {
 	VID_FMT_NV12,
 	VID_FMT_NV21,
 	VID_FMT_YUV444P,
+	VID_FMT_YUV422P,
 };
 
 
@@ -64,6 +65,7 @@ static int test_vidframe_size(void)
 {
 	static const struct vidsz vidsz = {32, 32};
 	size_t i;
+	int err = 0;
 
 	for (i=0; i<ARRAY_SIZE(fmtv); i++) {
 
@@ -74,9 +76,13 @@ static int test_vidframe_size(void)
 				      vidfmt_name(fmtv[i]));
 			return EINVAL;
 		}
+
+		const char *name = vidfmt_name(fmtv[i]);
+		ASSERT_TRUE(str_isset(name));
 	}
 
-	return 0;
+ out:
+	return err;
 }
 
 
@@ -209,6 +215,55 @@ static int test_vidframe_yuv_2x2_white(enum vidfmt fmt, unsigned chroma)
 }
 
 
+static int test_vid_draw(void)
+{
+	static const struct vidsz vidsz = {320, 240};
+	struct vidframe *vf = NULL, *vf2 = NULL;
+	int err = 0;
+
+	static const enum vidfmt drawfmtv[] = {
+		VID_FMT_YUV420P,
+		VID_FMT_NV12,
+		VID_FMT_NV21,
+		VID_FMT_YUV444P,
+		VID_FMT_YUV422P,
+	};
+
+	for (size_t i=0; i<ARRAY_SIZE(drawfmtv); i++) {
+
+		err  = vidframe_alloc(&vf,  drawfmtv[i], &vidsz);
+		err |= vidframe_alloc(&vf2, drawfmtv[i], &vidsz);
+		if (err)
+			break;
+
+		if (vf->fmt == VID_FMT_YUV422P) {
+
+			ASSERT_EQ(320, vf->linesize[0]);
+			ASSERT_EQ(160, vf->linesize[1]);
+			ASSERT_EQ(160, vf->linesize[2]);
+			ASSERT_EQ(  0, vf->linesize[3]);
+		}
+
+		for (unsigned x=0; x<vidsz.w; x++)
+			for (unsigned y=0; y<vidsz.h; y++)
+				vidframe_draw_point(vf, x, y, 127, 127, 127);
+
+		vidframe_fill(vf, 255, 255, 255);
+
+		vidframe_copy(vf2, vf);
+
+		vf2 = mem_deref(vf2);
+		vf  = mem_deref(vf);
+	}
+
+ out:
+	mem_deref(vf2);
+	mem_deref(vf);
+
+	return err;
+}
+
+
 int test_vid(void)
 {
 	int err;
@@ -235,6 +290,10 @@ int test_vid(void)
 
 	err  = test_vidframe_yuv_2x2_white(VID_FMT_YUV420P, 1);
 	err |= test_vidframe_yuv_2x2_white(VID_FMT_YUV444P, 2);
+	if (err)
+		return err;
+
+	err = test_vid_draw();
 	if (err)
 		return err;
 
