@@ -524,9 +524,9 @@ static int agent_alloc(struct agent **agentp, struct ice_test *it,
 	if (err)
 		goto out;
 
-	err = icem_cand_add(agent->icem, compid, 0, "eth0", &agent->laddr);
-	if (err)
-		goto out;
+	err = icem_lcand_add_base(agent->icem, ICE_CAND_TYPE_HOST, compid, 0,
+				  "eth0", ICE_TRANSP_UDP, &agent->laddr);
+	TEST_ERR(err);
 
 	++agent->n_cand;
 
