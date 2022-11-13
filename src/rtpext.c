@@ -39,8 +39,8 @@ int test_rtpext(void)
 	mb->pos = 0;
 
 	/* decode header */
-	uint16_t type  = htons(mbuf_read_u16(mb));
-	uint16_t words = htons(mbuf_read_u16(mb));
+	uint16_t type  = ntohs(mbuf_read_u16(mb));
+	uint16_t words = ntohs(mbuf_read_u16(mb));
 
 	ASSERT_EQ(RTPEXT_TYPE_MAGIC, type);
 	ASSERT_EQ(1, words);
