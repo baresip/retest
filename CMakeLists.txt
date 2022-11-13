@@ -121,6 +121,7 @@ set(SRCS
   src/rtcp.c
   src/rtmp.c
   src/rtp.c
+  src/rtpext.c
   src/sa.c
   src/sdp.c
   src/sha.c
