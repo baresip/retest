@@ -767,7 +767,6 @@ int test_multithread(void)
 #define NUM_TOTAL  (NUM_REPEAT * ARRAY_SIZE(tests))
 
 	struct thread threadv[NUM_TOTAL];
-	unsigned n=0;
 	size_t test_index=0;
 	size_t i;
 	int err = 0;
@@ -797,8 +796,6 @@ int test_multithread(void)
 			DEBUG_WARNING("thread_create failed (%m)\n", err);
 			break;
 		}
-
-		++n;
 	}
 
 	for (i=0; i<ARRAY_SIZE(threadv); i++) {
