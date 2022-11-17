@@ -78,28 +78,11 @@ static void can_send(struct tls_test *tt)
 static void client_estab_handler(void *arg)
 {
 	struct tls_test *tt = arg;
-	const char *cipher = tls_cipher_name(tt->sc_cli);
 	int err = 0;
-
-	if (tt->keytype == TLS_KEYTYPE_RSA) {
-
-		TEST_ASSERT(NULL == strstr(cipher, "ECDSA"));
-	}
-#if 0
-	else if (tt->keytype == TLS_KEYTYPE_EC) {
-
-		if (NULL == strstr(cipher, "ECDH")) {
-			DEBUG_WARNING("no ECDH in cipher (%s)\n", cipher);
-			err = EPROTO;
-			goto out;
-		}
-	}
-#endif
 
 	tt->estab_cli = true;
 	can_send(tt);
 
- out:
 	check(tt, err);
 }
 
@@ -225,13 +208,6 @@ static int test_tls_base(enum tls_keytype keytype, bool add_ca, int exp_verr,
 
 	switch (keytype) {
 
-	case TLS_KEYTYPE_RSA:
-		err = tls_set_certificate(tt.tls, test_certificate_rsa,
-					  strlen(test_certificate_rsa));
-		if (err)
-			goto out;
-		break;
-
 	case TLS_KEYTYPE_EC:
 		err = tls_set_certificate(tt.tls, test_certificate_ecdsa,
 					  strlen(test_certificate_ecdsa));
@@ -331,7 +307,7 @@ static int test_tls_base(enum tls_keytype keytype, bool add_ca, int exp_verr,
 
 int test_tls_session_reuse_tls_v12(void)
 {
-	return test_tls_base(TLS_KEYTYPE_RSA, false, EAUTH, true,
+	return test_tls_base(TLS_KEYTYPE_EC, false, EAUTH, true,
 		TLS1_2_VERSION);
 }
 
@@ -339,13 +315,13 @@ int test_tls_session_reuse_tls_v12(void)
 /* TLS v1.3 session reuse is not yet supported by libre */
 int test_tls_session_reuse(void)
 {
-	return test_tls_base(TLS_KEYTYPE_RSA, false, EAUTH, true, -1);
+	return test_tls_base(TLS_KEYTYPE_EC, false, EAUTH, true, -1);
 }
 
 
 int test_tls(void)
 {
-	return test_tls_base(TLS_KEYTYPE_RSA, false, EAUTH, false, -1);
+	return test_tls_base(TLS_KEYTYPE_EC, false, EAUTH, false, -1);
 }
 
 
