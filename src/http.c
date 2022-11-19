@@ -396,7 +396,7 @@ static size_t http_req_long_body_handler(struct mbuf *mb, void *arg)
 
 
 static int test_http_loop_base(bool secure, const char *met, bool http_conn,
-	bool dns_srv_query)
+	bool dns_srv_query, bool dns_set_conf_test)
 {
 	struct http_sock *sock = NULL;
 	struct http_cli *cli = NULL;
@@ -413,6 +413,13 @@ static int test_http_loop_base(bool secure, const char *met, bool http_conn,
 	bool put = false;
 	struct mbuf *mb_body = NULL;
 	struct pl pl;
+	struct dnsc_conf dconf;
+	struct http_conf hconf = {
+		30000,
+		30000,
+		900000,
+	};
+
 
 	if (!strcmp(met, "PUT"))
 		put = true;
@@ -457,6 +464,13 @@ static int test_http_loop_base(bool secure, const char *met, bool http_conn,
 	if (err)
 		goto out;
 
+	dconf.query_hash_size = 16;
+	dconf.tcp_hash_size	 = 2;
+	dconf.conn_timeout	 = hconf.conn_timeout;
+	dconf.idle_timeout	 = hconf.idle_timeout;
+	dconf.cache_ttl_max	 = 1800;
+	dconf.getaddrinfo	 = dnsc_getaddrinfo_enabled(dnsc);
+
 	err = http_client_alloc(&cli, dnsc);
 	if (err)
 		goto out;
@@ -478,8 +492,18 @@ static int test_http_loop_base(bool secure, const char *met, bool http_conn,
 			  dns_srv_query ? "test1.example.net" : "127.0.0.1",
 			  sa_port(&srv));
 
-	for (i = 1; i <= REQ_HTTP_REQUESTS; i++) {
+	for (i = 1; i <= 10*REQ_HTTP_REQUESTS; i++) {
 		t.i_req_body = 0;
+
+		err = http_client_set_config(cli, &hconf);
+		if (err)
+			goto out;
+
+		if (dns_set_conf_test) {
+			err = dnsc_conf_set(dnsc, &dconf);
+			if (err)
+				goto out;
+		}
 
 		t.clen = put ? REQ_BODY_SIZE :
 			2 * strlen("abcdefghijklmnopqrstuvwxyz");
@@ -641,45 +665,51 @@ out:
 
 int test_http_loop(void)
 {
-	return test_http_loop_base(false, "GET", false, false);
+	return test_http_loop_base(false, "GET", false, false, false);
 }
 
 
 #ifdef USE_TLS
 int test_https_loop(void)
 {
-	return test_http_loop_base(true, "GET", false, false);
+	return test_http_loop_base(true, "GET", false, false, false);
 }
 #endif
 
 
 int test_http_large_body(void)
 {
-	return test_http_loop_base(false, "PUT", false, false);
+	return test_http_loop_base(false, "PUT", false, false, false);
 }
 
 
 #ifdef USE_TLS
 int test_https_large_body(void)
 {
-	return test_http_loop_base(true, "PUT", false, false);
+	return test_http_loop_base(true, "PUT", false, false, false);
 }
 #endif
 
 
 int test_http_conn(void)
 {
-	return test_http_loop_base(false, "GET", true, false);
+	return test_http_loop_base(false, "GET", true, false, false);
 }
 
 
 int test_http_conn_large_body(void)
 {
-	return test_http_loop_base(false, "PUT", true, false);
+	return test_http_loop_base(false, "PUT", true, false, false);
 }
 
 
 int test_dns_http_integration(void)
 {
-	return test_http_loop_base(false, "GET", true, true);
+	return test_http_loop_base(false, "GET", true, true, false);
+}
+
+
+int test_dns_cache_http_integration(void)
+{
+	return test_http_loop_base(false, "GET", true, true, true);
 }
