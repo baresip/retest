@@ -3,6 +3,7 @@
  *
  * Copyright (C) 2010 Creytiv.com
  */
+#define _DEFAULT_SOURCE 1
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <fcntl.h>
@@ -259,14 +260,20 @@ static char datapath[256] = "./data";
 
 
 static uint32_t timeout_override;
+static int dup_stdout;
+static int dup_stderr;
 
 enum test_mode test_mode = TEST_NONE;
 
 
 static void hide_output(void)
 {
-	(void)freopen("stdout.out", "w", stdout);
-	(void)freopen("stderr.out", "w", stderr);
+	dup_stdout = dup(fileno(stdout));
+	dup_stderr = dup(fileno(stderr));
+	int fd_out = open("stdout.out", O_WRONLY | O_CREAT);
+	int fd_err = open("stderr.out", O_WRONLY | O_CREAT);
+	(void)dup2(fd_out, fileno(stdout));
+	(void)dup2(fd_err, fileno(stderr));
 }
 
 
@@ -279,11 +286,11 @@ static void restore_output(int err)
 	fflush(stderr);
 
 	/* Restore stdout/stderr */
-	fs_stdio_restore();
+	(void)dup2(dup_stdout, fileno(stdout));
+	(void)dup2(dup_stderr, fileno(stderr));
 
 	if (!err)
 		goto out;
-
 
 	f = fopen("stdout.out", "r");
 	if (!f)
