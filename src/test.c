@@ -33,6 +33,9 @@
 #define read _read
 #define write _write
 #define close _close
+#define dup _dup
+#define dup2 _dup2
+#define fileno _fileno
 #endif
 
 
