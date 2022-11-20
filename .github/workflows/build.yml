@@ -67,21 +67,20 @@ jobs:
           mv $p ../.
         done
 
-    - name: ldconfig
-      if: ${{ runner.os == 'Linux' }}
-      run: sudo ldconfig
-
     - name: retest
       if: ${{ runner.os == 'Linux' }}
       run: |
-        cmake -DCMAKE_C_FLAGS="-Werror" . && make
-        valgrind --leak-check=full --show-reachable=yes --error-exitcode=42 ./retest -v -r
+        sudo ldconfig
+        cmake -B build -G Ninja -DCMAKE_C_FLAGS="-Werror"
+        cmake --build build
+        valgrind --leak-check=full --show-reachable=yes --error-exitcode=42 ./build/retest -v -r
 
     - name: retest
       if: ${{ runner.os == 'macOS' }}
       run: |
-        OPENSSL_ROOT_DIR=/usr/local/opt/openssl cmake -DCMAKE_C_FLAGS="-Werror" . && make
-        ./retest -r
+        OPENSSL_ROOT_DIR=/usr/local/opt/openssl cmake -B build -G Ninja -DCMAKE_C_FLAGS="-Werror"
+        cmake --build build
+        ./build/retest -v -r
 
     - name: retest
       if: ${{ runner.os == 'Windows' }}
