@@ -23,6 +23,11 @@ int test_sa_cmp(void)
 		bool eq;
 	} testv[] = {
 		{
+			"unix:/test.sock", 0,
+			"unix:/test.sock", 0,
+			true
+		},
+		{
 			"1.2.3.4", 12345,
 			"1.2.3.4", 12345,
 			true
@@ -336,6 +341,7 @@ int test_sa_pton(void)
 		{"fa01::2a29",                      0            },
 		{"127.0.0.1",                       0            },
 		{"192.168.110.2",                   0            },
+		{"unix:/test.sock",                 0            },
 		{"fe80::xxxx:d8d9:ddc3:25dd:%eth0", EADDRNOTAVAIL},
 	};
 
