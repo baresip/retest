@@ -288,6 +288,7 @@ static int test_tls_base(enum tls_keytype keytype, bool add_ca, int exp_verr,
 		tt.tc_cli = mem_deref(tt.tc_cli);
 		tt.tc_srv = mem_deref(tt.tc_srv);
 		tt.estab_cli = false;
+		tt.estab_srv = false;
 		tt.recv_cli = 0;
 	}
 
