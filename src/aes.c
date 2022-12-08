@@ -271,28 +271,13 @@ int test_aes_gcm(void)
 		if (err)
 			goto out;
 
-		err = aes_alloc(&dec, AES_MODE_GCM, encr_key, key_bits, iv);
-		if (err)
-			goto out;
-
 		if (str_isset(test->aad_str)) {
-			uint8_t aad2[sizeof(aad)/2];
 
 			err = str_hex(aad, sizeof(aad), test->aad_str);
 			if (err) {
 				DEBUG_WARNING("could not set aad\n");
 				break;
 			}
-
-			/* split the AAD into 2 halves */
-			memcpy(aad2, &aad[sizeof(aad)/2], sizeof(aad)/2);
-
-			err = aes_encr(enc, NULL, aad, sizeof(aad)/2);
-			TEST_ERR(err);
-			err = aes_encr(enc, NULL, aad2, sizeof(aad2));
-			TEST_ERR(err);
-			err = aes_decr(dec, NULL, aad, sizeof(aad));
-			TEST_ERR(err);
 		}
 
 		if (str_isset(test->plain_str)) {
@@ -320,6 +305,10 @@ int test_aes_gcm(void)
 		}
 
 		/* Encrypt */
+		if (str_isset(test->aad_str)) {
+			err = aes_encr(enc, NULL, aad, sizeof(aad));
+			TEST_ERR(err);
+		}
 		if (clen) {
 			err = aes_encr(enc, out, test_vector, clen);
 			TEST_ERR(err);
@@ -334,8 +323,18 @@ int test_aes_gcm(void)
 		if (test->success) {
 			TEST_MEMCMP(tag_ref, sizeof(tag_ref), tag, tagsz);
 		}
+		enc = mem_deref(enc);
 
 		/* Decrypt */
+		err = aes_alloc(&dec, AES_MODE_GCM, encr_key, key_bits, iv);
+		if (err)
+			goto out;
+
+		if (str_isset(test->aad_str)) {
+			err = aes_decr(dec, NULL, aad, sizeof(aad));
+			TEST_ERR(err);
+		}
+
 		err = aes_decr(dec, clear, out, clen);
 		TEST_ERR(err);
 
@@ -356,7 +355,6 @@ int test_aes_gcm(void)
 			TEST_EQUALS(EAUTH, e);
 		}
 
-		enc = mem_deref(enc);
 		dec = mem_deref(dec);
 	}
 
