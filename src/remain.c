@@ -68,7 +68,7 @@ static int thread_handler(void *arg)
 	TEST_ERR(err);
 #endif
 	err = re_thread_init();
-	TEST_EQUALS(EALREADY, err);
+	TEST_EQUALS(0, err);
 
 	tmr_start(&tmr, 1, tmr_handler, data);
 
