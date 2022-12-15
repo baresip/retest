@@ -25,7 +25,7 @@ static void http_req_handler(struct http_conn *conn,
 int test_unixsock(void)
 {
 	struct sa srv;
-	re_sock_t fd;
+	re_sock_t fd = RE_BAD_SOCK;
 	struct http_sock *sock;
 	int err;
 	char filename[32];
@@ -49,5 +49,7 @@ int test_unixsock(void)
 	TEST_ERR(err);
 
 out:
+	if (err)
+		(void)unlink(&socket[5]);
 	return err;
 }
