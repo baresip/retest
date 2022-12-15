@@ -142,6 +142,7 @@ set(SRCS
   src/trice.c
   src/turn.c
   src/udp.c
+  src/unixsock.c
   src/uri.c
   src/vid.c
   src/vidconv.c
