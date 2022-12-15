@@ -252,7 +252,7 @@ static const struct test tests_integration[] = {
 	TEST(test_tmr_jiffies_usec),
 	TEST(test_dns_integration),
 	TEST(test_dns_http_integration),
-	/*TEST(test_dns_cache_http_integration),*/
+	TEST(test_dns_cache_http_integration),
 };
 
 
