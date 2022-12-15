@@ -9,6 +9,9 @@
 #endif
 #include <re.h>
 #include "test.h"
+#ifdef WIN32
+#define unlink _unlink
+#endif
 
 #define DEBUG_MODULE "unixsock"
 #define DEBUG_LEVEL 5
