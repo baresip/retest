@@ -4,7 +4,9 @@
  * Copyright (C) 2022 Sebastian Reimers
  */
 
+#ifdef HAVE_UNISTD_H
 #include <unistd.h>
+#endif
 #include <re.h>
 #include "test.h"
 
