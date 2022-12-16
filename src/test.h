@@ -326,6 +326,7 @@ int test_try_into(void);
 int test_turn(void);
 int test_turn_tcp(void);
 int test_udp(void);
+int test_unixsock(void);
 int test_uri(void);
 int test_uri_encode(void);
 int test_uri_headers(void);
