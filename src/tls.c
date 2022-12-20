@@ -16,6 +16,7 @@
 
 struct tls_test {
 	struct tls *tls;
+	struct tls *tls2;
 	struct tls_conn *sc_cli;
 	struct tls_conn *sc_srv;
 	struct tcp_sock *ts;
@@ -545,6 +546,102 @@ int test_tls_cli_conn_change_cert(void)
 	/* NOTE: close context first */
 	mem_deref(tt.tls);
 
+	mem_deref(tt.sc_cli);
+	mem_deref(tt.sc_srv);
+	mem_deref(tt.tc_cli);
+	mem_deref(tt.tc_srv);
+	mem_deref(tt.ts);
+
+	return err;
+}
+
+
+/**
+ * SNI Test
+ *
+ * - UAS opens a TLS connection to UAC by sending a client hello with SNI
+ * - UAC chooses a certificate with matching SNI
+ * - UAC verifies the chain and common name of the UAS
+ * - UAS verifies the chain and common name of the UAC
+ *
+ * @return 0 if success, otherwise errorcode
+ */
+int test_tls_sni(void)
+{
+	struct tls_test tt;
+	struct sa srv;
+	int err;
+	const char *dp = test_datapath();
+	char path[256];
+
+	memset(&tt, 0, sizeof(tt));
+
+	err = sa_set_str(&srv, "127.0.0.1", 0);
+	TEST_ERR(err);
+
+	/* UAC global not matching cert (test checks that it is not used) */
+	re_snprintf(path, sizeof(path), "%s/client.pem", dp);
+	err = tls_alloc(&tt.tls, TLS_METHOD_SSLV23, path, NULL);
+	TEST_ERR(err);
+
+	/* UAS cert + intermediate CA */
+	re_snprintf(path, sizeof(path), "%s/sni/rsa/server-interm.pem", dp);
+	err = tls_alloc(&tt.tls2, TLS_METHOD_SSLV23, path, NULL);
+	TEST_ERR(err);
+
+	/* set root CA at UAC */
+	re_snprintf(path, sizeof(path), "%s/sni/rsa/root-ca.pem", dp);
+	err = tls_add_ca(tt.tls, path);
+	TEST_ERR(err);
+
+	/* set root CA at UAS */
+	re_snprintf(path, sizeof(path), "%s/sni/rsa/root-ca.pem", dp);
+	err = tls_add_ca(tt.tls2, path);
+	TEST_ERR(err);
+
+	/* UAC cert + intermediate CA */
+	re_snprintf(path, sizeof(path), "%s/sni/rsa/client-interm.pem", dp);
+	err = tls_add_certf(tt.tls, path, "Mr Retest Server");
+	TEST_ERR(err);
+
+	/* UAC listens (as TLS server)*/
+	err = tcp_listen(&tt.ts, &srv, server_conn_handler, &tt);
+	TEST_ERR(err);
+
+	err = tcp_sock_local_get(tt.ts, &srv);
+	TEST_ERR(err);
+
+	/* UAS connects to UAC (as TLS client) */
+	err = tcp_connect(&tt.tc_cli, &srv, client_estab_handler,
+			  client_recv_handler, client_close_handler, &tt);
+	TEST_ERR(err);
+
+	err = tls_start_tcp(&tt.sc_cli, tt.tls2, tt.tc_cli, 0);
+	TEST_ERR(err);
+
+	err = tls_set_verify_server(tt.sc_cli, "Mr Retest Client");
+	TEST_ERR(err);
+
+	err = re_main_timeout(800);
+	TEST_ERR(err);
+
+	if (tt.err) {
+		err = tt.err;
+		goto out;
+	}
+
+	TEST_EQUALS(true, tt.estab_cli);
+	TEST_EQUALS(true, tt.estab_srv);
+	TEST_EQUALS(1, tt.recv_cli);
+	TEST_EQUALS(1, tt.recv_srv);
+
+	err = tls_peer_verify(tt.sc_cli);
+	TEST_EQUALS(0, err);
+
+ out:
+	/* NOTE: close context first */
+	mem_deref(tt.tls);
+	mem_deref(tt.tls2);
 	mem_deref(tt.sc_cli);
 	mem_deref(tt.sc_srv);
 	mem_deref(tt.tc_cli);
