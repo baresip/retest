@@ -13,11 +13,21 @@
 #include <re_dbg.h>
 
 
+enum sdp_neg_state {
+	INITIAL = 0,
+	OFFER_RECEIVED,
+	ANSWER_RECEIVED,
+	EARLY_CONFIRMED,
+	PRACK_ANSWERED
+};
+
+
 struct test {
 	struct sip *sip;
 	struct sipsess_sock *sock;
 	struct sipsess *a;
 	struct sipsess *b;
+	struct tmr ans_tmr;
 	bool estab_a;
 	bool estab_b;
 	bool answr_a;
@@ -28,6 +38,7 @@ struct test {
 	bool offer_b;
 	enum rel100_mode rel100_a;
 	enum rel100_mode rel100_b;
+	enum sdp_neg_state sdp_state;
 	bool req_received_a;
 	bool req_received_b;
 	bool sup_received_a;
@@ -88,6 +99,18 @@ static void exit_handler(void *arg)
 }
 
 
+static void send_answer_b(void *arg)
+{
+	struct test *test = arg;
+	int err;
+
+	err = sipsess_answer(test->b, 200, "Answering", NULL, NULL);
+	if (err) {
+		abort_test(test, err);
+	}
+}
+
+
 static int desc_handler(struct mbuf **descp, const struct sa *src,
 				const struct sa *dst, void *arg)
 {
@@ -104,12 +127,67 @@ static int desc_handler(struct mbuf **descp, const struct sa *src,
 }
 
 
+static int desc_handler_a(struct mbuf **descp, const struct sa *src,
+				const struct sa *dst, void *arg)
+{
+	struct mbuf *desc;
+	int err = 0;
+	(void)src;
+	(void)dst;
+	(void)arg;
+
+	desc = mbuf_alloc(sizeof(sdp_a));
+	if (!desc) {
+		err = ENOMEM;
+		goto out;
+	}
+	err = mbuf_write_str(desc, sdp_a);
+	if (err)
+		goto out;
+	mbuf_set_pos(desc, 0);
+	*descp = desc;
+
+out:
+	return err;
+}
+
+
+static int desc_handler_b(struct mbuf **descp, const struct sa *src,
+				const struct sa *dst, void *arg)
+{
+	struct mbuf *desc;
+	int err = 0;
+	(void)src;
+	(void)dst;
+	(void)arg;
+
+	desc = mbuf_alloc(sizeof(sdp_b));
+	if (!desc) {
+		err = ENOMEM;
+		goto out;
+	}
+	err = mbuf_write_str(desc, sdp_b);
+	if (err)
+		goto out;
+	mbuf_set_pos(desc, 0);
+	*descp = desc;
+
+out:
+	return err;
+}
+
+
 static int offer_handler_a(struct mbuf **descp, const struct sip_msg *msg,
 			   void *arg)
 {
 	struct test *test = arg;
 	(void)descp;
 	(void)msg;
+
+	if (test->sdp_state == INITIAL || test->sdp_state == EARLY_CONFIRMED
+	    || test->sdp_state == PRACK_ANSWERED)
+		test->sdp_state = OFFER_RECEIVED;
+
 
 	test->offer_a = true;
 	return 0;
@@ -123,6 +201,11 @@ static int offer_handler_update_a(struct mbuf **descp,
 	struct mbuf *desc;
 	int err = 0;
 	(void)msg;
+
+	if (test->sdp_state == INITIAL || test->sdp_state == EARLY_CONFIRMED
+	    || test->sdp_state == PRACK_ANSWERED)
+		test->sdp_state = OFFER_RECEIVED;
+
 
 	if (!pl_strcmp(&msg->met, "UPDATE"))
 		test->upd_a = true;
@@ -152,6 +235,13 @@ static int offer_handler_update_b(struct mbuf **descp,
 	int err = 0;
 	(void)msg;
 
+	test->sdp_state = OFFER_RECEIVED;
+
+	if (test->sdp_state == INITIAL || test->sdp_state == EARLY_CONFIRMED
+	    || test->sdp_state == PRACK_ANSWERED)
+		test->sdp_state = OFFER_RECEIVED;
+
+
 	if (!pl_strcmp(&msg->met, "UPDATE"))
 		test->upd_b = true;
 
@@ -179,6 +269,12 @@ static int offer_handler_b(struct mbuf **descp, const struct sip_msg *msg,
 	(void)descp;
 	(void)msg;
 
+	test->sdp_state = OFFER_RECEIVED;
+
+	if (test->sdp_state == INITIAL || test->sdp_state == EARLY_CONFIRMED
+	    || test->sdp_state == PRACK_ANSWERED)
+		test->sdp_state = OFFER_RECEIVED;
+
 	test->offer_b = true;
 	return 0;
 }
@@ -188,6 +284,8 @@ static int answer_handler_a(const struct sip_msg *msg, void *arg)
 {
 	struct test *test = arg;
 	test->answr_a = true;
+	if (mbuf_get_left(msg->mb))
+		test->sdp_state = ANSWER_RECEIVED;
 
 	test->sup_received_a = sip_msg_hdr_has_value(msg, SIP_HDR_SUPPORTED,
 						     "100rel");
@@ -199,11 +297,8 @@ static int answer_handler_a(const struct sip_msg *msg, void *arg)
 			abort_test(test, msg->scode);
 			return msg->scode;
 		}
-		re_cancel();
+		tmr_start(&test->ans_tmr, 0, send_answer_b, test);
 	}
-
-	if (!pl_strcmp(&msg->met, "PRACK"))
-		re_cancel();
 
 	return 0;
 }
@@ -214,10 +309,13 @@ static int answer_handler_b(const struct sip_msg *msg, void *arg)
 	struct test *test = arg;
 	(void)msg;
 	test->answr_b = true;
+	test->sdp_state = ANSWER_RECEIVED;
 
-	test->sup_received_b = sip_msg_hdr_has_value(msg, SIP_HDR_SUPPORTED,
+	test->sup_received_b = test->sup_received_b ? test->sup_received_b :
+				sip_msg_hdr_has_value(msg, SIP_HDR_SUPPORTED,
 						     "100rel");
-	test->req_received_b = sip_msg_hdr_has_value(msg, SIP_HDR_REQUIRE,
+	test->req_received_b = test->req_received_b ? test->req_received_b :
+				sip_msg_hdr_has_value(msg, SIP_HDR_REQUIRE,
 						     "100rel");
 
 	if (!pl_strcmp(&msg->cseq.met, "UPDATE")) {
@@ -225,12 +323,8 @@ static int answer_handler_b(const struct sip_msg *msg, void *arg)
 			abort_test(test, msg->scode);
 			return msg->scode;
 		}
-		re_cancel();
+		tmr_start(&test->ans_tmr, 0, send_answer_b, test);
 	}
-
-
-	if (!pl_strcmp(&msg->met, "PRACK"))
-		re_cancel();
 
 	return 0;
 }
@@ -242,6 +336,91 @@ static void progr_handler_a(const struct sip_msg *msg, void *arg)
 	(void)msg;
 
 	test->progr_a = true;
+}
+
+
+static void send_update_a(void *arg)
+{
+	struct test *test = arg;
+	struct mbuf *desc;
+	int err;
+
+	desc = mbuf_alloc(sizeof(sdp_a));
+	if (!desc) {
+		err = ENOMEM;
+		goto out;
+	}
+	err = mbuf_write_str(desc, sdp_a);
+	TEST_ERR(err);
+	mbuf_set_pos(desc, 0);
+
+	err = sipsess_modify(test->a, desc);
+	TEST_ERR(err);
+
+out:
+	mem_deref(desc);
+	if (err)
+		abort_test(test, err);
+
+}
+
+
+static void send_update_b(void *arg)
+{
+	struct test *test = arg;
+	struct mbuf *desc;
+	int err;
+
+	desc = mbuf_alloc(sizeof(sdp_b));
+	if (!desc) {
+		err = ENOMEM;
+		goto out;
+	}
+	err = mbuf_write_str(desc, sdp_b);
+	TEST_ERR(err);
+	mbuf_set_pos(desc, 0);
+
+	err = sipsess_modify(test->b, desc);
+	TEST_ERR(err);
+
+out:
+	mem_deref(desc);
+	if (err)
+		abort_test(test, err);
+
+}
+
+
+static void prack_handler(const struct sip_msg *msg, void *arg)
+{
+	struct test *test = arg;
+
+	(void) msg;
+
+	test->sdp_state = EARLY_CONFIRMED;
+	tmr_start(&test->ans_tmr, 0, send_answer_b, test);
+}
+
+
+static void prack_handler_update_b(const struct sip_msg *msg, void *arg)
+{
+	struct test *test = arg;
+
+	(void) msg;
+
+	test->sdp_state = EARLY_CONFIRMED;
+	tmr_start(&test->ans_tmr, 0, send_update_b, test);
+}
+
+
+static void prack_handler_update(const struct sip_msg *msg, void *arg)
+{
+	struct test *test = arg;
+
+	(void) msg;
+
+	test->sdp_state = EARLY_CONFIRMED;
+	tmr_start(&test->ans_tmr, 0, send_update_a, test);
 }
 
 
@@ -283,29 +462,7 @@ static void close_handler(int err, const struct sip_msg *msg, void *arg)
 }
 
 
-static void conn_handler_100rel(const struct sip_msg *msg, void *arg)
-{
-	struct test *test = arg;
-	char *desc = test->rel100_b == REL100_REQUIRED ?
-		     "Require: 100rel\r\n" : "";
-	(void)arg;
-
-	test->sup_received_b = sip_msg_hdr_has_value(msg, SIP_HDR_SUPPORTED,
-						     "100rel");
-	test->req_received_b = sip_msg_hdr_has_value(msg, SIP_HDR_REQUIRE,
-						     "100rel");
-
-	(void)sipsess_accept(&test->b, test->sock, msg, 180, "RINGING",
-			     test->rel100_b, "b", "application/sdp",
-			     NULL, NULL, NULL, false, offer_handler_b,
-			     answer_handler_b, estab_handler_b, NULL, NULL,
-			     close_handler, test, desc);
-
-	re_cancel();
-}
-
-
-static void conn_handler_update(const struct sip_msg *msg, void *arg)
+static void conn_handler_100rel_answer(const struct sip_msg *msg, void *arg)
 {
 	struct test *test = arg;
 	struct mbuf *desc;
@@ -314,9 +471,165 @@ static void conn_handler_update(const struct sip_msg *msg, void *arg)
 		     "Require: 100rel\r\n" : "";
 	(void)arg;
 
-	test->sup_received_b = sip_msg_hdr_has_value(msg, SIP_HDR_SUPPORTED,
+	if (mbuf_get_left(msg->mb)) {
+		test->sdp_state = OFFER_RECEIVED;
+		test->offer_b = true;
+	}
+
+	test->sup_received_b = test->sup_received_b ? test->sup_received_b :
+				sip_msg_hdr_has_value(msg, SIP_HDR_SUPPORTED,
 						     "100rel");
-	test->req_received_b = sip_msg_hdr_has_value(msg, SIP_HDR_REQUIRE,
+	test->req_received_b = test->req_received_b ? test->req_received_b :
+				sip_msg_hdr_has_value(msg, SIP_HDR_REQUIRE,
+						     "100rel");
+
+	desc = mbuf_alloc(sizeof(sdp_b));
+	if (!desc) {
+		abort_test(test, ENOMEM);
+		return;
+	}
+	err = mbuf_write_str(desc, sdp_b);
+	if (err) {
+		abort_test(test, err);
+		return;
+	}
+	mbuf_set_pos(desc, 0);
+	test->desc = desc;
+
+	err = sipsess_set_prack_handler(test->b, prack_handler);
+	if (err)
+		abort_test(test, err);
+
+	err = sipsess_accept(&test->b, test->sock, msg, 183, "Progress",
+			     test->rel100_b, "b", "application/sdp",
+			     desc, NULL, NULL, false, offer_handler_update_b,
+			     answer_handler_b, estab_handler_b, NULL, NULL,
+			     close_handler, test, hdrs);
+	if (err) {
+		abort_test(test, err);
+	}
+
+	err = sipsess_answer(test->b, 200, "Answering", NULL, NULL);
+	if (err) {
+		abort_test(test, -256);
+	}
+}
+
+
+static void conn_handler_420(const struct sip_msg *msg, void *arg)
+{
+	struct test *test = arg;
+	struct mbuf *desc;
+	int err;
+	char *hdrs = test->rel100_b == REL100_REQUIRED ?
+		     "Require: 100rel\r\n" : "";
+	(void)arg;
+
+	if (mbuf_get_left(msg->mb)) {
+		test->sdp_state = OFFER_RECEIVED;
+		test->offer_b = true;
+	}
+
+	test->sup_received_b = test->sup_received_b ? test->sup_received_b :
+				sip_msg_hdr_has_value(msg, SIP_HDR_SUPPORTED,
+						     "100rel");
+	test->req_received_b = test->req_received_b ? test->req_received_b :
+				sip_msg_hdr_has_value(msg, SIP_HDR_REQUIRE,
+						     "100rel");
+
+	desc = mbuf_alloc(sizeof(sdp_b));
+	if (!desc) {
+		abort_test(test, ENOMEM);
+		return;
+	}
+	err = mbuf_write_str(desc, sdp_b);
+	TEST_ERR(err);
+
+	mbuf_set_pos(desc, 0);
+	test->desc = desc;
+
+	err = sipsess_accept(&test->b, test->sock, msg, 183, "Progress",
+			     test->rel100_b, "b", "application/sdp",
+			     desc, NULL, NULL, false, offer_handler_update_b,
+			     answer_handler_b, estab_handler_b, NULL, NULL,
+			     close_handler, test, hdrs);
+	TEST_ASSERT(err == -1);
+	mem_deref(desc);
+	return;
+
+out:
+	mem_deref(desc);
+	if (err)
+		abort_test(test, err);
+}
+
+
+static void conn_handler_100rel(const struct sip_msg *msg, void *arg)
+{
+	struct test *test = arg;
+	struct mbuf *desc;
+	int err;
+	char *hdrs = test->rel100_b == REL100_REQUIRED ?
+		     "Require: 100rel\r\n" : "";
+	(void)arg;
+
+	if (mbuf_get_left(msg->mb)) {
+		test->sdp_state = OFFER_RECEIVED;
+		test->offer_b = true;
+	}
+
+	test->sup_received_b = test->sup_received_b ? test->sup_received_b :
+				sip_msg_hdr_has_value(msg, SIP_HDR_SUPPORTED,
+						     "100rel");
+	test->req_received_b = test->req_received_b ? test->req_received_b :
+				sip_msg_hdr_has_value(msg, SIP_HDR_REQUIRE,
+						     "100rel");
+
+	desc = mbuf_alloc(sizeof(sdp_b));
+	if (!desc) {
+		abort_test(test, ENOMEM);
+		return;
+	}
+	err = mbuf_write_str(desc, sdp_b);
+	TEST_ERR(err);
+
+	mbuf_set_pos(desc, 0);
+	test->desc = desc;
+
+	err = sipsess_accept(&test->b, test->sock, msg, 183, "Progress",
+			     test->rel100_b, "b", "application/sdp",
+			     desc, NULL, NULL, false, offer_handler_update_b,
+			     answer_handler_b, estab_handler_b, NULL, NULL,
+			     close_handler, test, hdrs);
+	TEST_ERR(err);
+	return;
+
+out:
+	mem_deref(desc);
+	if (err)
+		abort_test(test, err);
+}
+
+
+static void conn_handler_prack(const struct sip_msg *msg, void *arg)
+{
+	struct test *test = arg;
+	struct mbuf *desc;
+	int err;
+	char *hdrs = test->rel100_b == REL100_REQUIRED ?
+		     "Require: 100rel\r\n" : "";
+	(void)arg;
+
+	if (mbuf_get_left(msg->mb)) {
+		test->sdp_state = OFFER_RECEIVED;
+		test->offer_b = true;
+	}
+
+	test->sup_received_b = test->sup_received_b ? test->sup_received_b :
+				sip_msg_hdr_has_value(msg, SIP_HDR_SUPPORTED,
+						     "100rel");
+	test->req_received_b = test->req_received_b ? test->req_received_b :
+				sip_msg_hdr_has_value(msg, SIP_HDR_REQUIRE,
 						     "100rel");
 
 	desc = mbuf_alloc(sizeof(sdp_b));
@@ -337,21 +650,124 @@ static void conn_handler_update(const struct sip_msg *msg, void *arg)
 			     desc, NULL, NULL, false, offer_handler_update_b,
 			     answer_handler_b, estab_handler_b, NULL, NULL,
 			     close_handler, test, hdrs);
+
+	err = sipsess_set_prack_handler(test->b, prack_handler);
+	if (err)
+		abort_test(test, err);
+}
+
+
+static void conn_handler_update_b(const struct sip_msg *msg, void *arg)
+{
+	struct test *test = arg;
+	struct mbuf *desc;
+	int err;
+	char *hdrs = test->rel100_b == REL100_REQUIRED ?
+		     "Require: 100rel\r\n" : "";
+	(void)arg;
+
+	if (mbuf_get_left(msg->mb)) {
+		test->sdp_state = OFFER_RECEIVED;
+		test->offer_b = true;
+	}
+
+	test->sup_received_b = test->sup_received_b ? test->sup_received_b :
+				sip_msg_hdr_has_value(msg, SIP_HDR_SUPPORTED,
+						     "100rel");
+	test->req_received_b = test->req_received_b ? test->req_received_b :
+				sip_msg_hdr_has_value(msg, SIP_HDR_REQUIRE,
+						     "100rel");
+
+	desc = mbuf_alloc(sizeof(sdp_b));
+	if (!desc) {
+		abort_test(test, ENOMEM);
+		return;
+	}
+	err = mbuf_write_str(desc, sdp_b);
+	if (err) {
+		abort_test(test, err);
+		return;
+	}
+	mbuf_set_pos(desc, 0);
+	test->desc = desc;
+
+	(void)sipsess_accept(&test->b, test->sock, msg, 183, "Progress",
+			     test->rel100_b, "b", "application/sdp",
+			     desc, NULL, NULL, false, offer_handler_update_b,
+			     answer_handler_b, estab_handler_b, NULL, NULL,
+			     close_handler, test, hdrs);
+
+	err = sipsess_set_prack_handler(test->b, prack_handler_update_b);
+	if (err)
+		abort_test(test, err);
+}
+
+
+static void conn_handler_update(const struct sip_msg *msg, void *arg)
+{
+	struct test *test = arg;
+	struct mbuf *desc;
+	int err;
+	char *hdrs = test->rel100_b == REL100_REQUIRED ?
+		     "Require: 100rel\r\n" : "";
+	(void)arg;
+
+	if (mbuf_get_left(msg->mb)) {
+		test->sdp_state = OFFER_RECEIVED;
+		test->offer_b = true;
+	}
+
+	test->sup_received_b = test->sup_received_b ? test->sup_received_b :
+				sip_msg_hdr_has_value(msg, SIP_HDR_SUPPORTED,
+						     "100rel");
+	test->req_received_b = test->req_received_b ? test->req_received_b :
+				sip_msg_hdr_has_value(msg, SIP_HDR_REQUIRE,
+						     "100rel");
+
+	desc = mbuf_alloc(sizeof(sdp_b));
+	if (!desc) {
+		abort_test(test, ENOMEM);
+		return;
+	}
+	err = mbuf_write_str(desc, sdp_b);
+	if (err) {
+		abort_test(test, err);
+		return;
+	}
+	mbuf_set_pos(desc, 0);
+	test->desc = desc;
+
+	(void)sipsess_accept(&test->b, test->sock, msg, 183, "Progress",
+			     test->rel100_b, "b", "application/sdp",
+			     desc, NULL, NULL, false, offer_handler_update_b,
+			     answer_handler_b, estab_handler_b, NULL, NULL,
+			     close_handler, test, hdrs);
+
+	err = sipsess_set_prack_handler(test->b, prack_handler_update);
+	if (err)
+		abort_test(test, err);
 }
 
 
 static void conn_handler(const struct sip_msg *msg, void *arg)
 {
 	struct test *test = arg;
+	(void)arg;
 	int err;
 
-	(void)arg;
+	char *hdrs = test->rel100_b == REL100_REQUIRED ?
+		     "Require: 100rel\r\n" : "";
+
+	if (mbuf_get_left(msg->mb)) {
+		test->sdp_state = OFFER_RECEIVED;
+		test->offer_b = true;
+	}
 
 	err = sipsess_accept(&test->b, test->sock, msg, 200, "OK",
 			     test->rel100_b, "b", "application/sdp",
 			     NULL, NULL, NULL, false, offer_handler_b,
 			     answer_handler_b, estab_handler_b, NULL, NULL,
-			     close_handler, test, NULL);
+			     close_handler, test, hdrs);
 	if (err) {
 		abort_test(test, err);
 	}
@@ -587,7 +1003,7 @@ int test_sipsess_100rel_caller_require(void)
 
 	port = sa_port(&laddr);
 
-	err = sipsess_listen(&test.sock, test.sip, 32, conn_handler_100rel,
+	err = sipsess_listen(&test.sock, test.sip, 32, conn_handler_prack,
 			     &test);
 	TEST_ERR(err);
 
@@ -599,18 +1015,12 @@ int test_sipsess_100rel_caller_require(void)
 	err = sipsess_connect(&test.a, test.sock, to_uri, NULL,
 			      "sip:a@127.0.0.1", "a", NULL, 0,
 			      "application/sdp", NULL, NULL, false,
-			      callid, desc_handler,
+			      callid, desc_handler_a,
 			      offer_handler_a, answer_handler_a,
-			      progr_handler_a, estab_handler_a, NULL, NULL,
-			      close_handler, &test,
+			      progr_handler_a, estab_handler_a, NULL,
+			      NULL, close_handler, &test,
 			      "Require: 100rel\r\n");
 	mem_deref(callid);
-	TEST_ERR(err);
-
-	err = re_main_timeout(200);
-	TEST_ERR(err);
-
-	err = sipsess_answer(test.b, 200, "Answering", NULL, NULL);
 	TEST_ERR(err);
 
 	err = re_main_timeout(200);
@@ -625,12 +1035,14 @@ int test_sipsess_100rel_caller_require(void)
 	TEST_ASSERT(test.estab_a);
 	TEST_ASSERT(test.estab_b);
 	TEST_ASSERT(test.desc);
-	TEST_ASSERT(test.answr_a);
+	TEST_ASSERT(test.offer_b);
+	TEST_ASSERT(!test.answr_b);
 	TEST_ASSERT(test.progr_a);
 	TEST_ASSERT(test.req_received_b);
 	TEST_ASSERT(!test.sup_received_b);
+	TEST_ASSERT(test.sdp_state == EARLY_CONFIRMED);
 
- out:
+out:
 	test.a = mem_deref(test.a);
 	test.b = mem_deref(test.b);
 
@@ -639,6 +1051,8 @@ int test_sipsess_100rel_caller_require(void)
 
 	sip_close(test.sip, false);
 	test.sip = mem_deref(test.sip);
+
+	mem_deref(test.desc);
 
 	return err;
 }
@@ -671,7 +1085,7 @@ int test_sipsess_100rel_supported(void)
 
 	port = sa_port(&laddr);
 
-	err = sipsess_listen(&test.sock, test.sip, 32, conn_handler_100rel,
+	err = sipsess_listen(&test.sock, test.sip, 32, conn_handler_prack,
 			     &test);
 	TEST_ERR(err);
 
@@ -683,18 +1097,12 @@ int test_sipsess_100rel_supported(void)
 	err = sipsess_connect(&test.a, test.sock, to_uri, NULL,
 			      "sip:a@127.0.0.1", "a", NULL, 0,
 			      "application/sdp", NULL, NULL, false,
-			      callid, desc_handler,
+			      callid, desc_handler_a,
 			      offer_handler_a, answer_handler_a,
-			      progr_handler_a, estab_handler_a, NULL, NULL,
-			      close_handler, &test,
+			      progr_handler_a, estab_handler_a, NULL,
+			      NULL, close_handler, &test,
 			      "Supported: 100rel\r\n");
 	mem_deref(callid);
-	TEST_ERR(err);
-
-	err = re_main_timeout(200);
-	TEST_ERR(err);
-
-	err = sipsess_answer(test.b, 200, "Answering", NULL, NULL);
 	TEST_ERR(err);
 
 	err = re_main_timeout(200);
@@ -710,11 +1118,15 @@ int test_sipsess_100rel_supported(void)
 	TEST_ASSERT(test.estab_b);
 	TEST_ASSERT(test.desc);
 	TEST_ASSERT(test.answr_a);
+	TEST_ASSERT(!test.offer_a);
+	TEST_ASSERT(test.offer_b);
+	TEST_ASSERT(!test.answr_b);
 	TEST_ASSERT(test.progr_a);
 	TEST_ASSERT(test.sup_received_b);
 	TEST_ASSERT(!test.req_received_b);
+	TEST_ASSERT(test.sdp_state == EARLY_CONFIRMED);
 
- out:
+out:
 	test.a = mem_deref(test.a);
 	test.b = mem_deref(test.b);
 
@@ -723,6 +1135,82 @@ int test_sipsess_100rel_supported(void)
 
 	sip_close(test.sip, false);
 	test.sip = mem_deref(test.sip);
+
+	mem_deref(test.desc);
+
+	return err;
+}
+
+
+int test_sipsess_100rel_answer_not_allowed(void)
+{
+	struct test test;
+	struct sa laddr;
+	char to_uri[256];
+	int err;
+	uint16_t port;
+	char *callid;
+
+	memset(&test, 0, sizeof(test));
+
+	test.rel100_a = REL100_ENABLED;
+	test.rel100_b = REL100_ENABLED;
+
+	err = sip_alloc(&test.sip, NULL, 32, 32, 32,
+			"retest", exit_handler, NULL);
+	TEST_ERR(err);
+
+	(void)sa_set_str(&laddr, "127.0.0.1", 0);
+	err = sip_transp_add(test.sip, SIP_TRANSP_UDP, &laddr);
+	TEST_ERR(err);
+
+	err = sip_transp_laddr(test.sip, &laddr, SIP_TRANSP_UDP, NULL);
+	TEST_ERR(err);
+
+	port = sa_port(&laddr);
+
+	err = sipsess_listen(&test.sock, test.sip, 32,
+			     conn_handler_100rel_answer, &test);
+	TEST_ERR(err);
+
+	err = str_x64dup(&callid, rand_u64());
+	TEST_ERR(err);
+
+	/* Connect to "b" */
+	(void)re_snprintf(to_uri, sizeof(to_uri), "sip:b@127.0.0.1:%u", port);
+	err = sipsess_connect(&test.a, test.sock, to_uri, NULL,
+			      "sip:a@127.0.0.1", "a", NULL, 0,
+			      "application/sdp", NULL, NULL, false,
+			      callid, desc_handler_a,
+			      offer_handler_a, answer_handler_a,
+			      progr_handler_a, estab_handler_a, NULL,
+			      NULL, close_handler, &test,
+			      "Supported: 100rel\r\n");
+	mem_deref(callid);
+	TEST_ERR(err);
+
+	err = re_main_timeout(200);
+	TEST_ERR(err);
+
+	TEST_ASSERT(test.err == -256);
+
+	/* okay here -- verify */
+	TEST_ASSERT(!test.estab_a);
+	TEST_ASSERT(!test.estab_b);
+	TEST_ASSERT(test.sup_received_b);
+	TEST_ASSERT(!test.req_received_b);
+
+out:
+	test.a = mem_deref(test.a);
+	test.b = mem_deref(test.b);
+
+	sipsess_close_all(test.sock);
+	test.sock = mem_deref(test.sock);
+
+	sip_close(test.sip, false);
+	test.sip = mem_deref(test.sip);
+
+	mem_deref(test.desc);
 
 	return err;
 }
@@ -755,7 +1243,7 @@ int test_sipsess_100rel_420(void)
 
 	port = sa_port(&laddr);
 
-	err = sipsess_listen(&test.sock, test.sip, 32, conn_handler_100rel,
+	err = sipsess_listen(&test.sock, test.sip, 32, conn_handler_420,
 			     &test);
 	TEST_ERR(err);
 
@@ -825,7 +1313,7 @@ int test_sipsess_100rel_421(void)
 
 	port = sa_port(&laddr);
 
-	err = sipsess_listen(&test.sock, test.sip, 32, conn_handler_100rel,
+	err = sipsess_listen(&test.sock, test.sip, 32, conn_handler_420,
 			     &test);
 	TEST_ERR(err);
 
@@ -907,31 +1395,12 @@ int test_sipsess_update_uac(void)
 	err = sipsess_connect(&test.a, test.sock, to_uri, NULL,
 			      "sip:a@127.0.0.1", "a", NULL, 0,
 			      "application/sdp", NULL, NULL, false,
-			      callid, NULL,
+			      callid, desc_handler_a,
 			      offer_handler_update_a, answer_handler_a,
 			      progr_handler_a, estab_handler_a, NULL,
 			      NULL, close_handler, &test,
 			      "Supported: 100rel\r\n");
 	mem_deref(callid);
-	TEST_ERR(err);
-
-	desc_a = mbuf_alloc(sizeof(sdp_a));
-	err = mbuf_write_str(desc_a, sdp_a);
-	TEST_ERR(err);
-	mbuf_set_pos(desc_a, 0);
-
-	/* Wait for PRACK */
-	err = re_main_timeout(200);
-	TEST_ERR(err);
-
-	err = sipsess_modify(test.a, desc_a);
-	TEST_ERR(err);
-
-	/* Wait for UPDATE */
-	err = re_main_timeout(200);
-	TEST_ERR(err);
-
-	err = sipsess_answer(test.b, 200, "Answering", NULL, NULL);
 	TEST_ERR(err);
 
 	err = re_main_timeout(200);
@@ -946,8 +1415,8 @@ int test_sipsess_update_uac(void)
 	TEST_ASSERT(test.estab_a);
 	TEST_ASSERT(test.estab_b);
 	TEST_ASSERT(test.answr_a);
-	TEST_ASSERT(test.answr_b);
-	TEST_ASSERT(test.offer_a);
+	TEST_ASSERT(!test.answr_b);
+	TEST_ASSERT(!test.offer_a);
 	TEST_ASSERT(test.offer_b);
 	TEST_ASSERT(test.progr_a);
 	TEST_ASSERT(test.upd_b);
@@ -975,7 +1444,7 @@ int test_sipsess_update_uas(void)
 	struct test test;
 	struct sa laddr;
 	char to_uri[256];
-	struct mbuf *desc_b = NULL;
+	struct mbuf *desc_a = NULL;
 	int err;
 	uint16_t port;
 	char *callid;
@@ -998,7 +1467,7 @@ int test_sipsess_update_uas(void)
 
 	port = sa_port(&laddr);
 
-	err = sipsess_listen(&test.sock, test.sip, 32, conn_handler_update,
+	err = sipsess_listen(&test.sock, test.sip, 32, conn_handler_update_b,
 			     &test);
 	TEST_ERR(err);
 
@@ -1010,31 +1479,12 @@ int test_sipsess_update_uas(void)
 	err = sipsess_connect(&test.a, test.sock, to_uri, NULL,
 			      "sip:a@127.0.0.1", "a", NULL, 0,
 			      "application/sdp", NULL, NULL, false,
-			      callid, NULL,
+			      callid, desc_handler_a,
 			      offer_handler_update_a, answer_handler_a,
 			      progr_handler_a, estab_handler_a, NULL,
 			      NULL, close_handler, &test,
 			      "Supported: 100rel\r\n");
 	mem_deref(callid);
-	TEST_ERR(err);
-
-	desc_b = mbuf_alloc(sizeof(sdp_b));
-	err = mbuf_write_str(desc_b, sdp_b);
-	TEST_ERR(err);
-	mbuf_set_pos(desc_b, 0);
-
-	/* Wait for PRACK */
-	err = re_main_timeout(200);
-	TEST_ERR(err);
-
-	err = sipsess_modify(test.b, desc_b);
-	TEST_ERR(err);
-
-	/* Wait for UPDATE */
-	err = re_main_timeout(200);
-	TEST_ERR(err);
-
-	err = sipsess_answer(test.b, 200, "Answering", NULL, NULL);
 	TEST_ERR(err);
 
 	err = re_main_timeout(200);
@@ -1048,10 +1498,10 @@ int test_sipsess_update_uas(void)
 	/* okay here -- verify */
 	TEST_ASSERT(test.estab_a);
 	TEST_ASSERT(test.estab_b);
-	TEST_ASSERT(!test.answr_a);
+	TEST_ASSERT(test.answr_a);
 	TEST_ASSERT(test.answr_b);
 	TEST_ASSERT(test.offer_a);
-	TEST_ASSERT(!test.offer_b);
+	TEST_ASSERT(test.offer_b);
 	TEST_ASSERT(test.progr_a);
 	TEST_ASSERT(test.upd_a);
 	TEST_ASSERT(!test.upd_b);
@@ -1066,7 +1516,7 @@ int test_sipsess_update_uas(void)
 	sip_close(test.sip, false);
 	test.sip = mem_deref(test.sip);
 
-	mem_deref(desc_b);
+	mem_deref(desc_a);
 	mem_deref(test.desc);
 
 	return err;
