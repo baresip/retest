@@ -585,19 +585,19 @@ int test_tls_sni(void)
 	TEST_ERR(err);
 
 	/* UAS cert + intermediate CA */
-	re_snprintf(path, sizeof(path), "%s/sni/rsa/server-interm.pem", dp);
+	re_snprintf(path, sizeof(path), "%s/sni/server-interm.pem", dp);
 	err = tls_alloc(&tt.tls2, TLS_METHOD_SSLV23, path, NULL);
 	TEST_ERR(err);
 
 	/* set root CA at UAC and UAS */
-	re_snprintf(path, sizeof(path), "%s/sni/rsa/root-ca.pem", dp);
+	re_snprintf(path, sizeof(path), "%s/sni/root-ca.pem", dp);
 	err  = tls_add_ca(tt.tls, path);
 	err |= tls_add_ca(tt.tls2, path);
 	TEST_ERR(err);
 
 	/* UAC cert + intermediate CA */
-	re_snprintf(path, sizeof(path), "%s/sni/rsa/client-interm.pem", dp);
-	err = tls_add_certf(tt.tls, path, "Mr Retest Server");
+	re_snprintf(path, sizeof(path), "%s/sni/client-interm.pem", dp);
+	err = tls_add_certf(tt.tls, path, "retest.server.org");
 	TEST_ERR(err);
 
 	/* UAC listens (as TLS server)*/
@@ -615,7 +615,7 @@ int test_tls_sni(void)
 	err = tls_start_tcp(&tt.sc_cli, tt.tls2, tt.tc_cli, 0);
 	TEST_ERR(err);
 
-	err = tls_set_verify_server(tt.sc_cli, "Mr Retest Client");
+	err = tls_set_verify_server(tt.sc_cli, "retest.client.org");
 	TEST_ERR(err);
 
 	err = re_main_timeout(800);
