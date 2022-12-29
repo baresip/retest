@@ -589,14 +589,10 @@ int test_tls_sni(void)
 	err = tls_alloc(&tt.tls2, TLS_METHOD_SSLV23, path, NULL);
 	TEST_ERR(err);
 
-	/* set root CA at UAC */
+	/* set root CA at UAC and UAS */
 	re_snprintf(path, sizeof(path), "%s/sni/rsa/root-ca.pem", dp);
-	err = tls_add_ca(tt.tls, path);
-	TEST_ERR(err);
-
-	/* set root CA at UAS */
-	re_snprintf(path, sizeof(path), "%s/sni/rsa/root-ca.pem", dp);
-	err = tls_add_ca(tt.tls2, path);
+	err  = tls_add_ca(tt.tls, path);
+	err |= tls_add_ca(tt.tls2, path);
 	TEST_ERR(err);
 
 	/* UAC cert + intermediate CA */
