@@ -626,13 +626,13 @@ int test_tls_sni(void)
 		goto out;
 	}
 
-	TEST_EQUALS(true, tt.estab_cli);
-	TEST_EQUALS(true, tt.estab_srv);
-	TEST_EQUALS(1, tt.recv_cli);
-	TEST_EQUALS(1, tt.recv_srv);
+	ASSERT_TRUE(tt.estab_cli);
+	ASSERT_TRUE(tt.estab_srv);
+	ASSERT_EQ(1, tt.recv_cli);
+	ASSERT_EQ(1, tt.recv_srv);
 
 	err = tls_peer_verify(tt.sc_cli);
-	TEST_EQUALS(0, err);
+	ASSERT_EQ(0, err);
 
  out:
 	/* NOTE: close context first */
