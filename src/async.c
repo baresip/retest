@@ -11,6 +11,7 @@
 #endif
 
 #include <string.h>
+#include <stdlib.h>
 #include <re.h>
 #include "test.h"
 
@@ -79,7 +80,7 @@ out:
 }
 
 
-int test_async(void)
+static int test_re_thread_async(void)
 {
 	int err;
 
@@ -87,8 +88,7 @@ int test_async(void)
 
 	struct test testv[] = {
 		{"localhost", {.len = 0}, -1, 0, &cnt},
-		{"test.notfound", {.len = 0}, -1, EADDRNOTAVAIL, &cnt}
-	};
+		{"test.notfound", {.len = 0}, -1, EADDRNOTAVAIL, &cnt}};
 
 	cnt.tests = ARRAY_SIZE(testv);
 
@@ -109,5 +109,63 @@ int test_async(void)
 
 out:
 	re_thread_async_close();
+	return err;
+}
+
+
+static void never_callback(int err, void *arg)
+{
+	(void)err;
+	(void)arg;
+
+	DEBUG_WARNING("async: never_callback called!\n");
+	abort();
+}
+
+
+static void timer_cancel(void *arg)
+{
+	(void)arg;
+
+	re_cancel();
+}
+
+
+static int test_re_thread_async_cancel(void)
+{
+	int err;
+	struct tmr tmr;
+
+	err = re_thread_async_init(2);
+	TEST_ERR(err);
+
+	err = re_thread_async_id(1, NULL, never_callback, NULL);
+	TEST_ERR(err);
+
+	re_thread_async_cancel(1);
+
+	tmr_init(&tmr);
+	tmr_start(&tmr, 0, timer_cancel, NULL);
+
+	err = re_main_timeout(200);
+	TEST_ERR(err);
+
+out:
+	re_thread_async_close();
+	return err;
+}
+
+
+int test_async(void)
+{
+	int err;
+
+	err = test_re_thread_async();
+	TEST_ERR(err);
+
+	err = test_re_thread_async_cancel();
+	TEST_ERR(err);
+
+out:
 	return err;
 }
