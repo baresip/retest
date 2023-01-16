@@ -59,7 +59,6 @@ struct test {
 	enum rel100_state rel100_state_b;
 	enum connect_action conn_action;
 	prack_func *prack_action;
-	bool answer_on_connect;
 	int progr_ret_code;
 	int answ_ret_code;
 	bool upd_a;
@@ -115,6 +114,14 @@ static void exit_handler(void *arg)
 {
 	(void)arg;
 	re_cancel();
+}
+
+
+static void sess_abort_b(void *arg)
+{
+	struct test *test = arg;
+
+	sipsess_abort(test->b);
 }
 
 
@@ -728,6 +735,7 @@ int test_sipsess_100rel_caller_require(void)
 	ASSERT_TRUE(test.sdp_state == EARLY_CONFIRMED);
 
 out:
+	tmr_cancel(&test.ans_tmr);
 	test.a = mem_deref(test.a);
 	test.b = mem_deref(test.b);
 
@@ -814,8 +822,92 @@ int test_sipsess_100rel_supported(void)
 	ASSERT_TRUE(test.sdp_state == EARLY_CONFIRMED);
 
 out:
+	tmr_cancel(&test.ans_tmr);
 	test.a = mem_deref(test.a);
 	test.b = mem_deref(test.b);
+
+	sipsess_close_all(test.sock);
+	test.sock = mem_deref(test.sock);
+
+	sip_close(test.sip, false);
+	test.sip = mem_deref(test.sip);
+
+	mem_deref(test.desc);
+
+	return err;
+}
+
+
+int test_sipsess_100rel_abort(void)
+{
+	struct test test;
+	struct sa laddr;
+	char to_uri[256];
+	int err;
+	uint16_t port;
+	char *callid;
+
+	memset(&test, 0, sizeof(test));
+
+	test.rel100_a = REL100_ENABLED;
+	test.rel100_b = REL100_ENABLED;
+	test.conn_action = CONN_PROGRESS;
+	test.prack_action = sess_abort_b;
+
+	err = sip_alloc(&test.sip, NULL, 32, 32, 32,
+			"retest", exit_handler, NULL);
+	TEST_ERR(err);
+
+	(void)sa_set_str(&laddr, "127.0.0.1", 0);
+	err = sip_transp_add(test.sip, SIP_TRANSP_UDP, &laddr);
+	TEST_ERR(err);
+
+	err = sip_transp_laddr(test.sip, &laddr, SIP_TRANSP_UDP, NULL);
+	TEST_ERR(err);
+
+	port = sa_port(&laddr);
+
+	err = sipsess_listen(&test.sock, test.sip, 32, conn_handler,
+			     &test);
+	TEST_ERR(err);
+
+	err = str_x64dup(&callid, rand_u64());
+	TEST_ERR(err);
+
+	/* Connect to "b" */
+	(void)re_snprintf(to_uri, sizeof(to_uri), "sip:b@127.0.0.1:%u", port);
+	err = sipsess_connect(&test.a, test.sock, to_uri, NULL,
+			      "sip:a@127.0.0.1", "a", NULL, 0,
+			      "application/sdp", NULL, NULL, false,
+			      callid, desc_handler_a,
+			      offer_handler_a, answer_handler_a,
+			      progr_handler_a, estab_handler_a, NULL,
+			      NULL, close_handler, &test,
+			      "Supported: 100rel\r\n");
+	mem_deref(callid);
+	TEST_ERR(err);
+
+	err = re_main_timeout(200);
+	TEST_ERR(err);
+
+	ASSERT_TRUE(test.err == 104);
+
+	/* okay here -- verify */
+	ASSERT_TRUE(!test.estab_a);
+	ASSERT_TRUE(!test.estab_b);
+	ASSERT_TRUE(test.desc);
+	ASSERT_TRUE(test.answr_a);
+	ASSERT_TRUE(!test.offer_a);
+	ASSERT_TRUE(test.offer_b);
+	ASSERT_TRUE(!test.answr_b);
+	ASSERT_TRUE(test.progr_a);
+	ASSERT_TRUE(test.rel100_state_b & REL100_SUPPORTED);
+	ASSERT_TRUE((test.rel100_state_b & REL100_REQUIRE) == 0);
+	ASSERT_TRUE(test.sdp_state == EARLY_CONFIRMED);
+
+out:
+	tmr_cancel(&test.ans_tmr);
+	test.a = mem_deref(test.a);
 
 	sipsess_close_all(test.sock);
 	test.sock = mem_deref(test.sock);
@@ -890,6 +982,7 @@ int test_sipsess_100rel_answer_not_allowed(void)
 	ASSERT_TRUE((test.rel100_state_b & REL100_REQUIRE) == 0);
 
 out:
+	tmr_cancel(&test.ans_tmr);
 	test.a = mem_deref(test.a);
 	test.b = mem_deref(test.b);
 
@@ -963,6 +1056,7 @@ int test_sipsess_100rel_420(void)
 	ASSERT_TRUE(test.desc);
 
 out:
+	tmr_cancel(&test.ans_tmr);
 	test.a = mem_deref(test.a);
 	test.b = mem_deref(test.b);
 
@@ -1035,6 +1129,7 @@ int test_sipsess_100rel_421(void)
 	ASSERT_TRUE(test.desc);
 
 out:
+	tmr_cancel(&test.ans_tmr);
 	test.a = mem_deref(test.a);
 	test.b = mem_deref(test.b);
 
@@ -1118,6 +1213,7 @@ int test_sipsess_update_uac(void)
 	ASSERT_TRUE(!test.upd_a);
 
 out:
+	tmr_cancel(&test.ans_tmr);
 	test.a = mem_deref(test.a);
 	test.b = mem_deref(test.b);
 
@@ -1204,6 +1300,7 @@ int test_sipsess_update_uas(void)
 	ASSERT_TRUE(!test.upd_b);
 
 out:
+	tmr_cancel(&test.ans_tmr);
 	test.a = mem_deref(test.a);
 	test.b = mem_deref(test.b);
 
