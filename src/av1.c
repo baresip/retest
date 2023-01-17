@@ -494,13 +494,13 @@ static int test_av1_packetize(void)
 }
 
 
-#define PACKET1_SIZE 1188
-#define PACKET2_SIZE 231
+#define AV1_PACKET1_SIZE 1188
+#define AV1_PACKET2_SIZE 231
 
 
 struct state {
-	uint8_t buf_packet1[PACKET1_SIZE];
-	uint8_t buf_packet2[PACKET2_SIZE];
+	uint8_t buf_packet1[AV1_PACKET1_SIZE];
+	uint8_t buf_packet2[AV1_PACKET2_SIZE];
 	unsigned count;
 };
 
@@ -554,9 +554,9 @@ static int interop_packet_handler(bool marker, uint64_t rtp_ts,
  */
 static int test_av1_interop(void)
 {
-#define FRAME_SIZE 1421
+#define AV1_FRAME_SIZE 1421
 
-	static const char frame[FRAME_SIZE*2] =
+	static const char frame[] =
 
 		"12000a0a00000024cf7f0d80340132fc"
 		"0a10717800ffffff16e6180000000b01"
@@ -650,7 +650,7 @@ static int test_av1_interop(void)
 		;
 
 
-	static const char packet1[PACKET1_SIZE*2] =
+	static const char packet1[] =
 
 		/* NOTE: W=2 */
 		"68"
@@ -733,7 +733,7 @@ static int test_av1_interop(void)
 		;
 
 
-	static const char packet2[PACKET2_SIZE*2] =
+	static const char packet2[] =
 
 		/* NOTE: W=1 */
 
@@ -757,7 +757,7 @@ static int test_av1_interop(void)
 		;
 
 	struct state state;
-	uint8_t buf[FRAME_SIZE];
+	uint8_t buf[AV1_FRAME_SIZE];
 	bool new_flag = true;
 	int err;
 
