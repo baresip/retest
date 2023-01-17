@@ -763,8 +763,6 @@ static int test_av1_interop(void)
 
 	state.count = 0;
 
-	re_printf("interop\n");
-
 	err = str_hex(buf, sizeof(buf), frame);
 	TEST_ERR(err);
 
