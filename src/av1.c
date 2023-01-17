@@ -769,9 +769,6 @@ static int test_av1_interop(void)
 	err = str_hex(state.buf_packet1, sizeof(state.buf_packet1), packet1);
 	TEST_ERR(err);
 
-	re_printf(".... packet2: size=%zu, len=%zu\n",
-		  sizeof(state.buf_packet2), strlen(packet2));
-
 	err = str_hex(state.buf_packet2, sizeof(state.buf_packet2), packet2);
 	TEST_ERR(err);
 
