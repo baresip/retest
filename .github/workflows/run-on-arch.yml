@@ -4,9 +4,6 @@ jobs:
   prepare:
     runs-on: ubuntu-latest
 
-    env:
-      CMAKE_GENERATOR: Ninja
-
     steps:
     - uses: actions/checkout@v3
 
@@ -34,6 +31,9 @@ jobs:
     runs-on: ubuntu-20.04
     name: Build on ${{ matrix.distro }} ${{ matrix.arch }}
     needs: prepare
+
+    env:
+      CMAKE_GENERATOR: Ninja
 
     # Run steps on a matrix of 3 arch/distro combinations
     strategy:
