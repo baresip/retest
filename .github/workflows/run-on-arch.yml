@@ -81,15 +81,15 @@ jobs:
             case "${{ matrix.distro }}" in
               ubuntu*|jessie|stretch|buster|bullseye)
                 apt-get update -q -y
-                apt-get install -q -y cmake gcc git make libssl-dev
+                apt-get install -q -y cmake gcc git make libssl-dev ninja-build
                 ;;
               fedora*)
                 dnf -y update
-                dnf -y install cmake gcc git make openssl-devel
+                dnf -y install cmake gcc git make openssl-devel ninja-build
                 ;;
               alpine*)
                 apk update
-                apk add cmake gcc git linux-headers make musl-dev openssl-dev
+                apk add cmake gcc git linux-headers make musl-dev openssl-dev ninja
                 ;;
             esac
 
