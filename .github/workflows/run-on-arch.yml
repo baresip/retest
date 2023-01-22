@@ -4,6 +4,9 @@ jobs:
   prepare:
     runs-on: ubuntu-latest
 
+    env:
+      CMAKE_GENERATOR: Ninja
+
     steps:
     - uses: actions/checkout@v3
 
@@ -93,13 +96,13 @@ jobs:
           # Produce a binary artifact and place it in the mounted volume
           run: |
             for p in re rem; do
-              cmake -S $p -B $p/build -DCMAKE_C_FLAGS="-Werror"
+              cmake -S $p -B $p/build -DCMAKE_C_FLAGS="-Werror" -DCMAKE_BUILD_TYPE=Debug
               cmake --build $p/build -j
             done
             for p in re rem; do
               mv $p ../.
             done
-            cmake -B build -DCMAKE_C_FLAGS="-Werror"
+            cmake -B build -DCMAKE_C_FLAGS="-Werror" -DCMAKE_BUILD_TYPE=Debug
             cmake --build build -j
             ./build/retest -v -r
 
