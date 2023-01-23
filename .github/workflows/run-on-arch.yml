@@ -61,6 +61,9 @@ jobs:
           # Not required, but speeds up builds
           githubToken: ${{ github.token }}
 
+          env: |
+            CMAKE_GENERATOR: Ninja
+
           # Create an artifacts directory
           setup: |
             mkdir -p "${PWD}/artifacts"
@@ -78,28 +81,28 @@ jobs:
             case "${{ matrix.distro }}" in
               ubuntu*|jessie|stretch|buster|bullseye)
                 apt-get update -q -y
-                apt-get install -q -y cmake gcc git make libssl-dev
+                apt-get install -q -y cmake gcc git make libssl-dev ninja-build
                 ;;
               fedora*)
                 dnf -y update
-                dnf -y install cmake gcc git make openssl-devel
+                dnf -y install cmake gcc git make openssl-devel ninja-build
                 ;;
               alpine*)
                 apk update
-                apk add cmake gcc git linux-headers make musl-dev openssl-dev
+                apk add cmake gcc git linux-headers make musl-dev openssl-dev ninja
                 ;;
             esac
 
           # Produce a binary artifact and place it in the mounted volume
           run: |
             for p in re rem; do
-              cmake -S $p -B $p/build -DCMAKE_C_FLAGS="-Werror"
+              cmake -S $p -B $p/build -DCMAKE_C_FLAGS="-Werror" -DCMAKE_BUILD_TYPE=Debug
               cmake --build $p/build -j
             done
             for p in re rem; do
               mv $p ../.
             done
-            cmake -B build -DCMAKE_C_FLAGS="-Werror"
+            cmake -B build -DCMAKE_C_FLAGS="-Werror" -DCMAKE_BUILD_TYPE=Debug
             cmake --build build -j
             ./build/retest -v -r
 
