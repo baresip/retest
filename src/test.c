@@ -178,10 +178,10 @@ static const struct test tests[] = {
 #endif
 	TEST(test_sipevent),
 	TEST(test_sipsess),
+	TEST(test_sipsess_reject),
 	TEST(test_sipsess_blind_transfer),
 	TEST(test_sipsess_100rel_caller_require),
 	TEST(test_sipsess_100rel_supported),
-	TEST(test_sipsess_100rel_abort),
 	TEST(test_sipsess_100rel_answer_not_allowed),
 	TEST(test_sipsess_100rel_420),
 	TEST(test_sipsess_100rel_421),
