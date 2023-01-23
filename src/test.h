@@ -297,9 +297,11 @@ int test_sipreg_tcp(void);
 int test_sipreg_tls(void);
 #endif
 int test_sipsess(void);
+int test_sipsess_reject(void);
 int test_sipsess_blind_transfer(void);
 int test_sipsess_100rel_caller_require(void);
 int test_sipsess_100rel_supported(void);
+int test_sipsess_100rel_answer_not_allowed(void);
 int test_sipsess_100rel_420(void);
 int test_sipsess_100rel_421(void);
 int test_sipsess_update_uac(void);
