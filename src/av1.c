@@ -15,6 +15,9 @@
 #include <re_dbg.h>
 
 
+hello hello asdasdasd
+
+
 static int test_leb128(void)
 {
 	struct mbuf *mb = NULL;
