@@ -152,7 +152,7 @@ int test_fmt_pl_i32(void)
 	uint32_t i;
 	int err = 0;
 
-	for (i=0; i<ARRAY_SIZE(testv); i++) {
+	for (i=0; i<RE_ARRAY_SIZE(testv); i++) {
 		const int32_t v = pl_i32(&testv[i].pl);
 
 		TEST_EQUALS(testv[i].v, v);
@@ -200,7 +200,7 @@ int test_fmt_pl_i64(void)
 	uint64_t i;
 	int err = 0;
 
-	for (i=0; i<ARRAY_SIZE(testv); i++) {
+	for (i=0; i<RE_ARRAY_SIZE(testv); i++) {
 		const int64_t v = pl_i64(&testv[i].pl);
 
 		TEST_EQUALS(testv[i].v, v);
@@ -239,7 +239,7 @@ int test_fmt_pl_u32(void)
 	uint32_t i;
 	int err = 0;
 
-	for (i=0; i<ARRAY_SIZE(testv); i++) {
+	for (i=0; i<RE_ARRAY_SIZE(testv); i++) {
 		const uint32_t v = pl_u32(&testv[i].pl);
 
 		if (testv[i].v != v) {
@@ -280,7 +280,7 @@ int test_fmt_pl_u64(void)
 	uint32_t i;
 	int err = 0;
 
-	for (i=0; i<ARRAY_SIZE(testv); i++) {
+	for (i=0; i<RE_ARRAY_SIZE(testv); i++) {
 		const uint64_t v = pl_u64(&testv[i].pl);
 
 		if (testv[i].v != v) {
@@ -321,7 +321,7 @@ int test_fmt_pl_x3264(void)
 	uint32_t i;
 	int err = 0;
 
-	for (i=0; i<ARRAY_SIZE(testv); i++) {
+	for (i=0; i<RE_ARRAY_SIZE(testv); i++) {
 		struct pl pl;
 		uint32_t x32;
 		uint64_t x64;
@@ -720,7 +720,7 @@ int test_fmt_str(void)
 	size_t i;
 	int err = 0;
 
-	for (i=0; i<ARRAY_SIZE(testv); i++) {
+	for (i=0; i<RE_ARRAY_SIZE(testv); i++) {
 		const size_t sz = strlen(testv[i].dst) + 1;
 		str_ncpy(buf, testv[i].src, testv[i].n);
 
@@ -763,9 +763,9 @@ static void fmt_param_handler(const struct pl *name, const struct pl *val,
 	size_t *i = argv[0];
 	int *err = argv[1];
 
-	if (*i >= ARRAY_SIZE(testv)) {
+	if (*i >= RE_ARRAY_SIZE(testv)) {
 		DEBUG_WARNING("param: too many parameters (%u > %u)\n",
-			      *i, ARRAY_SIZE(testv));
+			      *i, RE_ARRAY_SIZE(testv));
 		*err = EOVERFLOW;
 		return;
 	}
@@ -801,7 +801,7 @@ int test_fmt_param(void)
 	argv[0] = &i;
 	argv[1] = &err;
 
-	for (i=0; i<ARRAY_SIZE(testv); i++) {
+	for (i=0; i<RE_ARRAY_SIZE(testv); i++) {
 		struct pl val;
 		bool res;
 
@@ -956,7 +956,7 @@ int test_fmt_unicode_decode(void)
 	char buf[256];
 	int err = 0;
 
-	for (i=0; i<ARRAY_SIZE(unitestv); i++) {
+	for (i=0; i<RE_ARRAY_SIZE(unitestv); i++) {
 
 		const struct test *test = &unitestv[i];
 		struct pl pl;
@@ -1023,21 +1023,21 @@ int test_fmt_str_bool(void)
 		"YESS",
 	};
 
-	for (i = 0; i < ARRAY_SIZE(truestr); i++) {
+	for (i = 0; i < RE_ARRAY_SIZE(truestr); i++) {
 		err = str_bool(&en, truestr[i]);
 		TEST_ERR(err);
 		TEST_EQUALS(true, en);
 	}
 
 	state = STATE_FALSE;
-	for (i = 0; i < ARRAY_SIZE(falsestr); i++) {
+	for (i = 0; i < RE_ARRAY_SIZE(falsestr); i++) {
 		err = str_bool(&en, falsestr[i]);
 		TEST_ERR(err);
 		TEST_EQUALS(false, en);
 	}
 
 	state = STATE_UNSUP;
-	for (i = 0; i < ARRAY_SIZE(notsup); i++) {
+	for (i = 0; i < RE_ARRAY_SIZE(notsup); i++) {
 		err = str_bool(&en, notsup[i]);
 		TEST_EQUALS(err, EINVAL);
 	}

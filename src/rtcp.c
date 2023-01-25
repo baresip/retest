@@ -181,13 +181,13 @@ int test_rtcp_packetloss(void)
 	static const uint16_t seqv7[] = {1,2,8,9,10};
 	int err = 0;
 
-	err |= test_loss(seqv1, ARRAY_SIZE(seqv1), 0);
-	err |= test_loss(seqv2, ARRAY_SIZE(seqv2), 0);
-	err |= test_loss(seqv3, ARRAY_SIZE(seqv3), 0);
-	err |= test_loss(seqv4, ARRAY_SIZE(seqv4), 1);
-	err |= test_loss(seqv5, ARRAY_SIZE(seqv5), 2);
-	err |= test_loss(seqv6, ARRAY_SIZE(seqv6), 1);
-	err |= test_loss(seqv7, ARRAY_SIZE(seqv7), 5);
+	err |= test_loss(seqv1, RE_ARRAY_SIZE(seqv1), 0);
+	err |= test_loss(seqv2, RE_ARRAY_SIZE(seqv2), 0);
+	err |= test_loss(seqv3, RE_ARRAY_SIZE(seqv3), 0);
+	err |= test_loss(seqv4, RE_ARRAY_SIZE(seqv4), 1);
+	err |= test_loss(seqv5, RE_ARRAY_SIZE(seqv5), 2);
+	err |= test_loss(seqv6, RE_ARRAY_SIZE(seqv6), 1);
+	err |= test_loss(seqv7, RE_ARRAY_SIZE(seqv7), 5);
 
 	return err;
 }

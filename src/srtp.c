@@ -110,7 +110,7 @@ static int test_srtp_aescm128(void)
 	if (err)
 		return err;
 
-	for (i=0; i<ARRAY_SIZE(testv); i++) {
+	for (i=0; i<RE_ARRAY_SIZE(testv); i++) {
 
 		uint8_t t_count[16], t_kstrm[16];
 
@@ -171,7 +171,7 @@ static int test_srtp_aescm256(void)
 	if (err)
 		return err;
 
-	for (i=0; i<ARRAY_SIZE(testv); i++) {
+	for (i=0; i<RE_ARRAY_SIZE(testv); i++) {
 
 		uint8_t t_keystream[16];
 
@@ -800,12 +800,12 @@ static int test_srtp_reordering_and_wrap(void)
 	static const uint16_t seqv6[] = {65534, 1, 2, 65535};
 	int err = 0;
 
-	err  = test_seq_loop(seqv1, ARRAY_SIZE(seqv1));
-	err |= test_seq_loop(seqv2, ARRAY_SIZE(seqv2));
-	err |= test_seq_loop(seqv3, ARRAY_SIZE(seqv3));
-	err |= test_seq_loop(seqv4, ARRAY_SIZE(seqv4));
-	err |= test_seq_loop(seqv5, ARRAY_SIZE(seqv5));
-	err |= test_seq_loop(seqv6, ARRAY_SIZE(seqv6));
+	err  = test_seq_loop(seqv1, RE_ARRAY_SIZE(seqv1));
+	err |= test_seq_loop(seqv2, RE_ARRAY_SIZE(seqv2));
+	err |= test_seq_loop(seqv3, RE_ARRAY_SIZE(seqv3));
+	err |= test_seq_loop(seqv4, RE_ARRAY_SIZE(seqv4));
+	err |= test_seq_loop(seqv5, RE_ARRAY_SIZE(seqv5));
+	err |= test_seq_loop(seqv6, RE_ARRAY_SIZE(seqv6));
 
 	return err;
 }

@@ -90,12 +90,12 @@ static int test_re_thread_async(void)
 		{"localhost", {.len = 0}, -1, 0, &cnt},
 		{"test.notfound", {.len = 0}, -1, EADDRNOTAVAIL, &cnt}};
 
-	cnt.tests = ARRAY_SIZE(testv);
+	cnt.tests = RE_ARRAY_SIZE(testv);
 
 	err = re_thread_async_init(2);
 	TEST_ERR(err);
 
-	for (size_t i = 0; i < ARRAY_SIZE(testv); i++) {
+	for (size_t i = 0; i < RE_ARRAY_SIZE(testv); i++) {
 		err = re_thread_async(blocking_getaddr, completed, &testv[i]);
 		TEST_ERR(err);
 	}
@@ -103,7 +103,7 @@ static int test_re_thread_async(void)
 	err = re_main_timeout(200);
 	TEST_ERR(err);
 
-	for (size_t i = 0; i < ARRAY_SIZE(testv); i++) {
+	for (size_t i = 0; i < RE_ARRAY_SIZE(testv); i++) {
 		TEST_EQUALS(testv[i].err_expected, testv[i].err);
 	}
 

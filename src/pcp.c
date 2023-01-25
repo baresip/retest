@@ -40,7 +40,7 @@ static int test_pcp_request_loop(size_t offset)
 	if (!mb)
 		return ENOMEM;
 
-	for (i=0; i<ARRAY_SIZE(testreqv); i++) {
+	for (i=0; i<RE_ARRAY_SIZE(testreqv); i++) {
 
 		struct sa sa;
 		struct pcp_peer peer;

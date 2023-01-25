@@ -198,7 +198,7 @@ int test_dns_rr(void)
 	if (err)
 		goto out;
 
-	for (i=0; i<ARRAY_SIZE(typev); i++) {
+	for (i=0; i<RE_ARRAY_SIZE(typev); i++) {
 
 		hash_flush(ht);
 
@@ -274,7 +274,7 @@ int test_dns_dname(void)
 	if (!mb)
 		return ENOMEM;
 
-	for (i=0; i<ARRAY_SIZE(testv); i++) {
+	for (i=0; i<RE_ARRAY_SIZE(testv); i++) {
 
 		const struct test *test = &testv[i];
 		const size_t size = str_len(test->str) / 2;

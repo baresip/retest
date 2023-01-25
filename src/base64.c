@@ -46,7 +46,7 @@ int test_base64(void)
 	uint8_t b64_buf[128];
 	size_t olen;
 
-	for (i=0; i<ARRAY_SIZE(testv); i++) {
+	for (i=0; i<RE_ARRAY_SIZE(testv); i++) {
 		const struct pl *pl = &testv[i].pl;
 		const struct pl *b;
 		char buf[128];

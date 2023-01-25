@@ -40,12 +40,12 @@ int test_fir(void)
 	TEST_EQUALS(0, fir.index);
 
 	/* process the FIR filter */
-	fir_filter(&fir, samp_out, samp_in, ARRAY_SIZE(samp_in),
-		   1, fir_48_8, ARRAY_SIZE(fir_48_8));
+	fir_filter(&fir, samp_out, samp_in, RE_ARRAY_SIZE(samp_in),
+		   1, fir_48_8, RE_ARRAY_SIZE(fir_48_8));
 
 	/* verify FIR-filter state */
 	TEST_EQUALS(NUM_SAMPLES, fir.index);
-	TEST_ASSERT(NUM_SAMPLES <= ARRAY_SIZE(fir.history));
+	TEST_ASSERT(NUM_SAMPLES <= RE_ARRAY_SIZE(fir.history));
 	TEST_MEMCMP(samp_in, sizeof(samp_in), fir.history, sizeof(samp_in));
 
 	/* verify output samples */
