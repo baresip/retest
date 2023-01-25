@@ -56,7 +56,7 @@ int test_aulevel(void)
 	};
 
 	auframe_init(&af, AUFMT_RAW, testv[0].sampv,
-		     ARRAY_SIZE(testv[0].sampv), 48000, 2);
+		     RE_ARRAY_SIZE(testv[0].sampv), 48000, 2);
 	TEST_EQUALS(AULEVEL_UNDEF, af.level);
 
 	level = auframe_level(&af);
@@ -66,18 +66,18 @@ int test_aulevel(void)
 	level = auframe_level(&af);
 	TEST_EQUALS(AULEVEL_UNDEF, level);
 
-	for (size_t i = 0; i < ARRAY_SIZE(testv); i++) {
+	for (size_t i = 0; i < RE_ARRAY_SIZE(testv); i++) {
 		auframe_init(&af, AUFMT_S16LE, testv[i].sampv,
-			     ARRAY_SIZE(testv[i].sampv), 48000, 2);
+			     RE_ARRAY_SIZE(testv[i].sampv), 48000, 2);
 
 		level = auframe_level(&af);
 
 		ASSERT_DOUBLE_EQ(testv[i].level, level, PREC);
 	}
 
-	for (size_t i = 0; i < ARRAY_SIZE(testv4); i++) {
+	for (size_t i = 0; i < RE_ARRAY_SIZE(testv4); i++) {
 		auframe_init(&af, AUFMT_S16LE, testv4[i].sampv,
-			     ARRAY_SIZE(testv4[i].sampv), 48000, 2);
+			     RE_ARRAY_SIZE(testv4[i].sampv), 48000, 2);
 
 		level = auframe_level(&af);
 

@@ -67,7 +67,7 @@ static int test_vidframe_size(void)
 	size_t i;
 	int err = 0;
 
-	for (i=0; i<ARRAY_SIZE(fmtv); i++) {
+	for (i=0; i<RE_ARRAY_SIZE(fmtv); i++) {
 
 		size_t sz = vidframe_size(fmtv[i], &vidsz);
 
@@ -93,7 +93,7 @@ static int test_vidframe_alloc(void)
 	size_t i;
 	int err = ENOENT;
 
-	for (i=0; i<ARRAY_SIZE(fmtv); i++) {
+	for (i=0; i<RE_ARRAY_SIZE(fmtv); i++) {
 
 		err = vidframe_alloc(&vf, fmtv[i], &vidsz);
 		if (err)
@@ -229,7 +229,7 @@ static int test_vid_draw(void)
 		VID_FMT_YUV422P,
 	};
 
-	for (size_t i=0; i<ARRAY_SIZE(drawfmtv); i++) {
+	for (size_t i=0; i<RE_ARRAY_SIZE(drawfmtv); i++) {
 
 		err  = vidframe_alloc(&vf,  drawfmtv[i], &vidsz);
 		err |= vidframe_alloc(&vf2, drawfmtv[i], &vidsz);

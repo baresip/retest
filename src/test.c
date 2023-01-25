@@ -332,7 +332,7 @@ static const struct test *find_test(const char *name)
 {
 	size_t i;
 
-	for (i=0; i<ARRAY_SIZE(tests); i++) {
+	for (i=0; i<RE_ARRAY_SIZE(tests); i++) {
 
 		if (0 == str_casecmp(name, tests[i].name))
 			return &tests[i];
@@ -344,7 +344,7 @@ static const struct test *find_test(const char *name)
 
 static const struct test *find_test_int(const char *name)
 {
-	for (size_t i=0; i<ARRAY_SIZE(tests_integration); i++) {
+	for (size_t i=0; i<RE_ARRAY_SIZE(tests_integration); i++) {
 
 		if (0 == str_casecmp(name, tests_integration[i].name))
 			return &tests_integration[i];
@@ -448,7 +448,7 @@ int test_oom(const char *name, bool verbose)
 	}
 	else {
 		/* All test cases */
-		for (i=0; i<ARRAY_SIZE(tests); i++) {
+		for (i=0; i<RE_ARRAY_SIZE(tests); i++) {
 			err = testcase_oom(&tests[i], levels, verbose);
 			if (err)
 				break;
@@ -474,7 +474,7 @@ out:
 
 static int test_unit(const char *name, bool verbose)
 {
-	size_t skipv[ARRAY_SIZE(tests)] = {0};
+	size_t skipv[RE_ARRAY_SIZE(tests)] = {0};
 	size_t i;
 	int err = 0;
 
@@ -498,7 +498,7 @@ static int test_unit(const char *name, bool verbose)
 	else {
 		unsigned n_skipped = 0;
 
-		for (i=0; i<ARRAY_SIZE(tests); i++) {
+		for (i=0; i<RE_ARRAY_SIZE(tests); i++) {
 
 			if (verbose) {
 				re_printf("test %u -- %s\n",
@@ -653,12 +653,12 @@ int test_perf(const char *name, bool verbose)
 			return err;
 	}
 	else {
-		struct timing timingv[ARRAY_SIZE(tests)];
+		struct timing timingv[RE_ARRAY_SIZE(tests)];
 
 		memset(&timingv, 0, sizeof(timingv));
 
 		/* All test cases */
-		for (i=0; i<ARRAY_SIZE(tests); i++) {
+		for (i=0; i<RE_ARRAY_SIZE(tests); i++) {
 
 			struct timing *tim = &timingv[i];
 			double usec_avg;
@@ -690,13 +690,13 @@ int test_perf(const char *name, bool verbose)
 		}
 
 		/* sort the timing table by average time */
-		qsort(timingv, ARRAY_SIZE(timingv), sizeof(timingv[0]),
+		qsort(timingv, RE_ARRAY_SIZE(timingv), sizeof(timingv[0]),
 		      timing_cmp);
 
 		re_fprintf(stderr,
 			   "\nsorted by average timing (slowest on top):\n");
 
-		for (i=0; i<ARRAY_SIZE(timingv); i++) {
+		for (i=0; i<RE_ARRAY_SIZE(timingv); i++) {
 
 			struct timing *tim = &timingv[i];
 			double usec_avg = tim->nsec_avg / 1000.0;
@@ -777,7 +777,7 @@ static int thread_handler(void *arg)
 int test_multithread(void)
 {
 #define NUM_REPEAT 2
-#define NUM_TOTAL  (NUM_REPEAT * ARRAY_SIZE(tests))
+#define NUM_TOTAL  (NUM_REPEAT * RE_ARRAY_SIZE(tests))
 
 	struct thread threadv[NUM_TOTAL];
 	size_t test_index=0;
@@ -792,11 +792,11 @@ int test_multithread(void)
 
 	(void)re_fprintf(stderr, "multithread: %u tests"
 			 " with %d repeats (total %u threads): ",
-			 ARRAY_SIZE(tests), NUM_REPEAT, NUM_TOTAL);
+			 RE_ARRAY_SIZE(tests), NUM_REPEAT, NUM_TOTAL);
 
-	for (i=0; i<ARRAY_SIZE(threadv); i++) {
+	for (i=0; i<RE_ARRAY_SIZE(threadv); i++) {
 
-		size_t ti = (test_index++ % ARRAY_SIZE(tests));
+		size_t ti = (test_index++ % RE_ARRAY_SIZE(tests));
 
 		threadv[i].test = &tests[ti];
 		threadv[i].err = -1;           /* error not set */
@@ -811,12 +811,12 @@ int test_multithread(void)
 		}
 	}
 
-	for (i=0; i<ARRAY_SIZE(threadv); i++) {
+	for (i=0; i<RE_ARRAY_SIZE(threadv); i++) {
 
 		thrd_join(threadv[i].tid, NULL);
 	}
 
-	for (i=0; i<ARRAY_SIZE(threadv); i++) {
+	for (i=0; i<RE_ARRAY_SIZE(threadv); i++) {
 
 		if (threadv[i].err != 0) {
 			re_printf("%u failed: %-30s  [%d] [%m]\n", i,
@@ -840,7 +840,7 @@ void test_listcases(void)
 {
 	size_t i, n, nh;
 
-	n = ARRAY_SIZE(tests);
+	n = RE_ARRAY_SIZE(tests);
 	nh = (n+1)/2;
 
 	(void)re_printf("\n%u test cases:\n", n);
@@ -1077,7 +1077,7 @@ int test_integration(const char *name, bool verbose)
 		return err;
 	}
 
-	for (i=0; i<ARRAY_SIZE(tests_integration); i++) {
+	for (i=0; i<RE_ARRAY_SIZE(tests_integration); i++) {
 
 		test = &tests_integration[i];
 		if (str_isset(name) && test->name)
