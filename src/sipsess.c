@@ -935,6 +935,8 @@ int test_sipsess_100rel_answer_not_allowed(void)
 	test.rel100_a = REL100_ENABLED;
 	test.rel100_b = REL100_ENABLED;
 	test.conn_action = CONN_PROGR_ANS;
+	test.answ_ret_code = 22;
+	test.prack_action = send_answer_b;
 
 	err = sip_alloc(&test.sip, NULL, 32, 32, 32,
 			"retest", exit_handler, NULL);
@@ -970,14 +972,15 @@ int test_sipsess_100rel_answer_not_allowed(void)
 
 	err = re_main_timeout(200);
 	TEST_ERR(err);
+	TEST_ERR(test.err);
 
 	TEST_ERR(test.progr_ret_code);
-	ASSERT_TRUE(test.err == 22);
 	ASSERT_TRUE(test.answ_ret_code == 22);
 
 	/* okay here -- verify */
-	ASSERT_TRUE(!test.estab_a);
-	ASSERT_TRUE(!test.estab_b);
+	ASSERT_TRUE(test.estab_a);
+	ASSERT_TRUE(test.estab_b);
+	ASSERT_TRUE(test.progr_a);
 	ASSERT_TRUE(test.rel100_state_b & REL100_SUPPORTED);
 	ASSERT_TRUE((test.rel100_state_b & REL100_REQUIRE) == 0);
 
