@@ -82,6 +82,12 @@ static int test_mbuf_basic(void)
 		goto out;
 	}
 
+	/* Test position and end */
+	mbuf_set_posend(&mb, 2, 4);
+
+	ASSERT_EQ(2, mbuf_pos(&mb));
+	ASSERT_EQ(4, mbuf_end(&mb));
+
  out:
 	mbuf_reset(&mb);
 	mem_deref(str);
