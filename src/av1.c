@@ -36,7 +36,7 @@ static int test_leb128(void)
 		0xffffffff      /* max 32-bit */
 	};
 
-	for (size_t i=0; i<ARRAY_SIZE(valuev); i++) {
+	for (size_t i=0; i<RE_ARRAY_SIZE(valuev); i++) {
 
 		uint64_t val = valuev[i];
 		uint64_t val_dec;
@@ -82,7 +82,7 @@ static int test_av1_aggr(void)
 	};
 	int err = 0;
 
-	for (size_t i=0; i<ARRAY_SIZE(testv); i++) {
+	for (size_t i=0; i<RE_ARRAY_SIZE(testv); i++) {
 
 		const struct test *test = &testv[i];
 		struct av1_aggr_hdr hdr;

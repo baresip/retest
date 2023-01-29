@@ -58,7 +58,7 @@ int test_auresamp(void)
 {
 	struct auresamp rs;
 	int16_t outv[CHANNELS_OUT * SAMPLES];
-	size_t outc = ARRAY_SIZE(outv);
+	size_t outc = RE_ARRAY_SIZE(outv);
 	int err;
 
 	auresamp_init(&rs);
@@ -67,10 +67,10 @@ int test_auresamp(void)
 	TEST_ERR(err);
 
 	/* resample from mono to stereo */
-	err = auresamp(&rs, outv, &outc, inv, ARRAY_SIZE(inv));
+	err = auresamp(&rs, outv, &outc, inv, RE_ARRAY_SIZE(inv));
 	TEST_ERR(err);
 
-	TEST_EQUALS(ARRAY_SIZE(outv), outc);
+	TEST_EQUALS(RE_ARRAY_SIZE(outv), outc);
 
 #if 0
 	re_printf("\nInput samples:\n");

@@ -108,7 +108,7 @@ int test_sip_addr(void)
 
 	mbuf_init(&mb);
 
-	for (i=0; i<ARRAY_SIZE(addrv); i++) {
+	for (i=0; i<RE_ARRAY_SIZE(addrv); i++) {
 		struct pl pl, pl2;
 
 		pl_set_str(&pl, addrv[i]);
@@ -182,7 +182,7 @@ int test_sip_via(void)
 		goto out;
 	}
 
-	for (i=0; i<ARRAY_SIZE(testv); i++) {
+	for (i=0; i<RE_ARRAY_SIZE(testv); i++) {
 		bool ipaddr;
 		struct sa addr;
 
@@ -365,7 +365,7 @@ int test_sip_apply(void)
 		goto out;
 	}
 
-	for (i=0; i<ARRAY_SIZE(testv); i++) {
+	for (i=0; i<RE_ARRAY_SIZE(testv); i++) {
 
 		struct apply apply;
 
@@ -461,7 +461,7 @@ int test_sip_param(void)
 	int err = EINVAL;
 	size_t i;
 
-	for (i=0; i<ARRAY_SIZE(testv); i++) {
+	for (i=0; i<RE_ARRAY_SIZE(testv); i++) {
 		struct pl pl, foo;
 
 		pl_set_str(&pl, testv[i].str);

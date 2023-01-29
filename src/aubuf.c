@@ -33,7 +33,7 @@ static int test_aubuf_raw(void)
 	if (!mb)
 		return ENOMEM;
 
-	for (i=0; i<ARRAY_SIZE(sampv_in); i++)
+	for (i=0; i<RE_ARRAY_SIZE(sampv_in); i++)
 		sampv_in[i] = i;
 	memset(sampv_out, 0, sizeof(sampv_out));
 
@@ -73,7 +73,7 @@ static int test_aubuf_samp(void)
 	unsigned i;
 	int err;
 
-	for (i=0; i<ARRAY_SIZE(sampv_in); i++)
+	for (i=0; i<RE_ARRAY_SIZE(sampv_in); i++)
 		sampv_in[i] = i;
 	memset(sampv_out, 0, sizeof(sampv_out));
 
@@ -88,7 +88,7 @@ static int test_aubuf_samp(void)
 
 	TEST_EQUALS(4 * FRAMES, aubuf_cur_size(ab));
 
-	aubuf_read_samp(ab, sampv_out, ARRAY_SIZE(sampv_out));
+	aubuf_read_samp(ab, sampv_out, RE_ARRAY_SIZE(sampv_out));
 	TEST_MEMCMP(sampv_in, sizeof(sampv_in), sampv_out, sizeof(sampv_out));
 	TEST_EQUALS(0, aubuf_cur_size(ab));
 
@@ -109,7 +109,7 @@ static int test_aubuf_auframe(void)
 	struct auframe af_out;
 	int err;
 
-	for (unsigned i = 0; i < ARRAY_SIZE(sampv_in); i++)
+	for (unsigned i = 0; i < RE_ARRAY_SIZE(sampv_in); i++)
 		sampv_in[i] = (float)i;
 	memset(sampv_out, 0, sizeof(sampv_out));
 

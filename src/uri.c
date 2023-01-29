@@ -62,7 +62,7 @@ int test_uri(void)
 
 	mbuf_init(&mb);
 
-	for (i=0; i<ARRAY_SIZE(uriv); i++) {
+	for (i=0; i<RE_ARRAY_SIZE(uriv); i++) {
 		struct pl pl0, pl;
 
 		/* Decode */
@@ -143,7 +143,7 @@ int test_uri_encode(void)
 
 	mbuf_init(&mb);
 
-	for (i=0; i<ARRAY_SIZE(uriv); i++) {
+	for (i=0; i<RE_ARRAY_SIZE(uriv); i++) {
 		struct pl pl;
 
 		/* Encode */
@@ -187,7 +187,7 @@ int test_uri_user(void)
 	mbuf_init(&mbd);
 	mbuf_init(&mbe);
 
-	for (i=0; i<ARRAY_SIZE(uriv); i++) {
+	for (i=0; i<RE_ARRAY_SIZE(uriv); i++) {
 		struct pl ple, pld, pl;
 
 		/* Decode and compare */
@@ -253,7 +253,7 @@ int test_uri_headers(void)
 	mbuf_init(&mbd);
 	mbuf_init(&mbe);
 
-	for (i=0; i<ARRAY_SIZE(uriv); i++) {
+	for (i=0; i<RE_ARRAY_SIZE(uriv); i++) {
 		struct pl pl;
 
 		/* Decode and compare */
@@ -358,7 +358,7 @@ int test_uri_params_headers(void)
 	uint32_t i;
 
 	err = ENOENT;
-	for (i=0; i<ARRAY_SIZE(paramv); i++) {
+	for (i=0; i<RE_ARRAY_SIZE(paramv); i++) {
 		static const struct pl transp = PL("transport");
 		struct pl pl, val;
 		uint32_t n = 0;
@@ -380,7 +380,7 @@ int test_uri_params_headers(void)
 		goto out;
 
 	err = ENOENT;
-	for (i=0; i<ARRAY_SIZE(headerv); i++) {
+	for (i=0; i<RE_ARRAY_SIZE(headerv); i++) {
 		static const struct pl subj = PL("Subject");
 		struct pl pl, val;
 		uint32_t n = 0;

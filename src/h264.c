@@ -392,7 +392,7 @@ int test_h264_sps(void)
 	size_t max_len;
 	int e, err;
 
-	for (i=0; i<ARRAY_SIZE(testv); i++) {
+	for (i=0; i<RE_ARRAY_SIZE(testv); i++) {
 
 		const struct test *test = &testv[i];
 		struct h264_sps ref = test->sps;

@@ -110,7 +110,7 @@ int test_odict(void)
 	if (err)
 		goto out;
 
-	for (i=0; i<ARRAY_SIZE(testv); i++) {
+	for (i=0; i<RE_ARRAY_SIZE(testv); i++) {
 
 		const struct dtest *test = &testv[i];
 		const struct odict_entry *entry = NULL;
@@ -157,13 +157,13 @@ int test_odict(void)
 	}
 
 	/* verify size of dictionary, after adding all entries */
-	TEST_EQUALS(ARRAY_SIZE(testv), odict_count(dict, false));
+	TEST_EQUALS(RE_ARRAY_SIZE(testv), odict_count(dict, false));
 
 	/* compare dictionary with itself */
 	TEST_ASSERT(odict_compare(dict, dict, false));
 
 	/* remove all entries */
-	for (i=0; i<ARRAY_SIZE(testv); i++) {
+	for (i=0; i<RE_ARRAY_SIZE(testv); i++) {
 
 		const struct dtest *test = &testv[i];
 		struct odict_entry *e;

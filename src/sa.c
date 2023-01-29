@@ -93,7 +93,7 @@ int test_sa_cmp(void)
 	size_t i;
 	int err = 0;
 
-	for (i=0; i<ARRAY_SIZE(testv); i++) {
+	for (i=0; i<RE_ARRAY_SIZE(testv); i++) {
 		struct sa sa1, sa2;
 		bool eq;
 
@@ -141,7 +141,7 @@ int test_sa_decode(void)
 	uint32_t i;
 	int err = 0;
 
-	for (i=0; i<ARRAY_SIZE(testv); i++) {
+	for (i=0; i<RE_ARRAY_SIZE(testv); i++) {
 		struct sa sa, sa2;
 		char buf[64];
 		int e;
@@ -212,7 +212,7 @@ int test_sa_class(void)
 	uint32_t i;
 	int err = 0;
 
-	for (i=0; i<ARRAY_SIZE(testv); i++) {
+	for (i=0; i<RE_ARRAY_SIZE(testv); i++) {
 		struct sa sa;
 		int lo, ll, any;
 
@@ -280,7 +280,7 @@ int test_sa_ntop(void)
 	uint32_t i;
 	int err = 0;
 
-	for (i=0; i<ARRAY_SIZE(testv); i++) {
+	for (i=0; i<RE_ARRAY_SIZE(testv); i++) {
 		struct sa sa0, sa;
 		char buf[64];
 
@@ -345,7 +345,7 @@ int test_sa_pton(void)
 		{"fe80::xxxx:d8d9:ddc3:25dd:%eth0", EADDRNOTAVAIL},
 	};
 
-	for (size_t i=0; i<ARRAY_SIZE(testv); i++) {
+	for (size_t i=0; i<RE_ARRAY_SIZE(testv); i++) {
 		int e = sa_pton(testv[i].addr, &sa);
 		TEST_EQUALS(testv[i].err, e);
 	}

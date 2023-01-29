@@ -59,7 +59,7 @@ static int test_aes_ctr_loop(void)
 	if (err)
 		goto out;
 
-	for (i=0; i<ARRAY_SIZE(testv); i++) {
+	for (i=0; i<RE_ARRAY_SIZE(testv); i++) {
 
 		uint8_t test_vector[16];
 		uint8_t cipher_text[16];
@@ -238,7 +238,7 @@ int test_aes_gcm(void)
 		return ESKIPPED;
 	}
 
-	for (i=0; i<ARRAY_SIZE(testv); i++) {
+	for (i=0; i<RE_ARRAY_SIZE(testv); i++) {
 
 		const struct test *test = &testv[i];
 		uint8_t test_vector[MSG_LEN] = {0};

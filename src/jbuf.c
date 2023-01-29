@@ -27,7 +27,7 @@ int test_jbuf(void)
 	if (err)
 		return err;
 
-	for (i=0; i<ARRAY_SIZE(frv); i++) {
+	for (i=0; i<RE_ARRAY_SIZE(frv); i++) {
 		frv[i] = mem_alloc(32, NULL);
 		if (!frv[i]) {
 			err = ENOMEM;
@@ -132,7 +132,7 @@ int test_jbuf(void)
  out:
 	mem_deref(jb);
 	mem_deref(mem);
-	for (i=0; i<ARRAY_SIZE(frv); i++)
+	for (i=0; i<RE_ARRAY_SIZE(frv); i++)
 		mem_deref(frv[i]);
 
 	return err;
@@ -158,7 +158,7 @@ int test_jbuf_adaptive(void)
 	err = jbuf_set_type(jb, JBUF_ADAPTIVE);
 	TEST_ERR(err);
 
-	for (i=0; i<ARRAY_SIZE(frv); i++) {
+	for (i=0; i<RE_ARRAY_SIZE(frv); i++) {
 		frv[i] = mem_zalloc(32, NULL);
 		if (frv[i] == NULL) {
 			err = ENOMEM;
@@ -235,7 +235,7 @@ int test_jbuf_adaptive(void)
  out:
 	mem_deref(jb);
 	mem_deref(mem);
-	for (i=0; i<ARRAY_SIZE(frv); i++)
+	for (i=0; i<RE_ARRAY_SIZE(frv); i++)
 		mem_deref(frv[i]);
 
 	return err;
