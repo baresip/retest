@@ -50,7 +50,7 @@ int test_sha1(void)
 	uint8_t digest[20];
 	char output[80];
 
-	for (k = 0; k < ARRAY_SIZE(test_data); k++) {
+	for (k = 0; k < RE_ARRAY_SIZE(test_data); k++) {
 
 		sha1((uint8_t *)test_data[k], strlen(test_data[k]), digest);
 

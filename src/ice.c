@@ -115,7 +115,7 @@ static int attr_add(struct attrs *attrs, const char *name,
 	va_list ap;
 	int r, err = 0;
 
-	TEST_ASSERT(attrs->attrc <= ARRAY_SIZE(attrs->attrv));
+	TEST_ASSERT(attrs->attrc <= RE_ARRAY_SIZE(attrs->attrv));
 
 	TEST_ASSERT(strlen(name) < sizeof(attr->name));
 	str_ncpy(attr->name, name, sizeof(attr->name));
@@ -811,7 +811,7 @@ static int test_ice_basic_candidate(void)
 	unsigned i;
 	int err = 0;
 
-	for (i=0; i<ARRAY_SIZE(typev); i++) {
+	for (i=0; i<RE_ARRAY_SIZE(typev); i++) {
 
 		const char *name;
 		enum ice_cand_type type;
@@ -872,7 +872,7 @@ static int test_ice_cand_attribute(void)
 	unsigned i;
 	int err = 0;
 
-	for (i=0; i<ARRAY_SIZE(testv); i++) {
+	for (i=0; i<RE_ARRAY_SIZE(testv); i++) {
 
 		struct ice_cand_attr cand;
 		char buf[256];

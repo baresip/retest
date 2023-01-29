@@ -327,7 +327,7 @@ int test_sdp_parse(void)
 
 	sa_init(&laddr, AF_INET);
 
-	for (i=0; i<ARRAY_SIZE(msgs); i++) {
+	for (i=0; i<RE_ARRAY_SIZE(msgs); i++) {
 
 		sess = mem_deref(sess);
 

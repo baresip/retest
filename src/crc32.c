@@ -25,7 +25,7 @@ int test_crc32(void)
 	};
 	size_t i;
 
-	for (i=0; i<ARRAY_SIZE(testv); i++) {
+	for (i=0; i<RE_ARRAY_SIZE(testv); i++) {
 		uint32_t crc;
 
 		crc = re_crc32(0L, (uint8_t *)testv[i].str,

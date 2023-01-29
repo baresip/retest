@@ -403,7 +403,7 @@ static int test_json_verify_decode(void)
 	unsigned i;
 	int err = 0;
 
-	for (i=0; i<ARRAY_SIZE(testv); i++) {
+	for (i=0; i<RE_ARRAY_SIZE(testv); i++) {
 
 		const struct test *t = &testv[i];
 
@@ -475,7 +475,7 @@ static int test_json_exponent(void)
 
 	arr = odict_lookup(dict, "exponents");
 
-	TEST_EQUALS(ARRAY_SIZE(values),
+	TEST_EQUALS(RE_ARRAY_SIZE(values),
 		    odict_count(odict_entry_array(arr), false));
 
 	for (le = list_head(&odict_entry_array(arr)->lst), i = 0; le;
@@ -617,7 +617,7 @@ int test_json_bad(void)
 	unsigned i;
 	int err = 0;
 
-	for (i=0; i<ARRAY_SIZE(testv); i++) {
+	for (i=0; i<RE_ARRAY_SIZE(testv); i++) {
 
 		const struct test *t = &testv[i];
 		int e;
@@ -715,7 +715,7 @@ int test_json_file(void)
 	unsigned i;
 	int err = 0;
 
-	for (i=0; i<ARRAY_SIZE(files); i++) {
+	for (i=0; i<RE_ARRAY_SIZE(files); i++) {
 		err = test_json_file_parse(files[i]);
 		if (err)
 			return err;

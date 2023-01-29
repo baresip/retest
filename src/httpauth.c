@@ -111,7 +111,7 @@ int test_httpauth_chall(void)
 	size_t i;
 	int err = 0;
 
-	for (i=0; i<ARRAY_SIZE(testv); i++) {
+	for (i=0; i<RE_ARRAY_SIZE(testv); i++) {
 
 		struct httpauth_digest_chall chall;
 		struct pl pl;
@@ -182,7 +182,7 @@ int test_httpauth_resp(void)
 	size_t i;
 	int err = 0;
 
-	for (i=0; i<ARRAY_SIZE(testv); i++) {
+	for (i=0; i<RE_ARRAY_SIZE(testv); i++) {
 
 		struct httpauth_digest_resp resp;
 		struct pl pl;

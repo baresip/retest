@@ -62,7 +62,7 @@ int test_hmac_sha1(void)
 	uint32_t i;
 	int err = 0;
 
-	for (i=0; i<ARRAY_SIZE(testv); i++) {
+	for (i=0; i<RE_ARRAY_SIZE(testv); i++) {
 		char buf[43];
 		uint8_t md[SHA_DIGEST_LENGTH];
 		uint32_t md_len = SHA_DIGEST_LENGTH;
@@ -227,7 +227,7 @@ int test_hmac_sha256(void)
 	size_t i;
 	int err = 0;
 
-	for (i=0; i<ARRAY_SIZE(testv); i++) {
+	for (i=0; i<RE_ARRAY_SIZE(testv); i++) {
 		const struct test *test = &testv[i];
 		uint8_t key[MAX_KEY_LEN];
 		size_t key_len = str_len(test->key) / 2;

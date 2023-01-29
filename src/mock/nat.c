@@ -24,7 +24,7 @@ static void nat_binding_add(struct nat *nat, const struct sa *addr)
 	if (!nat || !addr)
 		return;
 
-	if (nat->bindingc >= ARRAY_SIZE(nat->bindingv)) {
+	if (nat->bindingc >= RE_ARRAY_SIZE(nat->bindingv)) {
 		DEBUG_WARNING("NAT-box at max capacity\n");
 		return;
 	}

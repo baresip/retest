@@ -57,7 +57,7 @@ static int add_permission(struct turnserver *tt, const struct sa *peer)
 {
 	int err = 0;
 
-	TEST_ASSERT(tt->permc < ARRAY_SIZE(tt->permv));
+	TEST_ASSERT(tt->permc < RE_ARRAY_SIZE(tt->permv));
 	tt->permv[tt->permc] = *peer;
 	++tt->permc;
  out:
@@ -234,7 +234,7 @@ static void process_msg(struct turnserver *turn, int proto, void *sock,
 			goto out;
 		}
 
-		TEST_ASSERT(turn->chanc < ARRAY_SIZE(turn->chanv));
+		TEST_ASSERT(turn->chanc < RE_ARRAY_SIZE(turn->chanv));
 		turn->chanv[turn->chanc].nr   = chnr->v.channel_number;
 		turn->chanv[turn->chanc].peer = peer->v.xor_peer_addr;
 		++turn->chanc;
