@@ -372,20 +372,53 @@ int test_rtcp_decode(void)
 	err |= mbuf_write_u8(mb, 0xaa); /* junk */
 	mb->pos = 1;
 
-	while (mbuf_get_left(mb) >= 4 && !err) {
-		err = rtcp_decode(&msg, mb);
-		msg = mem_deref(msg);
-	}
+	/* SDES */
+	err = rtcp_decode(&msg, mb);
+	TEST_ERR(err);
 
-	mem_deref(msg);
-	mem_deref(mb);
+	ASSERT_EQ(  2, msg->hdr.version);
+	ASSERT_EQ(  0, msg->hdr.p);
+	ASSERT_EQ(  3, msg->hdr.count);
+	ASSERT_EQ(202, msg->hdr.pt);
+	ASSERT_EQ(  9, msg->hdr.length);
+
+	const struct rtcp_sdes *sdes = &msg->r.sdesv[0];
+
+	ASSERT_EQ(0x11223344, sdes->src);
+	ASSERT_EQ(1, sdes->n);
+
+	const struct rtcp_sdes_item *item = &sdes->itemv[0];
+
+	ASSERT_EQ(1, item->type);
+	ASSERT_EQ(2, item->length);
+	TEST_STRCMP("Aa", 2, item->data, item->length);
+
+	msg = mem_deref(msg);
+
+	/* APP */
+	err = rtcp_decode(&msg, mb);
+	TEST_ERR(err);
+
+	ASSERT_EQ(  2, msg->hdr.version);
+	ASSERT_EQ(  0, msg->hdr.p);
+	ASSERT_EQ(  0, msg->hdr.count);
+	ASSERT_EQ(204, msg->hdr.pt);
+	ASSERT_EQ(  3, msg->hdr.length);
+
+	ASSERT_EQ(  0x12345678, msg->r.app.src);
+	TEST_STRCMP("name", 4, msg->r.app.name, 4);
+	TEST_STRCMP("data", 4, msg->r.app.data, msg->r.app.data_len);
 
 	if (err)
-		return err;
+		goto out;
 
 	err = test_rtcp_decode_badmsg();
 	if (err)
 		return err;
+
+ out:
+	mem_deref(msg);
+	mem_deref(mb);
 
 	return err;
 }
