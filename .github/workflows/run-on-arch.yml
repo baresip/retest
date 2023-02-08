@@ -13,11 +13,18 @@ jobs:
         repo: https://github.com/baresip/re
         secret: ${{ secrets.GITHUB_TOKEN }}
 
+    - uses: sreimers/pr-dependency-action@v0.5
+      with:
+        name: rem
+        repo: https://github.com/baresip/rem
+        secret: ${{ secrets.GITHUB_TOKEN }}
+
     - uses: actions/upload-artifact@v3
       with:
         name: prepare
         path: |
           re
+          rem
 
   build_job:
     # The host should always be linux
@@ -39,7 +46,7 @@ jobs:
     steps:
       - uses: actions/checkout@v3
 
-      - name: Download re
+      - name: Download re/rem
         uses: actions/download-artifact@v3
         with:
           name: prepare
