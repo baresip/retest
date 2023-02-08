@@ -409,7 +409,8 @@ int test_turn(void)
 	int err;
 
 	err = turntest_alloc(&tt, IPPROTO_UDP, 600);
-	TEST_ERR(err);
+	if (err)
+		return err;
 
 	err = re_main_timeout(200);
 	TEST_ERR(err);
@@ -441,7 +442,8 @@ int test_turn_tcp(void)
 	int err;
 
 	err = turntest_alloc(&tt, IPPROTO_TCP, 600);
-	TEST_ERR(err);
+	if (err)
+		return err;
 
 	err = re_main_timeout(200);
 	TEST_ERR(err);
@@ -510,7 +512,8 @@ int test_turn_thread(void)
 	int err;
 
 	err = turntest_alloc(&tt, IPPROTO_UDP, 0);
-	TEST_ERR(err);
+	if (err)
+		return err;
 
 	re_atomic_rlx_set(&tt->rx_state, RX_DETACH);
 
