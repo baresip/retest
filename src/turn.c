@@ -409,17 +409,13 @@ int test_turn(void)
 	int err;
 
 	err = turntest_alloc(&tt, IPPROTO_UDP, 600);
-	if (err)
-		return err;
+	TEST_ERR(err);
 
 	err = re_main_timeout(200);
-	if (err)
-		goto out;
+	TEST_ERR(err);
 
-	if (tt->err) {
-		err = tt->err;
-		goto out;
-	}
+	err = tt->err;
+	TEST_ERR(err);
 
 	/* verify results after test is complete */
 
@@ -445,17 +441,13 @@ int test_turn_tcp(void)
 	int err;
 
 	err = turntest_alloc(&tt, IPPROTO_TCP, 600);
-	if (err)
-		return err;
+	TEST_ERR(err);
 
 	err = re_main_timeout(200);
-	if (err)
-		goto out;
+	TEST_ERR(err);
 
-	if (tt->err) {
-		err = tt->err;
-		goto out;
-	}
+	err = tt->err;
+	TEST_ERR(err);
 
 	/* verify results after test is complete */
 
@@ -530,10 +522,8 @@ int test_turn_thread(void)
 	thrd_join(tt->thr, &err);
 	TEST_ERR(err);
 
-	if (tt->err) {
-		err = tt->err;
-		goto out;
-	}
+	err = tt->err;
+	TEST_ERR(err);
 
 out:
 	mem_deref(tt);
