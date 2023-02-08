@@ -327,6 +327,7 @@ int test_tmr_jiffies_usec(void);
 int test_try_into(void);
 int test_turn(void);
 int test_turn_tcp(void);
+int test_turn_thread(void);
 int test_udp(void);
 int test_unixsock(void);
 int test_uri(void);
