@@ -23,11 +23,18 @@ jobs:
         repo: https://github.com/baresip/re
         secret: ${{ secrets.GITHUB_TOKEN }}
 
+    - uses: sreimers/pr-dependency-action@v0.5
+      with:
+        name: rem
+        repo: https://github.com/baresip/rem
+        secret: ${{ secrets.GITHUB_TOKEN }}
+
     - uses: actions/upload-artifact@v3
       with:
         name: prepare
         path: |
           re
+          rem
 
   build:
     runs-on: ${{ matrix.os }}
@@ -48,7 +55,7 @@ jobs:
       run: |
         yum -y install git gcc clang cmake openssl-devel pkgconfig zlib-devel net-tools
 
-    - name: Download re
+    - name: Download re/rem
       uses: actions/download-artifact@v3
       with:
         name: prepare
