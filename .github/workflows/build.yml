@@ -81,7 +81,7 @@ jobs:
       if: ${{ runner.os == 'macOS' }}
       run: |
         OPENSSL_ROOT_DIR=/usr/local/opt/openssl cmake -DCMAKE_C_FLAGS="-Werror" . && make
-        ./retest -r
+        ./retest -v -r
 
     - name: retest
       if: ${{ runner.os == 'Windows' }}
