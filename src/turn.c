@@ -4,6 +4,7 @@
  * Copyright (C) 2010 Creytiv.com
  */
 #include <string.h>
+#include <re_atomic.h>
 #include <re.h>
 #include "test.h"
 
@@ -11,6 +12,15 @@
 #define DEBUG_MODULE "test_turn"
 #define DEBUG_LEVEL 5
 #include <re_dbg.h>
+
+
+enum rx_state {
+	RX_NULL = 0,
+	RX_DETACH,
+	RX_ATTACH,
+	RX_READY,
+	RX_CLOSE
+};
 
 
 struct turntest {
@@ -22,6 +32,10 @@ struct turntest {
 	struct sa cli;
 	struct sa peer;
 	struct mbuf *mb;
+	struct tmr tmr;
+	uint32_t lifetime;
+	RE_ATOMIC enum rx_state rx_state;
+	thrd_t thr;
 	int proto;
 	int err;
 
@@ -105,7 +119,6 @@ static void turnc_chan_handler(void *arg)
 
 	++tt->n_chan_resp;
 
-	/*err |= send_payload(tt, 0, &tt->peer, test_payload);*/
 	err |= send_payload(tt, 4, &tt->peer, test_payload);
 	if (err) {
 		DEBUG_WARNING("failed to send payload (%m)\n", err);
@@ -147,7 +160,6 @@ static void turnc_handler(int err, uint16_t scode, const char *reason,
 	if (err)
 		goto out;
 
-	/*err  = send_payload(tt,  0, &tt->peer, test_payload);*/
 	err |= send_payload(tt, 36, &tt->peer, test_payload);
 	if (err) {
 		DEBUG_WARNING("failed to send payload (%m)\n", err);
@@ -173,12 +185,32 @@ static void peer_udp_recv(const struct sa *src, struct mbuf *mb, void *arg)
 
 	++tt->n_peer_recv;
 
+	err = udp_send(tt->us_peer, src, mb);
+	TEST_ERR(err);
+
 	TEST_MEMCMP(test_payload, strlen(test_payload),
 		    mbuf_buf(mb), mbuf_get_left(mb));
+
+	if (re_atomic_rlx(&tt->rx_state) > RX_NULL)
+		return;
 
  out:
 	if (err || is_complete(tt))
 		complete_test(tt, err);
+}
+
+
+static void cli_udp_recv(const struct sa *src, struct mbuf *mb, void *arg)
+{
+	struct turntest *tt = arg;
+	(void)src;
+
+	if (re_atomic_rlx(&tt->rx_state) == RX_DETACH) {
+		udp_thread_detach(tt->us_cli);
+		re_atomic_rlx_set(&tt->rx_state, RX_ATTACH);
+	}
+
+	udp_send(tt->us_cli, src, mb);
 }
 
 
@@ -200,7 +232,7 @@ static void tcp_estab_handler(void *arg)
 
 	err = turnc_alloc(&tt->turnc, NULL, IPPROTO_TCP, tt->tc,
 			  0, &tt->turnsrv->laddr_tcp,
-			  "username", "password", 600,
+			  "username", "password", tt->lifetime,
 			  turnc_handler, tt);
 	if (err)
 		goto out;
@@ -304,7 +336,7 @@ static void tcp_close_handler(int err, void *arg)
 }
 
 
-static int turntest_alloc(struct turntest **ttp, int proto)
+static int turntest_alloc(struct turntest **ttp, int proto, uint32_t lifetime)
 {
 	struct turntest *tt;
 	struct sa laddr;
@@ -314,14 +346,15 @@ static int turntest_alloc(struct turntest **ttp, int proto)
 	if (!tt)
 		return ENOMEM;
 
-	tt->proto = proto;
+	tt->proto    = proto;
+	tt->lifetime = lifetime;
 
 	err  = sa_set_str(&laddr, "127.0.0.1", 0);
 	if (err)
 		goto out;
 
 	if (proto == IPPROTO_UDP) {
-		err |= udp_listen(&tt->us_cli, &laddr, NULL, NULL);
+		err |= udp_listen(&tt->us_cli, &laddr, cli_udp_recv, tt);
 		if (err)
 			goto out;
 
@@ -347,7 +380,7 @@ static int turntest_alloc(struct turntest **ttp, int proto)
 	case IPPROTO_UDP:
 		err = turnc_alloc(&tt->turnc, NULL, proto, tt->us_cli,
 				  0, &tt->turnsrv->laddr,
-				  "username", "password", 600,
+				  "username", "password", lifetime,
 				  turnc_handler, tt);
 		break;
 
@@ -375,7 +408,43 @@ int test_turn(void)
 	struct turntest *tt;
 	int err;
 
-	err = turntest_alloc(&tt, IPPROTO_UDP);
+	err = turntest_alloc(&tt, IPPROTO_UDP, 600);
+	if (err)
+		return err;
+
+	err = re_main_timeout(200);
+	if (err)
+		goto out;
+
+	if (tt->err) {
+		err = tt->err;
+		goto out;
+	}
+
+	/* verify results after test is complete */
+
+	TEST_EQUALS(1, tt->n_alloc_resp);
+	TEST_EQUALS(1, tt->n_chan_resp);
+	TEST_EQUALS(2, tt->n_peer_recv);
+
+	TEST_ASSERT(tt->turnsrv->n_allocate >= 1);
+	TEST_ASSERT(tt->turnsrv->n_chanbind >= 1);
+	TEST_EQUALS(1, tt->turnsrv->n_send);
+	TEST_EQUALS(2, tt->turnsrv->n_raw);
+
+ out:
+	mem_deref(tt);
+
+	return err;
+}
+
+
+int test_turn_tcp(void)
+{
+	struct turntest *tt;
+	int err;
+
+	err = turntest_alloc(&tt, IPPROTO_TCP, 600);
 	if (err)
 		return err;
 
@@ -406,36 +475,67 @@ int test_turn(void)
 }
 
 
-int test_turn_tcp(void)
+static void tmr_handler(void *arg)
+{
+	struct turntest *tt = arg;
+
+	if (re_atomic_rlx(&tt->rx_state) == RX_CLOSE)
+		re_cancel();
+
+	if (re_atomic_rlx(&tt->rx_state) == RX_ATTACH) {
+		udp_thread_attach(tt->us_cli);
+		re_atomic_rlx_set(&tt->rx_state, RX_READY);
+	}
+
+	tmr_start(&tt->tmr, 0, tmr_handler, tt);
+}
+
+
+static int turn_thread(void *arg)
+{
+	struct turntest *tt = arg;
+	int err;
+
+	re_thread_init();
+
+	tmr_init(&tt->tmr);
+	tmr_start(&tt->tmr, 0, tmr_handler, tt);
+
+	err = re_main(NULL);
+	TEST_ERR(err);
+
+	tmr_cancel(&tt->tmr);
+
+out:
+	re_thread_close();
+	return err;
+}
+
+
+int test_turn_thread(void)
 {
 	struct turntest *tt;
 	int err;
 
-	err = turntest_alloc(&tt, IPPROTO_TCP);
-	if (err)
-		return err;
+	err = turntest_alloc(&tt, IPPROTO_UDP, 0);
+	TEST_ERR(err);
 
-	err = re_main_timeout(200);
-	if (err)
-		goto out;
+	re_atomic_rlx_set(&tt->rx_state, RX_DETACH);
+
+	thread_create_name(&tt->thr, "test_turn_thread", turn_thread, tt);
+
+	re_main_timeout(500);
+
+	re_atomic_rlx_set(&tt->rx_state, RX_CLOSE);
+	thrd_join(tt->thr, &err);
+	TEST_ERR(err);
 
 	if (tt->err) {
 		err = tt->err;
 		goto out;
 	}
 
-	/* verify results after test is complete */
-
-	TEST_EQUALS(1, tt->n_alloc_resp);
-	TEST_EQUALS(1, tt->n_chan_resp);
-	TEST_EQUALS(2, tt->n_peer_recv);
-
-	TEST_ASSERT(tt->turnsrv->n_allocate >= 1);
-	TEST_ASSERT(tt->turnsrv->n_chanbind >= 1);
-	TEST_EQUALS(1, tt->turnsrv->n_send);
-	TEST_EQUALS(1, tt->turnsrv->n_raw);
-
- out:
+out:
 	mem_deref(tt);
 
 	return err;

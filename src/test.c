@@ -243,20 +243,21 @@ static const struct test tests[] = {
 
 
 static const struct test tests_integration[] = {
+	TEST(test_dns_cache_http_integration),
+	TEST(test_dns_http_integration),
+	TEST(test_dns_integration),
 	TEST(test_net_dst_source_addr_get),
-	TEST(test_sipevent_network),
-	TEST(test_sip_drequestf_network),
 	TEST(test_rtp_listen),
-	TEST(test_sipreg_udp),
+	TEST(test_sip_drequestf_network),
+	TEST(test_sipevent_network),
 	TEST(test_sipreg_tcp),
 #ifdef USE_TLS
 	TEST(test_sipreg_tls),
 #endif
+	TEST(test_sipreg_udp),
 	TEST(test_tmr_jiffies),
 	TEST(test_tmr_jiffies_usec),
-	TEST(test_dns_integration),
-	TEST(test_dns_http_integration),
-	TEST(test_dns_cache_http_integration),
+	TEST(test_turn_thread),
 };
 
 
