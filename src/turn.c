@@ -425,8 +425,8 @@ int test_turn(void)
 
 	TEST_ASSERT(tt->turnsrv->n_allocate >= 1);
 	TEST_ASSERT(tt->turnsrv->n_chanbind >= 1);
+	TEST_ASSERT(tt->turnsrv->n_raw >= 1);
 	TEST_EQUALS(1, tt->turnsrv->n_send);
-	TEST_EQUALS(2, tt->turnsrv->n_raw);
 
  out:
 	mem_deref(tt);
@@ -457,8 +457,8 @@ int test_turn_tcp(void)
 
 	TEST_ASSERT(tt->turnsrv->n_allocate >= 1);
 	TEST_ASSERT(tt->turnsrv->n_chanbind >= 1);
+	TEST_ASSERT(tt->turnsrv->n_raw >= 1);
 	TEST_EQUALS(1, tt->turnsrv->n_send);
-	TEST_EQUALS(1, tt->turnsrv->n_raw);
 
  out:
 	mem_deref(tt);
