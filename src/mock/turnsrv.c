@@ -272,6 +272,13 @@ static void process_msg(struct turnserver *turn, int proto, void *sock,
 	}
 		break;
 
+	case STUN_METHOD_REFRESH: {
+		uint32_t lifetime = 1; /* short test lifetime */
+		err = stun_reply(proto, sock, src, 0, msg, NULL, 0, false, 1,
+				 STUN_ATTR_LIFETIME, &lifetime);
+	}
+		break;
+
 	default:
 		DEBUG_WARNING("unknown STUN method: %s\n",
 			      stun_method_name(stun_msg_method(msg)));
