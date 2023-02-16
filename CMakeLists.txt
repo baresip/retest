@@ -22,7 +22,6 @@ list(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_LIST_DIR}/cmake)
 #
 
 find_package(RE REQUIRED)
-find_package(REM REQUIRED)
 
 ##############################################################################
 #
@@ -62,7 +61,6 @@ endif()
 include_directories(
   src
   ${RE_INCLUDE_DIRS}
-  ${REM_INCLUDE_DIRS}
 )
 
 find_package(re CONFIG REQUIRED HINTS ../re/cmake)
@@ -164,7 +162,7 @@ endif()
 # Main target object
 #
 
-set(LINKLIBS ${REM_LIBRARIES} ${RE_LIBRARIES} ${OPENSSL_LIBRARIES})
+set(LINKLIBS ${RE_LIBRARIES} ${OPENSSL_LIBRARIES})
 if(WIN32)
   list(APPEND LINKLIBS qwave iphlpapi wsock32 ws2_32)
 else()

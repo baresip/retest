@@ -95,11 +95,11 @@ jobs:
 
           # Produce a binary artifact and place it in the mounted volume
           run: |
-            for p in re rem; do
+            for p in re; do
               cmake -S $p -B $p/build -DCMAKE_C_FLAGS="-Werror" -DCMAKE_BUILD_TYPE=Debug
               cmake --build $p/build -j
             done
-            for p in re rem; do
+            for p in re; do
               mv $p ../.
             done
             cmake -B build -DCMAKE_C_FLAGS="-Werror" -DCMAKE_BUILD_TYPE=Debug

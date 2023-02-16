@@ -67,13 +67,13 @@ jobs:
         ${{ matrix.compiler }} - --version
         /sbin/ifconfig
 
-    - name: make re/rem
+    - name: make re
       run: |
-        for p in re rem; do
+        for p in re; do
           cmake -S $p -B $p/build
           cmake --build $p/build -j
         done
-        for p in re rem; do
+        for p in re; do
           mv $p ../.
         done
 
